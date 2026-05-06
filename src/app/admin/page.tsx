@@ -230,8 +230,24 @@ doc.text(
 )}
 
               <p className="mt-2">
-                Estado: <strong>{pedido.estado || "pendiente"}</strong>
-              </p>
+  Estado:{" "}
+  <span
+    className={`px-3 py-1 rounded text-white text-sm font-semibold
+    ${
+      pedido.estado === "pendiente"
+        ? "bg-gray-500"
+        : pedido.estado === "anticipo"
+        ? "bg-yellow-500"
+        : pedido.estado === "pagado"
+        ? "bg-blue-600"
+        : pedido.estado === "entregado"
+        ? "bg-green-600"
+        : "bg-gray-700"
+    }`}
+  >
+    {pedido.estado || "pendiente"}
+  </span>
+</p>
 
               {/* BOTONES DE ESTADO */}
               <div className="flex gap-2 mt-3 flex-wrap">
