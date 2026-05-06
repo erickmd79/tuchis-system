@@ -197,6 +197,9 @@ doc.text(
   return (
     <div className="p-10">
       <div className="flex justify-between items-center mb-6">
+  <h1 className="text-3xl font-bold">
+    Panel Administrador
+  </h1>
 
   <button
     onClick={cerrarSesion}
@@ -205,7 +208,6 @@ doc.text(
     Cerrar sesión
   </button>
 </div>
-      <h1 className="text-3xl font-bold mb-6">Panel Administrador</h1>
 
       {pedidos.length === 0 ? (
         <p>No hay pedidos registrados</p>
