@@ -8,6 +8,10 @@ import { useRouter } from "next/navigation"
 export default function Page() {
   const [pedidos, setPedidos] = useState<any[]>([])
   const router = useRouter()
+  const cerrarSesion = async () => {
+  await supabase.auth.signOut()
+  router.push("/login")
+}
 
   useEffect(() => {
   const verificarLogin = async () => {
@@ -192,6 +196,18 @@ doc.text(
 
   return (
     <div className="p-10">
+      <div className="flex justify-between items-center mb-6">
+  <h1 className="text-3xl font-bold">
+    Panel Admin
+  </h1>
+
+  <button
+    onClick={cerrarSesion}
+    className="bg-red-600 text-white px-4 py-2 rounded"
+  >
+    Cerrar sesión
+  </button>
+</div>
       <h1 className="text-3xl font-bold mb-6">Panel Administrador</h1>
 
       {pedidos.length === 0 ? (
