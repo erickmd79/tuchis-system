@@ -3,11 +3,25 @@
 import jsPDF from "jspdf"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
-
+import { useRouter } from "next/navigation"
 
 export default function Page() {
   const [pedidos, setPedidos] = useState<any[]>([])
+  const router = useRouter()
 
+  useEffect(() => {
+  const verificarLogin = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session) {
+      router.push("/login")
+    }
+  }
+
+  verificarLogin()
+}, [])
   
 useEffect(() => {
   const obtenerPedidos = async () => {
