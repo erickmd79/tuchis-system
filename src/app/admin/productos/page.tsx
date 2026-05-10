@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { supabase } from "../../../lib/supabase"
 
 export default function ProductosAdmin() {
@@ -8,8 +8,23 @@ export default function ProductosAdmin() {
   const [nombre, setNombre] = useState("")
   const [precio, setPrecio] = useState("")
   const [categoria, setCategoria] = useState("")
+  const [categorias, setCategorias] = useState<any[]>([])
   const [medidas, setMedidas] = useState("")
   const [imagenes, setImagenes] = useState<FileList | null>(null)
+  useEffect(() => {
+  cargarCategorias()
+}, [])
+
+async function cargarCategorias() {
+
+  const { data } = await supabase
+    .from("categorias")
+    .select("*")
+
+  if (data) {
+    setCategorias(data)
+  }
+}
 
   const guardarProducto = async () => {
 
@@ -98,13 +113,26 @@ export default function ProductosAdmin() {
           className="w-full p-4 rounded-2xl border"
         />
 
-        <input
-          type="text"
-          placeholder="Categoría"
-          value={categoria}
-          onChange={(e) => setCategoria(e.target.value)}
-          className="w-full p-4 rounded-2xl border"
-        />
+        <select
+  value={categoria}
+  onChange={(e) => setCategoria(e.target.value)}
+  className="w-full border p-4 rounded-2xl mb-4"
+>
+
+  <option value="">
+    Selecciona categoría
+  </option>
+
+  {categorias.map((cat) => (
+    <option
+      key={cat.id}
+      value={cat.nombre}
+    >
+      {cat.nombre}
+    </option>
+  ))}
+
+</select>
 
         <input
           type="text"
