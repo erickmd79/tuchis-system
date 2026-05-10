@@ -7,11 +7,16 @@ export default function CatalogoPage() {
 
   const [productos, setProductos] = useState<any[]>([])
   const [carrito, setCarrito] = useState<any[]>([])
+
   const [busqueda, setBusqueda] = useState("")
-  const [categoria, setCategoria] = useState("Todas")
-  const [categorias, setCategorias] = useState<any[]>([])
+  const [categoria, setCategoria] =
+    useState("Todas")
+
+  const [categorias, setCategorias] =
+    useState<any[]>([])
 
   useEffect(() => {
+
     obtenerProductos()
     obtenerCategorias()
 
@@ -30,7 +35,9 @@ export default function CatalogoPage() {
       await supabase
         .from("productos")
         .select("*")
-        .order("id", { ascending: false })
+        .order("id", {
+          ascending: false
+        })
 
     if (!error && data) {
       setProductos(data)
@@ -50,7 +57,9 @@ export default function CatalogoPage() {
     }
   }
 
-  const guardarCarrito = (nuevoCarrito: any[]) => {
+  const guardarCarrito = (
+    nuevoCarrito: any[]
+  ) => {
 
     setCarrito(nuevoCarrito)
 
@@ -60,11 +69,15 @@ export default function CatalogoPage() {
     )
   }
 
-  const agregarAlCarrito = (producto: any) => {
+  const agregarAlCarrito = (
+    producto: any
+  ) => {
 
-    const existe = carrito.find(
-      (item) => item.id === producto.id
-    )
+    const existe =
+      carrito.find(
+        (item) =>
+          item.id === producto.id
+      )
 
     if (existe) {
 
@@ -74,7 +87,8 @@ export default function CatalogoPage() {
           item.id === producto.id
             ? {
                 ...item,
-                cantidad: item.cantidad + 1,
+                cantidad:
+                  item.cantidad + 1,
               }
             : item
         )
@@ -93,7 +107,9 @@ export default function CatalogoPage() {
     }
   }
 
-  const aumentarCantidad = (id: number) => {
+  const aumentarCantidad = (
+    id: number
+  ) => {
 
     const actualizado =
       carrito.map((item) =>
@@ -101,7 +117,8 @@ export default function CatalogoPage() {
         item.id === id
           ? {
               ...item,
-              cantidad: item.cantidad + 1,
+              cantidad:
+                item.cantidad + 1,
             }
           : item
       )
@@ -109,7 +126,9 @@ export default function CatalogoPage() {
     guardarCarrito(actualizado)
   }
 
-  const disminuirCantidad = (id: number) => {
+  const disminuirCantidad = (
+    id: number
+  ) => {
 
     const actualizado =
       carrito
@@ -118,13 +137,27 @@ export default function CatalogoPage() {
           item.id === id
             ? {
                 ...item,
-                cantidad: item.cantidad - 1,
+                cantidad:
+                  item.cantidad - 1,
               }
             : item
         )
         .filter(
-          (item) => item.cantidad > 0
+          (item) =>
+            item.cantidad > 0
         )
+
+    guardarCarrito(actualizado)
+  }
+
+  const eliminarProducto = (
+    id: number
+  ) => {
+
+    const actualizado =
+      carrito.filter(
+        (item) => item.id !== id
+      )
 
     guardarCarrito(actualizado)
   }
@@ -136,10 +169,12 @@ export default function CatalogoPage() {
       0
     )
 
-  const total =
+  const subtotal =
     carrito.reduce(
       (acc, item) =>
-        acc + item.precio * item.cantidad,
+        acc +
+        item.precio *
+          item.cantidad,
       0
     )
 
@@ -155,7 +190,8 @@ export default function CatalogoPage() {
 
       const coincideCategoria =
         categoria === "Todas" ||
-        producto.categoria === categoria
+        producto.categoria ===
+          categoria
 
       return (
         coincideBusqueda &&
@@ -164,7 +200,8 @@ export default function CatalogoPage() {
     })
 
   return (
-    <div className="min-h-screen bg-[#FFF8F5] p-8 pb-40">
+
+    <div className="min-h-screen bg-[#FFF8F5] p-8 pb-52">
 
       <div className="mb-10">
 
@@ -172,7 +209,7 @@ export default function CatalogoPage() {
           Catálogo TUCHIS
         </h1>
 
-        <p className="text-gray-600 mt-3">
+        <p className="text-gray-500 mt-3">
           Elige tus alcancías favoritas
         </p>
 
@@ -185,7 +222,9 @@ export default function CatalogoPage() {
           placeholder="Buscar producto..."
           value={busqueda}
           onChange={(e) =>
-            setBusqueda(e.target.value)
+            setBusqueda(
+              e.target.value
+            )
           }
           className="w-full p-4 rounded-2xl border"
         />
@@ -193,7 +232,9 @@ export default function CatalogoPage() {
         <select
           value={categoria}
           onChange={(e) =>
-            setCategoria(e.target.value)
+            setCategoria(
+              e.target.value
+            )
           }
           className="w-full p-4 rounded-2xl border"
         >
@@ -219,132 +260,230 @@ export default function CatalogoPage() {
 
       <div className="grid md:grid-cols-4 gap-6">
 
-        {productosFiltrados.map((producto) => {
+        {productosFiltrados.map(
+          (producto) => {
 
-          const itemCarrito =
-            carrito.find(
-              (item) =>
-                item.id === producto.id
-            )
+            const itemCarrito =
+              carrito.find(
+                (item) =>
+                  item.id ===
+                  producto.id
+              )
 
-          return (
+            return (
 
-            <div
-              key={producto.id}
-              className="bg-white rounded-3xl overflow-hidden shadow-lg border border-[#F8D6D0]"
-            >
+              <div
+                key={producto.id}
+                className="bg-white rounded-3xl overflow-hidden shadow-lg border border-[#F8D6D0]"
+              >
 
-              <img
-                src={
-                  producto.imagenes?.[0] ||
-                  "/placeholder.png"
-                }
-                alt={producto.nombre}
-                className="w-full h-64 object-cover"
-              />
+                <img
+                  src={
+                    producto
+                      .imagenes?.[0] ||
+                    "/placeholder.png"
+                  }
+                  className="w-full h-64 object-cover"
+                />
 
-              <div className="p-5">
+                <div className="p-5">
 
-                <p className="text-sm text-pink-400 font-bold">
-                  {producto.categoria}
-                </p>
-
-                <h2 className="text-2xl font-bold text-[#20B8C9] mt-2">
-                  {producto.nombre}
-                </h2>
-
-                <p className="text-gray-500 mt-2">
-                  {producto.medidas}
-                </p>
-
-                <p className="text-3xl font-bold text-[#F49B93] mt-4">
-                  ${producto.precio}
-                </p>
-
-                {itemCarrito ? (
-
-                  <div className="flex items-center gap-3 mt-5">
-
-                    <button
-                      onClick={() =>
-                        disminuirCantidad(
-                          producto.id
-                        )
-                      }
-                      className="bg-[#FFD6D6] w-10 h-10 rounded-full text-xl font-bold"
-                    >
-                      -
-                    </button>
-
-                    <span className="text-xl font-bold">
-                      {
-                        itemCarrito.cantidad
-                      }
-                    </span>
-
-                    <button
-                      onClick={() =>
-                        aumentarCantidad(
-                          producto.id
-                        )
-                      }
-                      className="bg-[#BEE9E8] w-10 h-10 rounded-full text-xl font-bold"
-                    >
-                      +
-                    </button>
-
-                  </div>
-
-                ) : (
-
-                  <button
-                    onClick={() =>
-                      agregarAlCarrito(
-                        producto
-                      )
+                  <p className="text-pink-400 font-bold text-sm">
+                    {
+                      producto.categoria
                     }
-                    className="w-full bg-[#20B8C9] hover:bg-[#17A7B8]
-                    text-white py-4 rounded-2xl font-bold mt-5"
-                  >
-                    Agregar al carrito
-                  </button>
+                  </p>
 
-                )}
+                  <h2 className="text-2xl font-bold text-[#20B8C9] mt-2">
+                    {producto.nombre}
+                  </h2>
+
+                  <p className="text-gray-500 mt-2">
+                    {producto.medidas}
+                  </p>
+
+                  <p className="text-3xl font-bold text-[#F49B93] mt-4">
+                    ${producto.precio}
+                  </p>
+
+                  {itemCarrito ? (
+
+                    <div className="flex items-center gap-3 mt-5">
+
+                      <button
+                        onClick={() =>
+                          disminuirCantidad(
+                            producto.id
+                          )
+                        }
+                        className="bg-[#FFD6D6]
+                        w-10 h-10 rounded-full
+                        text-xl font-bold"
+                      >
+                        -
+                      </button>
+
+                      <span className="text-xl font-bold">
+
+                        {
+                          itemCarrito.cantidad
+                        }
+
+                      </span>
+
+                      <button
+                        onClick={() =>
+                          aumentarCantidad(
+                            producto.id
+                          )
+                        }
+                        className="bg-[#BEE9E8]
+                        w-10 h-10 rounded-full
+                        text-xl font-bold"
+                      >
+                        +
+                      </button>
+
+                    </div>
+
+                  ) : (
+
+                    <button
+                      onClick={() =>
+                        agregarAlCarrito(
+                          producto
+                        )
+                      }
+                      className="w-full mt-5
+                      bg-[#20B8C9]
+                      hover:bg-[#17A7B8]
+                      text-white py-4
+                      rounded-2xl font-bold"
+                    >
+                      Agregar al carrito
+                    </button>
+
+                  )}
+
+                </div>
 
               </div>
-
-            </div>
-          )
-        })}
+            )
+          }
+        )}
 
       </div>
 
       {carrito.length > 0 && (
 
-        <div className="fixed bottom-5 left-1/2 -translate-x-1/2
-        bg-white border border-[#F8D6D0]
-        shadow-2xl rounded-3xl px-8 py-5
-        flex items-center gap-10 z-50">
+        <div
+          className="fixed bottom-5 left-1/2
+          -translate-x-1/2
+          bg-white border border-[#F8D6D0]
+          shadow-2xl rounded-3xl
+          w-[95%] md:w-[850px]
+          p-6 z-50"
+        >
 
-          <div>
+          <div className="flex justify-between items-center mb-5">
 
-            <p className="font-bold text-[#20B8C9]">
-              🛒 {totalProductos} productos
-            </p>
+            <div>
 
-            <p className="text-[#F49B93] font-bold text-xl">
-              ${total}
-            </p>
+              <p className="font-bold text-[#20B8C9] text-xl">
+                🛒 {totalProductos} productos
+              </p>
+
+              <p className="text-[#F49B93] text-3xl font-bold mt-1">
+                ${subtotal}
+              </p>
+
+            </div>
+
+            <a
+              href="/pedido"
+              className="bg-[#20B8C9]
+              text-white px-6 py-4
+              rounded-2xl font-bold"
+            >
+              Ver pedido
+            </a>
 
           </div>
 
-          <a
-            href="/pedido"
-            className="bg-[#20B8C9]
-            text-white px-6 py-4 rounded-2xl font-bold"
-          >
-            Ver pedido
-          </a>
+          <div className="max-h-56 overflow-auto space-y-3">
+
+            {carrito.map((item) => (
+
+              <div
+                key={item.id}
+                className="bg-[#FFF8F5]
+                rounded-2xl p-4
+                flex justify-between
+                items-center"
+              >
+
+                <div>
+
+                  <p className="font-bold">
+                    {item.nombre}
+                  </p>
+
+                  <p className="text-[#F49B93] font-bold">
+                    ${item.precio}
+                  </p>
+
+                </div>
+
+                <div className="flex items-center gap-3">
+
+                  <button
+                    onClick={() =>
+                      disminuirCantidad(
+                        item.id
+                      )
+                    }
+                    className="bg-[#FFD6D6]
+                    w-9 h-9 rounded-full"
+                  >
+                    -
+                  </button>
+
+                  <span className="font-bold text-lg">
+                    {item.cantidad}
+                  </span>
+
+                  <button
+                    onClick={() =>
+                      aumentarCantidad(
+                        item.id
+                      )
+                    }
+                    className="bg-[#BEE9E8]
+                    w-9 h-9 rounded-full"
+                  >
+                    +
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      eliminarProducto(
+                        item.id
+                      )
+                    }
+                    className="bg-red-500
+                    text-white px-4 py-2
+                    rounded-xl"
+                  >
+                    Eliminar
+                  </button>
+
+                </div>
+
+              </div>
+
+            ))}
+
+          </div>
 
         </div>
 
