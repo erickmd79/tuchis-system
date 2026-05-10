@@ -9,7 +9,6 @@ export default function Page() {
   const [telefono, setTelefono] = useState("")
   const [fecha, setFecha] = useState("")
   const [notas, setNotas] = useState("")
-  const [imagen, setImagen] = useState<File | null>(null)
 
   useEffect(() => {
     const data = JSON.parse(localStorage.getItem("carrito") || "[]")
@@ -21,55 +20,34 @@ export default function Page() {
     0
   )
 
-  // 🔥 FUNCIÓN PARA GUARDAR EN SUPABASE
- const guardarPedido = async (pedido: any) => {
-   let imagenUrl = ""
-   if (imagen) {
+  // 🔥 GUARDAR PEDIDO EN SUPABASE
+  const guardarPedido = async (pedido: any) => {
+    const { error } = await supabase.from("pedidos").insert([
+      {
+        cliente: pedido.cliente,
+        telefono: pedido.telefono,
+        fecha: pedido.fecha,
+        notas: pedido.notas,
 
-  const nombreArchivo =
-    `${Date.now()}-${imagen.name}`
+        productos: pedido.productos.map((p: any) => ({
+          nombre: p.nombre,
+          precio: p.precio,
+          cantidad: p.cantidad,
+        })),
 
-  const { error: uploadError } =
-    await supabase.storage
-      .from("productos")
-      .upload(nombreArchivo, imagen)
+        total: pedido.total,
+        estado: "pendiente",
+      },
+    ])
 
-  if (!uploadError) {
+    if (error) {
+      alert(JSON.stringify(error))
+      alert("Error al guardar pedido")
+      return false
+    }
 
-    const { data } = supabase.storage
-      .from("productos")
-      .getPublicUrl(nombreArchivo)
-
-    imagenUrl = data.publicUrl
+    return true
   }
-}
-  const { error } = await supabase.from("pedidos").insert([
-    {
-      cliente: pedido.cliente,
-      telefono: pedido.telefono,
-      fecha: pedido.fecha,
-      notas: pedido.notas,
-
-      productos: pedido.productos.map((p: any) => ({
-        nombre: p.nombre,
-        precio: p.precio,
-        cantidad: p.cantidad
-      })),
-
-      total: pedido.total,
-      estado: "pendiente",
-      imagen: imagenUrl,
-    },
-  ])
-
-  if (error) {
-    alert(JSON.stringify(error))
-    alert("Error al guardar pedido")
-    return false
-  }
-
-  return true
-}
 
   // 🔥 GENERAR PEDIDO
   const generarPedido = async () => {
@@ -99,8 +77,10 @@ export default function Page() {
   }
 
   return (
-    <div className="p-10">
-      <h1 className="text-3xl font-bold mb-6">Tu Pedido</h1>
+    <div className="p-10 bg-[#FFFDF8] min-h-screen">
+      <h1 className="text-4xl font-bold mb-6 text-[#27B6C7]">
+        Tu Pedido
+      </h1>
 
       <div className="mb-6 space-y-4">
         <input
@@ -108,7 +88,7 @@ export default function Page() {
           placeholder="Nombre del cliente"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
-          className="w-full border p-2 rounded"
+          className="w-full border border-[#FFD9D4] p-3 rounded-2xl bg-white"
         />
 
         <input
@@ -116,61 +96,53 @@ export default function Page() {
           placeholder="Teléfono"
           value={telefono}
           onChange={(e) => setTelefono(e.target.value)}
-          className="w-full border p-2 rounded"
+          className="w-full border border-[#FFD9D4] p-3 rounded-2xl bg-white"
         />
 
         <input
           type="date"
           value={fecha}
           onChange={(e) => setFecha(e.target.value)}
-          className="w-full border p-2 rounded"
+          className="w-full border border-[#FFD9D4] p-3 rounded-2xl bg-white"
         />
 
         <textarea
           placeholder="Notas del pedido"
           value={notas}
           onChange={(e) => setNotas(e.target.value)}
-          className="w-full border p-2 rounded"
+          className="w-full border border-[#FFD9D4] p-3 rounded-2xl bg-white"
         />
-        <div className="mt-4">
-  <label className="block mb-2 font-semibold">
-    Imagen de referencia
-  </label>
-
-  <input
-    type="file"
-    accept="image/*"
-    onChange={(e) => {
-      if (e.target.files?.[0]) {
-        setImagen(e.target.files[0])
-      }
-    }}
-    className="w-full bg-white p-3 rounded-2xl border"
-  />
-</div>
       </div>
 
       {carrito.length === 0 ? (
-        <p>No hay productos en el pedido</p>
+        <p className="text-gray-500">
+          No hay productos en el pedido
+        </p>
       ) : (
         <div className="space-y-4">
           {carrito.map((item, index) => (
-            <div key={index} className="border p-4 rounded">
-              <h2 className="text-xl font-semibold">{item.nombre}</h2>
-              <p>
+            <div
+              key={index}
+              className="bg-white border border-[#FFD9D4] p-5 rounded-3xl shadow-sm"
+            >
+              <h2 className="text-2xl font-bold text-[#27B6C7]">
+                {item.nombre}
+              </h2>
+
+              <p className="text-lg mt-2 text-gray-700">
                 {item.cantidad} x ${item.precio} = $
                 {item.precio * item.cantidad}
               </p>
             </div>
           ))}
 
-          <div className="mt-6 text-2xl font-bold">
+          <div className="mt-6 text-3xl font-bold text-[#F59AA3]">
             Total: ${total}
           </div>
 
           <button
             onClick={generarPedido}
-            className="mt-6 bg-green-600 text-white px-6 py-3 rounded"
+            className="mt-6 bg-[#27B6C7] hover:bg-[#1fa3b3] text-white px-8 py-4 rounded-2xl text-xl font-bold transition"
           >
             Generar Pedido
           </button>
