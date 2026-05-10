@@ -326,7 +326,7 @@ export default function Page() {
                   onClick={() =>
                     enviarWhatsApp(pedido)
                   }
-                  className="bg-[#18AFC4] text-white px-5 py-3 rounded-2xl font-semibold"
+                  className="bg-[#A8D5BA] text-[#2E5E4E] px-5 py-3 rounded-2xl font-semibold"
                 >
                   WhatsApp
                 </button>
@@ -335,7 +335,7 @@ export default function Page() {
                   onClick={() =>
                     generarPDF(pedido)
                   }
-                  className="bg-[#F9958E] text-white px-5 py-3 rounded-2xl font-semibold"
+                  className="bg-[#F7B7C3] text-[#7A3E4D] px-5 py-3 rounded-2xl font-semibold"
                 >
                   Descargar PDF
                 </button>
