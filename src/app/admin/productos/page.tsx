@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { supabase } from "../../../lib/supabase"
 
 export default function ProductosAdmin() {
@@ -11,24 +12,26 @@ export default function ProductosAdmin() {
   const [categorias, setCategorias] = useState<any[]>([])
   const [medidas, setMedidas] = useState("")
   const [imagenes, setImagenes] = useState<FileList | null>(null)
+
   useEffect(() => {
-  cargarCategorias()
-}, [])
+    obtenerCategorias()
+  }, [])
 
-async function cargarCategorias() {
+  const obtenerCategorias = async () => {
 
-  const { data } = await supabase
-    .from("categorias")
-    .select("*")
+    const { data, error } = await supabase
+      .from("categorias")
+      .select("*")
+      .order("nombre")
 
-  if (data) {
-    setCategorias(data)
+    if (!error && data) {
+      setCategorias(data)
+    }
   }
-}
 
   const guardarProducto = async () => {
 
-    if (!nombre || !precio) {
+    if (!nombre || !precio || !categoria) {
       alert("Faltan datos")
       return
     }
@@ -48,6 +51,7 @@ async function cargarCategorias() {
             .upload(nombreArchivo, imagen)
 
         if (uploadError) {
+          console.log(uploadError)
           alert("Error subiendo imagen")
           return
         }
@@ -74,11 +78,10 @@ async function cargarCategorias() {
         ])
 
     if (error) {
-  console.log(error)
-  alert(JSON.stringify(error))
-  alert("Error guardando producto")
-  return
-}
+      console.log(error)
+      alert(JSON.stringify(error))
+      return
+    }
 
     alert("Producto guardado")
 
@@ -86,34 +89,36 @@ async function cargarCategorias() {
     setPrecio("")
     setCategoria("")
     setMedidas("")
+    setImagenes(null)
   }
 
   return (
-    <div className="flex gap-4 mb-8">
+    <div className="min-h-screen bg-[#FFF8F5] p-8">
 
-  <a
-    href="/admin"
-    className="bg-[#20B8C9] text-white px-6 py-3 rounded-2xl font-bold"
-  >
-    Pedidos
-  </a>
+      <div className="flex gap-4 mb-8">
 
-  <a
-    href="/admin/productos"
-    className="bg-[#F7AFAF] text-white px-6 py-3 rounded-2xl font-bold"
-  >
-    Productos
-  </a>
+        <Link
+          href="/admin"
+          className="bg-[#20B8C9] text-white px-5 py-3 rounded-2xl font-bold"
+        >
+          Dashboard
+        </Link>
 
-  <a
-    href="/admin/categorias"
-    className="bg-[#F6D36B] text-white px-6 py-3 rounded-2xl font-bold"
-  >
-    Categorías
-  </a>
+        <Link
+          href="/admin/productos"
+          className="bg-[#F49B93] text-white px-5 py-3 rounded-2xl font-bold"
+        >
+          Productos
+        </Link>
 
-</div>
-    <div className="min-h-screen p-10 bg-[#FFFDF8]">
+        <Link
+          href="/admin/categorias"
+          className="bg-[#FFD56B] text-[#444] px-5 py-3 rounded-2xl font-bold"
+        >
+          Categorías
+        </Link>
+
+      </div>
 
       <h1 className="text-5xl font-bold text-[#20B8C9] mb-10">
         Productos
@@ -138,25 +143,25 @@ async function cargarCategorias() {
         />
 
         <select
-  value={categoria}
-  onChange={(e) => setCategoria(e.target.value)}
-  className="w-full border p-4 rounded-2xl mb-4"
->
+          value={categoria}
+          onChange={(e) => setCategoria(e.target.value)}
+          className="w-full border p-4 rounded-2xl"
+        >
 
-  <option value="">
-    Selecciona categoría
-  </option>
+          <option value="">
+            Selecciona categoría
+          </option>
 
-  {categorias.map((cat) => (
-    <option
-      key={cat.id}
-      value={cat.nombre}
-    >
-      {cat.nombre}
-    </option>
-  ))}
+          {categorias.map((cat) => (
+            <option
+              key={cat.id}
+              value={cat.nombre}
+            >
+              {cat.nombre}
+            </option>
+          ))}
 
-</select>
+        </select>
 
         <input
           type="text"
