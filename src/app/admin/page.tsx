@@ -90,6 +90,20 @@ const [filtroEstado, setFiltroEstado] = useState("todos")
     window.open(url, "_blank")
   }
 
+  const totalPedidos = pedidos.length
+
+const totalVendido = pedidos.reduce(
+  (acc, pedido) => acc + Number(pedido.total || 0),
+  0
+)
+
+const totalPendientes = pedidos.filter(
+  (p) => p.estado === "pendiente"
+).length
+
+const totalPagados = pedidos.filter(
+  (p) => p.estado === "pagado"
+).length
   const pedidosFiltrados = pedidos.filter((pedido) => {
 
   const coincideBusqueda =
@@ -229,6 +243,49 @@ const [filtroEstado, setFiltroEstado] = useState("todos")
         </button>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+
+  <div className="bg-[#BEE9E8] rounded-3xl p-6 shadow-sm">
+    <p className="text-sm text-[#3D5A80] mb-2">
+      Total pedidos
+    </p>
+
+    <h2 className="text-4xl font-bold text-[#18AFC4]">
+      {totalPedidos}
+    </h2>
+  </div>
+
+  <div className="bg-[#FFD6BA] rounded-3xl p-6 shadow-sm">
+    <p className="text-sm text-[#8B5E3C] mb-2">
+      Total vendido
+    </p>
+
+    <h2 className="text-4xl font-bold text-[#F9958E]">
+      ${totalVendido}
+    </h2>
+  </div>
+
+  <div className="bg-[#FDE2E4] rounded-3xl p-6 shadow-sm">
+    <p className="text-sm text-[#7A3E4D] mb-2">
+      Pendientes
+    </p>
+
+    <h2 className="text-4xl font-bold text-[#F28482]">
+      {totalPendientes}
+    </h2>
+  </div>
+
+  <div className="bg-[#FAEDCD] rounded-3xl p-6 shadow-sm">
+    <p className="text-sm text-[#7C6A0A] mb-2">
+      Pagados
+    </p>
+
+    <h2 className="text-4xl font-bold text-[#E9C46A]">
+      {totalPagados}
+    </h2>
+  </div>
+
+</div>
      <div className="flex flex-col md:flex-row gap-4 mb-8">
 
   <input
