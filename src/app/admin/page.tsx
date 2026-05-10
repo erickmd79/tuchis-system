@@ -228,267 +228,283 @@ const totalPagados = pedidos.filter(
   }
 
   return (
+  <div className="min-h-screen bg-[#FFF8F1] p-8">
+
     <div className="flex gap-4 mb-8">
 
-  <a
-    href="/admin"
-    className="bg-[#20B8C9] text-white px-6 py-3 rounded-2xl font-bold"
-  >
-    Pedidos
-  </a>
+      <a
+        href="/admin"
+        className="bg-[#20B8C9] text-white px-6 py-3 rounded-2xl font-bold"
+      >
+        Pedidos
+      </a>
 
-  <a
-    href="/admin/productos"
-    className="bg-[#F7AFAF] text-white px-6 py-3 rounded-2xl font-bold"
-  >
-    Productos
-  </a>
+      <a
+        href="/admin/productos"
+        className="bg-[#F7AFAF] text-white px-6 py-3 rounded-2xl font-bold"
+      >
+        Productos
+      </a>
 
-  <a
-    href="/admin/categorias"
-    className="bg-[#F6D36B] text-white px-6 py-3 rounded-2xl font-bold"
-  >
-    Categorías
-  </a>
+      <a
+        href="/admin/categorias"
+        className="bg-[#F6D36B] text-white px-6 py-3 rounded-2xl font-bold"
+      >
+        Categorías
+      </a>
 
-</div>
-    <div className="min-h-screen bg-[#FFF8F1] p-8">
+    </div>
 
-      <div className="flex justify-between items-center mb-10">
-        <h1 className="text-5xl font-bold text-[#18AFC4]">
-          Panel Administrador
-        </h1>
+    <div className="flex justify-between items-center mb-10">
 
-        <button
-          onClick={cerrarSesion}
-          className="btn-coral"
-        >
-          Cerrar sesión
-        </button>
+      <h1 className="text-5xl font-bold text-[#18AFC4]">
+        Panel Administrador
+      </h1>
+
+      <button
+        onClick={cerrarSesion}
+        className="btn-coral"
+      >
+        Cerrar sesión
+      </button>
+
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+
+      <div className="bg-[#BEE9E8] rounded-3xl p-6 shadow-sm">
+        <p className="text-sm text-[#3D5A80] mb-2">
+          Total pedidos
+        </p>
+
+        <h2 className="text-4xl font-bold text-[#18AFC4]">
+          {totalPedidos}
+        </h2>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
-
-  <div className="bg-[#BEE9E8] rounded-3xl p-6 shadow-sm">
-    <p className="text-sm text-[#3D5A80] mb-2">
-      Total pedidos
-    </p>
-
-    <h2 className="text-4xl font-bold text-[#18AFC4]">
-      {totalPedidos}
-    </h2>
-  </div>
-
-  <div className="bg-[#FFD6BA] rounded-3xl p-6 shadow-sm">
-    <p className="text-sm text-[#8B5E3C] mb-2">
-      Total vendido
-    </p>
-
-    <h2 className="text-4xl font-bold text-[#F9958E]">
-      ${totalVendido}
-    </h2>
-  </div>
-
-  <div className="bg-[#FDE2E4] rounded-3xl p-6 shadow-sm">
-    <p className="text-sm text-[#7A3E4D] mb-2">
-      Pendientes
-    </p>
-
-    <h2 className="text-4xl font-bold text-[#F28482]">
-      {totalPendientes}
-    </h2>
-  </div>
-
-  <div className="bg-[#FAEDCD] rounded-3xl p-6 shadow-sm">
-    <p className="text-sm text-[#7C6A0A] mb-2">
-      Pagados
-    </p>
-
-    <h2 className="text-4xl font-bold text-[#E9C46A]">
-      {totalPagados}
-    </h2>
-  </div>
-
-</div>
-     <div className="flex flex-col md:flex-row gap-4 mb-8">
-
-  <input
-    type="text"
-    placeholder="Buscar cliente o teléfono..."
-    value={busqueda}
-    onChange={(e) => setBusqueda(e.target.value)}
-    className="flex-1 px-5 py-4 rounded-2xl border border-[#F9DDD9] bg-white outline-none"
-  />
-
-  <select
-    value={filtroEstado}
-    onChange={(e) => setFiltroEstado(e.target.value)}
-    className="px-5 py-4 rounded-2xl border border-[#F9DDD9] bg-white outline-none"
-  >
-    <option value="todos">Todos</option>
-    <option value="pendiente">Pendientes</option>
-    <option value="anticipo">Anticipos</option>
-    <option value="pagado">Pagados</option>
-    <option value="entregado">Entregados</option>
-  </select>
-
-</div>
-
-{pedidosFiltrados.length === 0 ? (
-        <p className="text-lg">
-          No hay pedidos registrados
+      <div className="bg-[#FFD6BA] rounded-3xl p-6 shadow-sm">
+        <p className="text-sm text-[#8B5E3C] mb-2">
+          Total vendido
         </p>
-      ) : (
-        <div className="space-y-8">
-          {pedidosFiltrados.map((pedido) => (
-            <div
-              key={pedido.id}
-              className="card-soft border border-[#F9DDD9]"
-            >
 
-              <div className="flex justify-between items-start flex-wrap gap-4">
+        <h2 className="text-4xl font-bold text-[#F9958E]">
+          ${totalVendido}
+        </h2>
+      </div>
 
-                <div>
-                  <h2 className="text-2xl font-bold text-[#18AFC4]">
-                    {pedido.cliente}
-                  </h2>
+      <div className="bg-[#FDE2E4] rounded-3xl p-6 shadow-sm">
+        <p className="text-sm text-[#7A3E4D] mb-2">
+          Pendientes
+        </p>
 
-                  <p className="mt-2">
-                    📞 {pedido.telefono}
-                  </p>
+        <h2 className="text-4xl font-bold text-[#F28482]">
+          {totalPendientes}
+        </h2>
+      </div>
 
-                  <p>
-                    📅 {pedido.fecha}
-                  </p>
+      <div className="bg-[#FAEDCD] rounded-3xl p-6 shadow-sm">
+        <p className="text-sm text-[#7C6A0A] mb-2">
+          Pagados
+        </p>
 
-                  <p className="font-semibold mt-2 text-lg">
-                    Total: ${pedido.total}
-                  </p>
+        <h2 className="text-4xl font-bold text-[#E9C46A]">
+          {totalPagados}
+        </h2>
+      </div>
 
-                  {pedido.notas && (
-                    <p className="mt-3">
-                      <strong>Notas:</strong>{" "}
-                      {pedido.notas}
-                    </p>
-                  )}
-                </div>
+    </div>
 
-                <div>
-                  <span
-                    className={`px-4 py-2 rounded-full text-white text-sm font-semibold
-                    ${
-                      pedido.estado === "pendiente"
-                        ? "bg-gray-500"
-                        : pedido.estado === "anticipo"
-                        ? "bg-yellow-500"
-                        : pedido.estado === "pagado"
-                        ? "bg-[#18AFC4]"
-                        : pedido.estado === "entregado"
-                        ? "bg-green-600"
-                        : "bg-gray-700"
-                    }`}
-                  >
-                    {pedido.estado || "pendiente"}
-                  </span>
-                </div>
+    <div className="flex flex-col md:flex-row gap-4 mb-8">
 
-              </div>
+      <input
+        type="text"
+        placeholder="Buscar cliente o teléfono..."
+        value={busqueda}
+        onChange={(e) => setBusqueda(e.target.value)}
+        className="flex-1 px-5 py-4 rounded-2xl border border-[#F9DDD9] bg-white outline-none"
+      />
 
-              <div className="flex gap-3 mt-6 flex-wrap">
+      <select
+        value={filtroEstado}
+        onChange={(e) => setFiltroEstado(e.target.value)}
+        className="px-5 py-4 rounded-2xl border border-[#F9DDD9] bg-white outline-none"
+      >
+        <option value="todos">Todos</option>
+        <option value="pendiente">Pendientes</option>
+        <option value="anticipo">Anticipos</option>
+        <option value="pagado">Pagados</option>
+        <option value="entregado">Entregados</option>
+      </select>
 
-                <button
-                  onClick={() =>
-                    actualizarEstado(
-                      pedido.id,
-                      "pendiente"
-                    )
-                  }
-                  className="btn-soft"
-                >
-                  Pendiente
-                </button>
+    </div>
 
-                <button
-                  onClick={() =>
-                    actualizarEstado(
-                      pedido.id,
-                      "anticipo"
-                    )
-                  }
-                  className="btn-yellow"
-                >
-                  Anticipo
-                </button>
+    {pedidosFiltrados.length === 0 ? (
+      <p className="text-lg">
+        No hay pedidos registrados
+      </p>
+    ) : (
+      <div className="space-y-8">
 
-                <button
-                  onClick={() =>
-                    actualizarEstado(
-                      pedido.id,
-                      "pagado"
-                    )
-                  }
-                  className="btn-primary"
-                >
-                  Pagado
-                </button>
+        {pedidosFiltrados.map((pedido) => (
 
-                <button
-                  onClick={() =>
-                    actualizarEstado(
-                      pedido.id,
-                      "entregado"
-                    )
-                  }
-                  className="btn-coral"
-                >
-                  Entregado
-                </button>
+          <div
+            key={pedido.id}
+            className="card-soft border border-[#F9DDD9]"
+          >
 
-                <button
-                  onClick={() =>
-                    enviarWhatsApp(pedido)
-                  }
-                  className="bg-[#A8D5BA] text-[#2E5E4E] px-5 py-3 rounded-2xl font-semibold"
-                >
-                  WhatsApp
-                </button>
+            <div className="flex justify-between items-start flex-wrap gap-4">
 
-                <button
-                  onClick={() =>
-                    generarPDF(pedido)
-                  }
-                  className="bg-[#F7B7C3] text-[#7A3E4D] px-5 py-3 rounded-2xl font-semibold"
-                >
-                  Descargar PDF
-                </button>
+              <div>
 
-              </div>
+                <h2 className="text-2xl font-bold text-[#18AFC4]">
+                  {pedido.cliente}
+                </h2>
 
-              <div className="mt-6 bg-[#FFFCF8] rounded-3xl p-5">
-                <p className="font-bold text-[#18AFC4] mb-3">
-                  Productos
+                <p className="mt-2">
+                  📞 {pedido.telefono}
                 </p>
 
-                <ul className="space-y-2">
-                  {pedido.productos?.map(
-                    (prod: any, i: number) => (
-                      <li
-                        key={i}
-                        className="bg-white rounded-2xl px-4 py-3 border border-[#F9DDD9]"
-                      >
-                        {prod.nombre} —{" "}
-                        {prod.cantidad} x $
-                        {prod.precio}
-                      </li>
-                    )
-                  )}
-                </ul>
+                <p>
+                  📅 {pedido.fecha}
+                </p>
+
+                <p className="font-semibold mt-2 text-lg">
+                  Total: ${pedido.total}
+                </p>
+
+                {pedido.notas && (
+                  <p className="mt-3">
+                    <strong>Notas:</strong>{" "}
+                    {pedido.notas}
+                  </p>
+                )}
+
+              </div>
+
+              <div>
+
+                <span
+                  className={`px-4 py-2 rounded-full text-white text-sm font-semibold
+                  ${
+                    pedido.estado === "pendiente"
+                      ? "bg-gray-500"
+                      : pedido.estado === "anticipo"
+                      ? "bg-yellow-500"
+                      : pedido.estado === "pagado"
+                      ? "bg-[#18AFC4]"
+                      : pedido.estado === "entregado"
+                      ? "bg-green-600"
+                      : "bg-gray-700"
+                  }`}
+                >
+                  {pedido.estado || "pendiente"}
+                </span>
+
               </div>
 
             </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
+
+            <div className="flex gap-3 mt-6 flex-wrap">
+
+              <button
+                onClick={() =>
+                  actualizarEstado(
+                    pedido.id,
+                    "pendiente"
+                  )
+                }
+                className="btn-soft"
+              >
+                Pendiente
+              </button>
+
+              <button
+                onClick={() =>
+                  actualizarEstado(
+                    pedido.id,
+                    "anticipo"
+                  )
+                }
+                className="btn-yellow"
+              >
+                Anticipo
+              </button>
+
+              <button
+                onClick={() =>
+                  actualizarEstado(
+                    pedido.id,
+                    "pagado"
+                  )
+                }
+                className="btn-primary"
+              >
+                Pagado
+              </button>
+
+              <button
+                onClick={() =>
+                  actualizarEstado(
+                    pedido.id,
+                    "entregado"
+                  )
+                }
+                className="btn-coral"
+              >
+                Entregado
+              </button>
+
+              <button
+                onClick={() =>
+                  enviarWhatsApp(pedido)
+                }
+                className="bg-[#A8D5BA] text-[#2E5E4E] px-5 py-3 rounded-2xl font-semibold"
+              >
+                WhatsApp
+              </button>
+
+              <button
+                onClick={() =>
+                  generarPDF(pedido)
+                }
+                className="bg-[#F7B7C3] text-[#7A3E4D] px-5 py-3 rounded-2xl font-semibold"
+              >
+                Descargar PDF
+              </button>
+
+            </div>
+
+            <div className="mt-6 bg-[#FFFCF8] rounded-3xl p-5">
+
+              <p className="font-bold text-[#18AFC4] mb-3">
+                Productos
+              </p>
+
+              <ul className="space-y-2">
+
+                {pedido.productos?.map(
+                  (prod: any, i: number) => (
+
+                    <li
+                      key={i}
+                      className="bg-white rounded-2xl px-4 py-3 border border-[#F9DDD9]"
+                    >
+                      {prod.nombre} — {prod.cantidad} x ${prod.precio}
+                    </li>
+
+                  )
+                )}
+
+              </ul>
+
+            </div>
+
+          </div>
+
+        ))}
+
+      </div>
+    )}
+
+  </div>
+)
