@@ -59,10 +59,11 @@ export default function ProductosAdmin() {
         ])
 
     if (error) {
-      alert("Error guardando producto")
-      console.log(error)
-      return
-    }
+  console.log(error)
+  alert(JSON.stringify(error))
+  alert("Error guardando producto")
+  return
+}
 
     alert("Producto guardado")
 
