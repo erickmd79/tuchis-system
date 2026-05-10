@@ -159,6 +159,12 @@ export default function ProductosAdmin() {
         producto.medidas
       )
 
+    const nuevaCategoria =
+      prompt(
+        "Categoría",
+        producto.categoria
+      )
+
     const { error } =
       await supabase
         .from("productos")
@@ -166,6 +172,7 @@ export default function ProductosAdmin() {
           nombre: nuevoNombre,
           precio: nuevoPrecio,
           medidas: nuevasMedidas,
+          categoria: nuevaCategoria,
         })
         .eq("id", producto.id)
 
@@ -177,11 +184,95 @@ export default function ProductosAdmin() {
     obtenerProductos()
   }
 
+  const eliminarImagen = async (
+    producto: any,
+    imagenUrl: string
+  ) => {
+
+    const confirmar =
+      confirm("¿Eliminar imagen?")
+
+    if (!confirmar) return
+
+    const nuevasImagenes =
+      producto.imagenes.filter(
+        (img: string) =>
+          img !== imagenUrl
+      )
+
+    const { error } =
+      await supabase
+        .from("productos")
+        .update({
+          imagenes: nuevasImagenes
+        })
+        .eq("id", producto.id)
+
+    if (error) {
+      alert("Error eliminando imagen")
+      return
+    }
+
+    obtenerProductos()
+  }
+
+  const agregarImagenes = async (
+    producto: any,
+    files: FileList | null
+  ) => {
+
+    if (!files) return
+
+    let nuevasUrls = [
+      ...(producto.imagenes || [])
+    ]
+
+    for (const imagen of Array.from(files)) {
+
+      const nombreArchivo =
+        `${Date.now()}-${imagen.name}`
+
+      const { error: uploadError } =
+        await supabase.storage
+          .from("productos")
+          .upload(nombreArchivo, imagen)
+
+      if (uploadError) {
+        alert("Error subiendo")
+        return
+      }
+
+      const { data } =
+        supabase.storage
+          .from("productos")
+          .getPublicUrl(nombreArchivo)
+
+      nuevasUrls.push(
+        data.publicUrl
+      )
+    }
+
+    const { error } =
+      await supabase
+        .from("productos")
+        .update({
+          imagenes: nuevasUrls
+        })
+        .eq("id", producto.id)
+
+    if (error) {
+      alert("Error actualizando")
+      return
+    }
+
+    obtenerProductos()
+  }
+
   return (
 
     <div className="min-h-screen bg-[#FFF8F5] p-8">
 
-      <div className="flex gap-4 mb-8">
+      <div className="flex gap-4 mb-8 flex-wrap">
 
         <Link
           href="/admin"
@@ -304,13 +395,61 @@ export default function ProductosAdmin() {
             className="bg-white rounded-3xl p-5 border border-[#F8D6D0]"
           >
 
-            <img
-              src={
-                producto.imagenes?.[0] ||
-                "/placeholder.png"
-              }
-              className="w-full h-52 object-cover rounded-2xl"
-            />
+            <div className="grid grid-cols-2 gap-3">
+
+              {producto.imagenes?.map(
+                (
+                  imagen: string,
+                  index: number
+                ) => (
+
+                  <div
+                    key={index}
+                    className="relative"
+                  >
+
+                    <img
+                      src={imagen}
+                      className="w-full h-40 object-cover rounded-2xl"
+                    />
+
+                    <button
+                      onClick={() =>
+                        eliminarImagen(
+                          producto,
+                          imagen
+                        )
+                      }
+                      className="absolute top-2 right-2
+                      bg-red-500 text-white
+                      w-8 h-8 rounded-full"
+                    >
+                      ×
+                    </button>
+
+                  </div>
+
+                )
+              )}
+
+            </div>
+
+            <div className="mt-5">
+
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(e) =>
+                  agregarImagenes(
+                    producto,
+                    e.target.files
+                  )
+                }
+                className="w-full p-3 border rounded-2xl"
+              />
+
+            </div>
 
             <h2 className="text-2xl font-bold mt-4 text-[#20B8C9]">
               {producto.nombre}
