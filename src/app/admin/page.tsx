@@ -228,6 +228,30 @@ const totalPagados = pedidos.filter(
   }
 
   return (
+    <div className="flex gap-4 mb-8">
+
+  <a
+    href="/admin"
+    className="bg-[#20B8C9] text-white px-6 py-3 rounded-2xl font-bold"
+  >
+    Pedidos
+  </a>
+
+  <a
+    href="/admin/productos"
+    className="bg-[#F7AFAF] text-white px-6 py-3 rounded-2xl font-bold"
+  >
+    Productos
+  </a>
+
+  <a
+    href="/admin/categorias"
+    className="bg-[#F6D36B] text-white px-6 py-3 rounded-2xl font-bold"
+  >
+    Categorías
+  </a>
+
+</div>
     <div className="min-h-screen bg-[#FFF8F1] p-8">
 
       <div className="flex justify-between items-center mb-10">
