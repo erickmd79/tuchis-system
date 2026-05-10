@@ -504,7 +504,9 @@ const totalPagados = pedidos.filter(
         ))}
 
       </div>
-    )}
+    )
+    }
 
   </div>
 )
+}
