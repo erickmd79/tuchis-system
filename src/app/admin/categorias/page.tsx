@@ -1,33 +1,34 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { supabase } from "../../../lib/supabase"
 
-export default function CategoriasPage() {
+export default function CategoriasAdmin() {
 
   const [nombre, setNombre] = useState("")
   const [categorias, setCategorias] = useState<any[]>([])
 
-  async function cargarCategorias() {
+  useEffect(() => {
+    obtenerCategorias()
+  }, [])
 
-    const { data } = await supabase
+  const obtenerCategorias = async () => {
+
+    const { data, error } = await supabase
       .from("categorias")
       .select("*")
-      .order("id", { ascending: false })
+      .order("nombre")
 
-    if (data) {
+    if (!error && data) {
       setCategorias(data)
     }
   }
 
-  useEffect(() => {
-    cargarCategorias()
-  }, [])
-
-  async function guardarCategoria() {
+  const guardarCategoria = async () => {
 
     if (!nombre) {
-      alert("Escribe nombre")
+      alert("Escribe una categoría")
       return
     }
 
@@ -35,81 +36,95 @@ export default function CategoriasPage() {
       .from("categorias")
       .insert([
         {
-          nombre
-        }
+          nombre,
+        },
       ])
 
     if (error) {
-      alert("Error guardando")
+      console.log(error)
+      alert("Error guardando categoría")
       return
     }
 
+    alert("Categoría guardada")
+
     setNombre("")
-    cargarCategorias()
+
+    obtenerCategorias()
   }
 
   return (
-    <div className="flex gap-4 mb-8">
+    <div className="min-h-screen bg-[#FFF8F5] p-8">
 
-  <a
-    href="/admin"
-    className="bg-[#20B8C9] text-white px-6 py-3 rounded-2xl font-bold"
-  >
-    Pedidos
-  </a>
+      <div className="flex gap-4 mb-8">
 
-  <a
-    href="/admin/productos"
-    className="bg-[#F7AFAF] text-white px-6 py-3 rounded-2xl font-bold"
-  >
-    Productos
-  </a>
+        <Link
+          href="/admin"
+          className="bg-[#20B8C9] text-white px-5 py-3 rounded-2xl font-bold"
+        >
+          Dashboard
+        </Link>
 
-  <a
-    href="/admin/categorias"
-    className="bg-[#F6D36B] text-white px-6 py-3 rounded-2xl font-bold"
-  >
-    Categorías
-  </a>
+        <Link
+          href="/admin/productos"
+          className="bg-[#F49B93] text-white px-5 py-3 rounded-2xl font-bold"
+        >
+          Productos
+        </Link>
 
-</div>
-    <div className="p-10">
+        <Link
+          href="/admin/categorias"
+          className="bg-[#FFD56B] text-[#444] px-5 py-3 rounded-2xl font-bold"
+        >
+          Categorías
+        </Link>
 
-      <h1 className="text-5xl font-bold mb-10 text-cyan-700">
+      </div>
+
+      <h1 className="text-5xl font-bold text-[#20B8C9] mb-10">
         Categorías
       </h1>
 
-      <div className="bg-white p-6 rounded-3xl shadow-xl mb-10">
+      <div className="bg-white p-8 rounded-3xl shadow-lg border border-[#F8D6D0] mb-10">
 
         <input
           type="text"
-          placeholder="Nombre categoría"
+          placeholder="Nombre de la categoría"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
-          className="w-full border p-4 rounded-2xl mb-4"
+          className="w-full p-4 rounded-2xl border mb-5"
         />
 
         <button
           onClick={guardarCategoria}
-          className="bg-pink-400 hover:bg-pink-500 text-white px-6 py-3 rounded-2xl font-bold"
+          className="bg-[#20B8C9] hover:bg-[#17A7B8]
+          text-white px-8 py-4 rounded-2xl font-bold"
         >
           Guardar categoría
         </button>
 
       </div>
 
-      <div className="space-y-4">
+      <div className="bg-white rounded-3xl p-8 shadow-lg border border-[#F8D6D0]">
 
-        {categorias.map((cat) => (
+        <h2 className="text-3xl font-bold text-[#20B8C9] mb-6">
+          Lista de categorías
+        </h2>
 
-          <div
-            key={cat.id}
-            className="bg-white p-5 rounded-2xl shadow"
-          >
-            {cat.nombre}
-          </div>
+        <div className="space-y-4">
 
-        ))}
+          {categorias.map((cat) => (
+
+            <div
+              key={cat.id}
+              className="p-4 rounded-2xl bg-[#FFF8F5] border border-[#F8D6D0]"
+            >
+              {cat.nombre}
+            </div>
+
+          ))}
+
+        </div>
 
       </div>
 
