@@ -195,15 +195,15 @@ doc.text(
 }
 
   return (
-    <div className="p-10">
+    <div className="p-10 min-h-screen">
       <div className="flex justify-between items-center mb-6">
-  <h1 className="text-3xl font-bold">
+  <h1 className="text-4xl font-bold text-[#4A4A4A]">
     Panel Administrador
   </h1>
 
   <button
     onClick={cerrarSesion}
-    className="bg-red-600 text-white px-4 py-2 rounded"
+    className="btn-pink"
   >
     Cerrar sesión
   </button>
@@ -214,7 +214,10 @@ doc.text(
       ) : (
         <div className="space-y-6">
           {pedidos.map((pedido) => (
-            <div key={pedido.id} className="border p-4 rounded shadow">
+           <div
+  key={pedido.id}
+  className="card-soft border border-white/40"
+>
               
               <h2 className="text-xl font-semibold">
                 {pedido.cliente}
@@ -253,28 +256,28 @@ doc.text(
               <div className="flex gap-2 mt-3 flex-wrap">
                 <button
                   onClick={() => actualizarEstado(pedido.id, "pendiente")}
-                  className="bg-gray-500 text-white px-3 py-1 rounded"
+                  className="btn-yellow"
                 >
                   Pendiente
                 </button>
 
                 <button
                   onClick={() => actualizarEstado(pedido.id, "anticipo")}
-                  className="bg-yellow-500 text-white px-3 py-1 rounded"
+                  className="btn-pink"
                 >
                   Anticipo
                 </button>
 
                 <button
                   onClick={() => actualizarEstado(pedido.id, "pagado")}
-                  className="bg-blue-500 text-white px-3 py-1 rounded"
+                  className="btn-blue"
                 >
                   Pagado
                 </button>
 
                 <button
                   onClick={() => actualizarEstado(pedido.id, "entregado")}
-                  className="bg-green-600 text-white px-3 py-1 rounded"
+                  className="btn-blue"
                 >
                   Entregado
                 </button>
