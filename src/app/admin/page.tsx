@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation"
 
 export default function Page() {
   const [pedidos, setPedidos] = useState<any[]>([])
+  const [busqueda, setBusqueda] = useState("")
+const [filtroEstado, setFiltroEstado] = useState("todos")
   const router = useRouter()
 
   const cerrarSesion = async () => {
@@ -88,6 +90,21 @@ export default function Page() {
     window.open(url, "_blank")
   }
 
+  const pedidosFiltrados = pedidos.filter((pedido) => {
+
+  const coincideBusqueda =
+    pedido.cliente
+      ?.toLowerCase()
+      .includes(busqueda.toLowerCase()) ||
+    pedido.telefono
+      ?.includes(busqueda)
+
+  const coincideEstado =
+    filtroEstado === "todos" ||
+    pedido.estado === filtroEstado
+
+  return coincideBusqueda && coincideEstado
+})
   const generarPDF = (pedido: any) => {
     const doc = new jsPDF()
 
@@ -212,13 +229,37 @@ export default function Page() {
         </button>
       </div>
 
-      {pedidos.length === 0 ? (
+     <div className="flex flex-col md:flex-row gap-4 mb-8">
+
+  <input
+    type="text"
+    placeholder="Buscar cliente o teléfono..."
+    value={busqueda}
+    onChange={(e) => setBusqueda(e.target.value)}
+    className="flex-1 px-5 py-4 rounded-2xl border border-[#F9DDD9] bg-white outline-none"
+  />
+
+  <select
+    value={filtroEstado}
+    onChange={(e) => setFiltroEstado(e.target.value)}
+    className="px-5 py-4 rounded-2xl border border-[#F9DDD9] bg-white outline-none"
+  >
+    <option value="todos">Todos</option>
+    <option value="pendiente">Pendientes</option>
+    <option value="anticipo">Anticipos</option>
+    <option value="pagado">Pagados</option>
+    <option value="entregado">Entregados</option>
+  </select>
+
+</div>
+
+{pedidosFiltrados.length === 0 ? (
         <p className="text-lg">
           No hay pedidos registrados
         </p>
       ) : (
         <div className="space-y-8">
-          {pedidos.map((pedido) => (
+          {pedidosFiltrados.map((pedido) => (
             <div
               key={pedido.id}
               className="card-soft border border-[#F9DDD9]"
