@@ -15,6 +15,10 @@ export default function ProductosAdmin() {
   const [medidas, setMedidas] = useState("")
   const [imagenes, setImagenes] = useState<FileList | null>(null)
 
+  const [busqueda, setBusqueda] = useState("")
+  const [filtroCategoria, setFiltroCategoria] =
+    useState("Todas")
+
   useEffect(() => {
     obtenerProductos()
     obtenerCategorias()
@@ -268,6 +272,27 @@ export default function ProductosAdmin() {
     obtenerProductos()
   }
 
+  const productosFiltrados =
+    productos.filter((producto) => {
+
+      const coincideBusqueda =
+        producto.nombre
+          ?.toLowerCase()
+          .includes(
+            busqueda.toLowerCase()
+          )
+
+      const coincideCategoria =
+        filtroCategoria === "Todas" ||
+        producto.categoria ===
+          filtroCategoria
+
+      return (
+        coincideBusqueda &&
+        coincideCategoria
+      )
+    })
+
   return (
 
     <div className="min-h-screen bg-[#FFF8F5] p-8">
@@ -306,6 +331,54 @@ export default function ProductosAdmin() {
       <h1 className="text-5xl font-bold text-[#20B8C9] mb-10">
         Productos
       </h1>
+
+      <div className="grid md:grid-cols-3 gap-4 mb-10">
+
+        <input
+          type="text"
+          placeholder="Buscar producto..."
+          value={busqueda}
+          onChange={(e) =>
+            setBusqueda(e.target.value)
+          }
+          className="w-full p-4 rounded-2xl border"
+        />
+
+        <select
+          value={filtroCategoria}
+          onChange={(e) =>
+            setFiltroCategoria(
+              e.target.value
+            )
+          }
+          className="w-full p-4 rounded-2xl border"
+        >
+
+          <option value="Todas">
+            Todas las categorías
+          </option>
+
+          {categorias.map((cat) => (
+
+            <option
+              key={cat.id}
+              value={cat.nombre}
+            >
+              {cat.nombre}
+            </option>
+
+          ))}
+
+        </select>
+
+        <div className="bg-white rounded-2xl border border-[#F8D6D0]
+        flex items-center justify-center font-bold text-[#20B8C9]">
+
+          {productosFiltrados.length} productos
+
+        </div>
+
+      </div>
 
       <div className="bg-white p-8 rounded-3xl shadow-lg space-y-5 border border-[#F8D6D0]">
 
@@ -388,7 +461,7 @@ export default function ProductosAdmin() {
 
       <div className="mt-10 grid md:grid-cols-3 gap-6">
 
-        {productos.map((producto) => (
+        {productosFiltrados.map((producto) => (
 
           <div
             key={producto.id}
