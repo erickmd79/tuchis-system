@@ -1,111 +1,92 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase"
+import { supabase } from "../../../lib/supabase"
 
 export default function ProductosPage() {
 
-  const [productos, setProductos] =
-    useState<any[]>([])
+  const [productos, setProductos] = useState<any[]>([])
+  const [categorias, setCategorias] = useState<any[]>([])
 
-  const [categorias, setCategorias] =
-    useState<any[]>([])
+  const [nombre, setNombre] = useState("")
+  const [precio, setPrecio] = useState("")
+  const [categoria, setCategoria] = useState("")
+  const [medidas, setMedidas] = useState("")
+  const [imagenes, setImagenes] = useState<FileList | null>(null)
 
-  const [busqueda, setBusqueda] =
-    useState("")
+  const [sku, setSku] = useState("")
+  const [stock, setStock] = useState(0)
 
-  const [filtroCategoria,
-    setFiltroCategoria] =
-    useState("")
+  const [etiquetas, setEtiquetas] = useState("")
+  const [badges, setBadges] = useState("")
 
-  const [nombre, setNombre] =
-    useState("")
+  const [destacado, setDestacado] = useState(false)
 
-  const [precio, setPrecio] =
-    useState("")
+  const [busqueda, setBusqueda] = useState("")
+  const [filtroCategoria, setFiltroCategoria] = useState("")
 
-  const [categoria, setCategoria] =
-    useState("")
+  const [modalEditar, setModalEditar] = useState(false)
+  const [productoEditando, setProductoEditando] = useState<any>(null)
 
-  const [medidas, setMedidas] =
-    useState("")
+  const [pagina, setPagina] = useState(1)
 
-  const [imagenes,
-    setImagenes] =
-    useState<FileList | null>(null)
+  const productosPorPagina = 6
 
   useEffect(() => {
-
     obtenerProductos()
     obtenerCategorias()
-
   }, [])
 
   const obtenerProductos = async () => {
 
-    const { data } =
-      await supabase
-        .from("productos")
-        .select("*")
-        .order("id",
-          { ascending: false })
+    const { data } = await supabase
+      .from("productos")
+      .select("*")
+      .order("id", { ascending: false })
 
-    if (data) {
-      setProductos(data)
-    }
+    if (data) setProductos(data)
   }
 
   const obtenerCategorias = async () => {
 
-    const { data } =
-      await supabase
-        .from("categorias")
-        .select("*")
-        .order("nombre")
+    const { data } = await supabase
+      .from("categorias")
+      .select("*")
 
-    if (data) {
-      setCategorias(data)
+    if (data) setCategorias(data)
+  }
+
+  const subirImagenes = async () => {
+
+    let urls: string[] = []
+
+    if (!imagenes) return urls
+
+    for (const imagen of Array.from(imagenes)) {
+
+      const nombreArchivo =
+        `${Date.now()}-${imagen.name}`
+
+      const { error } =
+        await supabase.storage
+          .from("productos")
+          .upload(nombreArchivo, imagen)
+
+      if (error) continue
+
+      const { data } = supabase.storage
+        .from("productos")
+        .getPublicUrl(nombreArchivo)
+
+      urls.push(data.publicUrl)
     }
+
+    return urls
   }
 
   const guardarProducto = async () => {
 
-    if (
-      !nombre ||
-      !precio ||
-      !categoria
-    ) {
-      alert("Completa los campos")
-      return
-    }
-
-    let urls: string[] = []
-
-    if (imagenes) {
-
-      for (const imagen of Array.from(imagenes)) {
-
-        const nombreArchivo =
-          `${Date.now()}-${imagen.name}`
-
-        const { error: uploadError } =
-          await supabase.storage
-            .from("productos")
-            .upload(nombreArchivo, imagen)
-
-        if (uploadError) {
-          alert("Error subiendo imagen")
-          return
-        }
-
-        const { data } =
-          supabase.storage
-            .from("productos")
-            .getPublicUrl(nombreArchivo)
-
-        urls.push(data.publicUrl)
-      }
-    }
+    const urls = await subirImagenes()
 
     const { error } =
       await supabase
@@ -117,6 +98,20 @@ export default function ProductosPage() {
             categoria,
             medidas,
             imagenes: urls,
+            sku,
+            stock,
+            destacado,
+            etiquetas:
+              etiquetas
+                .split(",")
+                .map((e) => e.trim()),
+
+            badges:
+              badges
+                .split(",")
+                .map((b) => b.trim()),
+
+            variantes: [],
           }
         ])
 
@@ -127,17 +122,25 @@ export default function ProductosPage() {
 
     alert("Producto guardado")
 
-    setNombre("")
-    setPrecio("")
-    setCategoria("")
-    setMedidas("")
-    setImagenes(null)
+    limpiarFormulario()
 
     obtenerProductos()
   }
 
-  const eliminarProducto =
-    async (id: number) => {
+  const limpiarFormulario = () => {
+
+    setNombre("")
+    setPrecio("")
+    setCategoria("")
+    setMedidas("")
+    setSku("")
+    setStock(0)
+    setEtiquetas("")
+    setBadges("")
+    setDestacado(false)
+  }
+
+  const eliminarProducto = async (id: number) => {
 
     const confirmar =
       confirm("Eliminar producto?")
@@ -152,389 +155,577 @@ export default function ProductosPage() {
     obtenerProductos()
   }
 
-  const productosFiltrados =
-    productos.filter((producto) => {
+  const abrirEditar = (producto: any) => {
 
-      const coincideBusqueda =
-        producto.nombre
-          ?.toLowerCase()
-          .includes(
-            busqueda.toLowerCase()
-          )
+    setProductoEditando(producto)
 
-      const coincideCategoria =
-        filtroCategoria === "" ||
-        producto.categoria ===
-        filtroCategoria
+    setNombre(producto.nombre)
+    setPrecio(producto.precio)
+    setCategoria(producto.categoria)
+    setMedidas(producto.medidas)
 
-      return (
-        coincideBusqueda &&
-        coincideCategoria
+    setSku(producto.sku || "")
+    setStock(producto.stock || 0)
+
+    setEtiquetas(
+      producto.etiquetas?.join(", ") || ""
+    )
+
+    setBadges(
+      producto.badges?.join(", ") || ""
+    )
+
+    setDestacado(producto.destacado)
+
+    setModalEditar(true)
+  }
+
+  const actualizarProducto = async () => {
+
+    let nuevasUrls: string[] = []
+
+    if (imagenes) {
+      nuevasUrls = await subirImagenes()
+    }
+
+    const imagenesFinales = [
+      ...(productoEditando.imagenes || []),
+      ...nuevasUrls,
+    ]
+
+    await supabase
+      .from("productos")
+      .update({
+        nombre,
+        precio,
+        categoria,
+        medidas,
+        sku,
+        stock,
+        destacado,
+        etiquetas:
+          etiquetas
+            .split(",")
+            .map((e) => e.trim()),
+
+        badges:
+          badges
+            .split(",")
+            .map((b) => b.trim()),
+
+        imagenes: imagenesFinales,
+      })
+      .eq("id", productoEditando.id)
+
+    setModalEditar(false)
+
+    obtenerProductos()
+  }
+
+  const eliminarImagen = async (
+    index: number
+  ) => {
+
+    const nuevas =
+      productoEditando.imagenes.filter(
+        (_: any, i: number) => i !== index
       )
+
+    setProductoEditando({
+      ...productoEditando,
+      imagenes: nuevas,
     })
+
+    await supabase
+      .from("productos")
+      .update({
+        imagenes: nuevas,
+      })
+      .eq("id", productoEditando.id)
+
+    obtenerProductos()
+  }
+
+  const moverImagen = async (
+    index: number,
+    direccion: "arriba" | "abajo"
+  ) => {
+
+    let imgs = [...productoEditando.imagenes]
+
+    if (
+      direccion === "arriba" &&
+      index > 0
+    ) {
+
+      ;[
+        imgs[index - 1],
+        imgs[index]
+      ] = [
+        imgs[index],
+        imgs[index - 1]
+      ]
+    }
+
+    if (
+      direccion === "abajo" &&
+      index < imgs.length - 1
+    ) {
+
+      ;[
+        imgs[index + 1],
+        imgs[index]
+      ] = [
+        imgs[index],
+        imgs[index + 1]
+      ]
+    }
+
+    setProductoEditando({
+      ...productoEditando,
+      imagenes: imgs,
+    })
+
+    await supabase
+      .from("productos")
+      .update({
+        imagenes: imgs,
+      })
+      .eq("id", productoEditando.id)
+  }
+
+  const filtrados = productos.filter((p) => {
+
+    const coincideBusqueda =
+      p.nombre
+        .toLowerCase()
+        .includes(busqueda.toLowerCase())
+
+    const coincideCategoria =
+      filtroCategoria === "" ||
+      p.categoria === filtroCategoria
+
+    return (
+      coincideBusqueda &&
+      coincideCategoria
+    )
+  })
+
+  const inicio =
+    (pagina - 1) * productosPorPagina
+
+  const visibles =
+    filtrados.slice(
+      inicio,
+      inicio + productosPorPagina
+    )
 
   return (
 
-    <div className="admin-layout">
+    <div className="min-h-screen bg-[#FFF9F7] p-4 md:p-10">
 
-      <main className="main-content">
+      <div className="max-w-7xl mx-auto">
 
-        <div className="page-container">
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
 
-          <div>
+          <input
+            type="text"
+            placeholder="Buscar producto..."
+            value={busqueda}
+            onChange={(e) =>
+              setBusqueda(e.target.value)
+            }
+            className="flex-1 bg-white border border-[#F8D6D0] rounded-2xl p-4"
+          />
 
-            <h1 className="title-xl">
-              Productos
-            </h1>
-
-            <p className="subtitle">
-              Administra tu catálogo
-            </p>
-
-          </div>
-
-          <div
-            className="section-spacing"
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit,minmax(250px,1fr))",
-              gap: 18
-            }}
+          <select
+            value={filtroCategoria}
+            onChange={(e) =>
+              setFiltroCategoria(e.target.value)
+            }
+            className="bg-white border border-[#F8D6D0] rounded-2xl p-4"
           >
+
+            <option value="">
+              Todas las categorías
+            </option>
+
+            {categorias.map((cat) => (
+              <option
+                key={cat.id}
+                value={cat.nombre}
+              >
+                {cat.nombre}
+              </option>
+            ))}
+
+          </select>
+
+        </div>
+
+        <div className="bg-white rounded-3xl p-6 shadow-lg border border-[#F8D6D0] mb-10">
+
+          <h1 className="text-4xl font-black text-[#20B8C9] mb-6">
+            Crear producto
+          </h1>
+
+          <div className="grid md:grid-cols-2 gap-4">
 
             <input
               type="text"
-              placeholder="Buscar producto..."
-              value={busqueda}
+              placeholder="Nombre"
+              value={nombre}
               onChange={(e) =>
-                setBusqueda(
-                  e.target.value
-                )
+                setNombre(e.target.value)
               }
+              className="input-premium"
+            />
+
+            <input
+              type="number"
+              placeholder="Precio"
+              value={precio}
+              onChange={(e) =>
+                setPrecio(e.target.value)
+              }
+              className="input-premium"
             />
 
             <select
-              value={filtroCategoria}
+              value={categoria}
               onChange={(e) =>
-                setFiltroCategoria(
-                  e.target.value
-                )
+                setCategoria(e.target.value)
               }
+              className="input-premium"
             >
 
               <option value="">
-                Todas las categorías
+                Selecciona categoría
               </option>
 
               {categorias.map((cat) => (
-
                 <option
                   key={cat.id}
                   value={cat.nombre}
                 >
                   {cat.nombre}
                 </option>
-
               ))}
 
             </select>
 
-            <div
-              className="card"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent:
-                  "center",
-                fontWeight: 800,
-                color: "#20B8C9"
-              }}
-            >
-              {productos.length} productos
-            </div>
+            <input
+              type="text"
+              placeholder="Medidas"
+              value={medidas}
+              onChange={(e) =>
+                setMedidas(e.target.value)
+              }
+              className="input-premium"
+            />
+
+            <input
+              type="text"
+              placeholder="SKU"
+              value={sku}
+              onChange={(e) =>
+                setSku(e.target.value)
+              }
+              className="input-premium"
+            />
+
+            <input
+              type="number"
+              placeholder="Stock"
+              value={stock}
+              onChange={(e) =>
+                setStock(Number(e.target.value))
+              }
+              className="input-premium"
+            />
+
+            <input
+              type="text"
+              placeholder="Etiquetas separadas por coma"
+              value={etiquetas}
+              onChange={(e) =>
+                setEtiquetas(e.target.value)
+              }
+              className="input-premium"
+            />
+
+            <input
+              type="text"
+              placeholder="Badges separadas por coma"
+              value={badges}
+              onChange={(e) =>
+                setBadges(e.target.value)
+              }
+              className="input-premium"
+            />
 
           </div>
 
-          <div
-            className="card section-spacing"
-          >
+          <div className="mt-6">
 
-            <h2
-              className="title-lg"
-              style={{
-                color: "#20B8C9",
-                marginBottom: 24
-              }}
-            >
-              Nuevo producto
-            </h2>
+            <label className="flex items-center gap-3">
+
+              <input
+                type="checkbox"
+                checked={destacado}
+                onChange={(e) =>
+                  setDestacado(e.target.checked)
+                }
+              />
+
+              Producto destacado
+
+            </label>
+
+          </div>
+
+          <div className="mt-6 border-2 border-dashed border-[#20B8C9] rounded-3xl p-10 bg-[#F7FFFF]">
+
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={(e) =>
+                setImagenes(e.target.files)
+              }
+            />
+
+          </div>
+
+          <button
+            onClick={guardarProducto}
+            className="mt-6 bg-[#20B8C9] hover:bg-[#18AFC4] text-white px-8 py-4 rounded-2xl font-bold"
+          >
+            Guardar producto
+          </button>
+
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+          {visibles.map((producto) => (
 
             <div
-              style={{
-                display: "grid",
-                gap: 18
-              }}
+              key={producto.id}
+              className="bg-white rounded-3xl overflow-hidden shadow-lg border border-[#F8D6D0]"
             >
 
-              <input
-                type="text"
-                placeholder="Nombre"
-                value={nombre}
-                onChange={(e) =>
-                  setNombre(
-                    e.target.value
-                  )
-                }
-              />
+              <div className="relative">
 
-              <input
-                type="number"
-                placeholder="Precio"
-                value={precio}
-                onChange={(e) =>
-                  setPrecio(
-                    e.target.value
-                  )
-                }
-              />
+                <img
+                  src={
+                    producto.imagenes?.[0]
+                  }
+                  className="w-full h-64 object-cover hover:scale-105 transition"
+                />
 
-              <select
-                value={categoria}
-                onChange={(e) =>
-                  setCategoria(
-                    e.target.value
-                  )
-                }
-              >
+                {producto.destacado && (
 
-                <option value="">
-                  Selecciona categoría
-                </option>
+                  <div className="absolute top-3 left-3 bg-yellow-400 text-black px-3 py-1 rounded-full text-xs font-bold">
+                    DESTACADO
+                  </div>
 
-                {categorias.map((cat) => (
+                )}
 
-                  <option
-                    key={cat.id}
-                    value={cat.nombre}
-                  >
-                    {cat.nombre}
-                  </option>
+              </div>
 
-                ))}
+              <div className="p-5">
 
-              </select>
+                <h2 className="text-2xl font-black text-[#20B8C9]">
+                  {producto.nombre}
+                </h2>
 
-              <input
-                type="text"
-                placeholder="Medidas"
-                value={medidas}
-                onChange={(e) =>
-                  setMedidas(
-                    e.target.value
-                  )
-                }
-              />
+                <p className="text-gray-500">
+                  {producto.categoria}
+                </p>
 
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={(e) =>
-                  setImagenes(
-                    e.target.files
-                  )
-                }
-              />
+                <p className="text-3xl font-black mt-3">
+                  ${producto.precio}
+                </p>
 
-              {imagenes && (
+                <div className="mt-3 flex flex-wrap gap-2">
 
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns:
-                      "repeat(auto-fill,minmax(120px,1fr))",
-                    gap: 16
-                  }}
-                >
+                  {producto.badges?.map(
+                    (badge: string, i: number) => (
 
-                  {Array.from(imagenes)
-                    .map((imagen, i) => (
+                      <span
+                        key={i}
+                        className="bg-pink-200 text-pink-800 px-3 py-1 rounded-full text-xs"
+                      >
+                        {badge}
+                      </span>
 
-                    <div
-                      key={i}
-                      style={{
-                        position:
-                          "relative"
-                      }}
-                    >
-
-                      <img
-                        src={URL.createObjectURL(imagen)}
-                        alt=""
-                        style={{
-                          width: "100%",
-                          aspectRatio: "1/1",
-                          objectFit: "cover",
-                          borderRadius: 24,
-                          border:
-                            "2px solid #F3D7D2"
-                        }}
-                      />
-
-                    </div>
-
-                  ))}
+                    )
+                  )}
 
                 </div>
 
-              )}
+                <div className="flex gap-3 mt-6">
+
+                  <button
+                    onClick={() =>
+                      abrirEditar(producto)
+                    }
+                    className="flex-1 bg-[#20B8C9] text-white py-3 rounded-2xl font-bold"
+                  >
+                    Editar
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      eliminarProducto(producto.id)
+                    }
+                    className="flex-1 bg-red-400 text-white py-3 rounded-2xl font-bold"
+                  >
+                    Eliminar
+                  </button>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          ))}
+
+        </div>
+
+        <div className="flex justify-center gap-3 mt-10">
+
+          <button
+            onClick={() =>
+              setPagina(pagina - 1)
+            }
+            disabled={pagina === 1}
+            className="px-5 py-3 rounded-2xl bg-white border"
+          >
+            ←
+          </button>
+
+          <button
+            onClick={() =>
+              setPagina(pagina + 1)
+            }
+            disabled={
+              inicio + productosPorPagina >=
+              filtrados.length
+            }
+            className="px-5 py-3 rounded-2xl bg-white border"
+          >
+            →
+          </button>
+
+        </div>
+
+      </div>
+
+      {modalEditar && (
+
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 overflow-auto">
+
+          <div className="bg-white rounded-3xl p-6 max-w-5xl w-full">
+
+            <div className="flex justify-between mb-6">
+
+              <h2 className="text-3xl font-black text-[#20B8C9]">
+                Editar producto
+              </h2>
 
               <button
-                onClick={
-                  guardarProducto
+                onClick={() =>
+                  setModalEditar(false)
                 }
-                className="btn btn-primary"
               >
-                Guardar producto
+                ✕
               </button>
 
             </div>
 
-          </div>
+            <div className="grid md:grid-cols-2 gap-6">
 
-          <div className="section-spacing">
-
-            <h2
-              className="title-lg"
-              style={{
-                color: "#20B8C9",
-                marginBottom: 24
-              }}
-            >
-              Lista de productos
-            </h2>
-
-            <div className="products-grid">
-
-              {productosFiltrados.map(
-                (producto) => (
-
-                <div
-                  key={producto.id}
-                  className="product-card"
-                >
+              {productoEditando?.imagenes?.map(
+                (img: string, index: number) => (
 
                   <div
-                    style={{
-                      position:
-                        "relative"
-                    }}
+                    key={index}
+                    className="relative"
                   >
 
                     <img
-                      src={
-                        producto.imagenes?.[0]
-                      }
-                      alt=""
-                      style={{
-                        width: "100%",
-                        aspectRatio: "1/1",
-                        objectFit: "cover"
-                      }}
+                      src={img}
+                      className="w-full h-72 object-cover rounded-3xl"
                     />
 
-                    <div
-                      style={{
-                        position:
-                          "absolute",
-                        top: 14,
-                        right: 14,
-                        background:
-                          "#20B8C9",
-                        color: "white",
-                        padding:
-                          "8px 14px",
-                        borderRadius: 999,
-                        fontWeight: 700
-                      }}
-                    >
-                      $
-                      {producto.precio}
-                    </div>
-
-                  </div>
-
-                  <div className="product-body">
-
-                    <h3
-                      className="product-title"
-                    >
-                      {producto.nombre}
-                    </h3>
-
-                    <p
-                      style={{
-                        color: "#666",
-                        marginBottom: 8
-                      }}
-                    >
-                      {producto.categoria}
-                    </p>
-
-                    <p
-                      style={{
-                        marginBottom: 18
-                      }}
-                    >
-                      {producto.medidas}
-                    </p>
-
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 12
-                      }}
-                    >
+                    <div className="absolute top-3 right-3 flex gap-2">
 
                       <button
-                        className="btn btn-primary"
-                        style={{
-                          flex: 1
-                        }}
+                        onClick={() =>
+                          moverImagen(
+                            index,
+                            "arriba"
+                          )
+                        }
+                        className="bg-white rounded-full w-10 h-10"
                       >
-                        Editar
+                        ↑
                       </button>
 
                       <button
                         onClick={() =>
-                          eliminarProducto(
-                            producto.id
+                          moverImagen(
+                            index,
+                            "abajo"
                           )
                         }
-                        className="btn btn-pink"
-                        style={{
-                          flex: 1
-                        }}
+                        className="bg-white rounded-full w-10 h-10"
                       >
-                        Eliminar
+                        ↓
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          eliminarImagen(index)
+                        }
+                        className="bg-red-500 text-white rounded-full w-10 h-10"
+                      >
+                        ✕
                       </button>
 
                     </div>
 
                   </div>
 
-                </div>
-
-              ))}
+                )
+              )}
 
             </div>
+
+            <input
+              type="file"
+              multiple
+              className="mt-6"
+              onChange={(e) =>
+                setImagenes(e.target.files)
+              }
+            />
+
+            <button
+              onClick={actualizarProducto}
+              className="mt-6 bg-[#20B8C9] text-white px-8 py-4 rounded-2xl font-bold"
+            >
+              Guardar cambios
+            </button>
 
           </div>
 
         </div>
 
-      </main>
+      )}
 
     </div>
   )
