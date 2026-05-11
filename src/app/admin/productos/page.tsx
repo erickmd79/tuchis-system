@@ -15,24 +15,55 @@ export default function ProductosPage() {
   const [sku, setSku] = useState("")
   const [stock, setStock] = useState("")
   const [etiquetas, setEtiquetas] = useState("")
-  const [imagenes, setImagenes] = useState<FileList | null>(null)
+  const [imagenes, setImagenes] =
+    useState<FileList | null>(null)
 
   const [busqueda, setBusqueda] = useState("")
-  const [filtroCategoria, setFiltroCategoria] = useState("")
+  const [filtroCategoria, setFiltroCategoria] =
+    useState("")
 
   const [loading, setLoading] = useState(false)
 
+  const [editando, setEditando] =
+    useState<any | null>(null)
+
+  const [editNombre, setEditNombre] =
+    useState("")
+
+  const [editPrecio, setEditPrecio] =
+    useState("")
+
+  const [editCategoria, setEditCategoria] =
+    useState("")
+
+  const [editMedidas, setEditMedidas] =
+    useState("")
+
+  const [editStock, setEditStock] =
+    useState("")
+
+  const [editSku, setEditSku] =
+    useState("")
+
+  const [editEtiquetas, setEditEtiquetas] =
+    useState("")
+
   useEffect(() => {
+
     obtenerProductos()
     obtenerCategorias()
+
   }, [])
 
   const obtenerProductos = async () => {
 
-    const { data } = await supabase
-      .from("productos")
-      .select("*")
-      .order("id", { ascending: false })
+    const { data } =
+      await supabase
+        .from("productos")
+        .select("*")
+        .order("id", {
+          ascending: false,
+        })
 
     if (data) {
       setProductos(data)
@@ -41,10 +72,11 @@ export default function ProductosPage() {
 
   const obtenerCategorias = async () => {
 
-    const { data } = await supabase
-      .from("categorias")
-      .select("*")
-      .order("nombre")
+    const { data } =
+      await supabase
+        .from("categorias")
+        .select("*")
+        .order("nombre")
 
     if (data) {
       setCategorias(data)
@@ -53,7 +85,11 @@ export default function ProductosPage() {
 
   const guardarProducto = async () => {
 
-    if (!nombre || !precio || !categoria) {
+    if (
+      !nombre ||
+      !precio ||
+      !categoria
+    ) {
       alert("Completa los campos")
       return
     }
@@ -74,7 +110,10 @@ export default function ProductosPage() {
           const { error: uploadError } =
             await supabase.storage
               .from("productos")
-              .upload(nombreArchivo, imagen)
+              .upload(
+                nombreArchivo,
+                imagen
+              )
 
           if (uploadError) {
             console.log(uploadError)
@@ -84,7 +123,9 @@ export default function ProductosPage() {
           const { data } =
             supabase.storage
               .from("productos")
-              .getPublicUrl(nombreArchivo)
+              .getPublicUrl(
+                nombreArchivo
+              )
 
           urls.push(data.publicUrl)
         }
@@ -108,7 +149,9 @@ export default function ProductosPage() {
 
       if (error) {
         console.log(error)
-        alert("Error guardando producto")
+        alert(
+          "Error guardando producto"
+        )
         return
       }
 
@@ -131,7 +174,9 @@ export default function ProductosPage() {
     }
   }
 
-  const eliminarProducto = async (id: number) => {
+  const eliminarProducto = async (
+    id: number
+  ) => {
 
     const confirmar =
       confirm("¿Eliminar producto?")
@@ -146,30 +191,114 @@ export default function ProductosPage() {
     obtenerProductos()
   }
 
-  const productosFiltrados = useMemo(() => {
+  const abrirEditor = (
+    producto: any
+  ) => {
 
-    return productos.filter((producto) => {
+    setEditando(producto)
 
-      const coincideBusqueda =
-        producto.nombre
-          ?.toLowerCase()
-          .includes(busqueda.toLowerCase())
+    setEditNombre(
+      producto.nombre || ""
+    )
 
-      const coincideCategoria =
-        filtroCategoria === "" ||
-        producto.categoria === filtroCategoria
+    setEditPrecio(
+      producto.precio || ""
+    )
 
-      return (
-        coincideBusqueda &&
-        coincideCategoria
+    setEditCategoria(
+      producto.categoria || ""
+    )
+
+    setEditMedidas(
+      producto.medidas || ""
+    )
+
+    setEditStock(
+      producto.stock || ""
+    )
+
+    setEditSku(
+      producto.sku || ""
+    )
+
+    setEditEtiquetas(
+      producto.etiquetas || ""
+    )
+  }
+
+  const guardarEdicion =
+    async () => {
+
+      if (!editando) return
+
+      const { error } =
+        await supabase
+          .from("productos")
+          .update({
+            nombre: editNombre,
+            precio: editPrecio,
+            categoria:
+              editCategoria,
+            medidas:
+              editMedidas,
+            stock: editStock,
+            sku: editSku,
+            etiquetas:
+              editEtiquetas,
+          })
+          .eq(
+            "id",
+            editando.id
+          )
+
+      if (error) {
+        console.log(error)
+        alert(
+          "Error actualizando"
+        )
+        return
+      }
+
+      alert(
+        "Producto actualizado"
       )
-    })
 
-  }, [
-    productos,
-    busqueda,
-    filtroCategoria,
-  ])
+      setEditando(null)
+
+      obtenerProductos()
+    }
+
+  const productosFiltrados =
+    useMemo(() => {
+
+      return productos.filter(
+        (producto) => {
+
+          const coincideBusqueda =
+            producto.nombre
+              ?.toLowerCase()
+              .includes(
+                busqueda.toLowerCase()
+              )
+
+          const coincideCategoria =
+            filtroCategoria ===
+              "" ||
+            producto.categoria ===
+              filtroCategoria
+
+          return (
+            coincideBusqueda &&
+            coincideCategoria
+          )
+        }
+      )
+
+    }, [
+      productos,
+      busqueda,
+      filtroCategoria,
+    ])
 
   return (
 
@@ -200,7 +329,9 @@ export default function ProductosPage() {
             placeholder="Buscar producto..."
             value={busqueda}
             onChange={(e) =>
-              setBusqueda(e.target.value)
+              setBusqueda(
+                e.target.value
+              )
             }
             className="bg-white border border-[#F4D4CF]
             rounded-2xl px-5 py-4 outline-none"
@@ -209,7 +340,9 @@ export default function ProductosPage() {
           <select
             value={filtroCategoria}
             onChange={(e) =>
-              setFiltroCategoria(e.target.value)
+              setFiltroCategoria(
+                e.target.value
+              )
             }
             className="bg-white border border-[#F4D4CF]
             rounded-2xl px-5 py-4 outline-none"
@@ -219,7 +352,8 @@ export default function ProductosPage() {
               Todas las categorías
             </option>
 
-            {categorias.map((cat) => (
+            {categorias.map(
+              (cat) => (
 
               <option
                 key={cat.id}
@@ -236,7 +370,9 @@ export default function ProductosPage() {
           rounded-2xl px-5 py-4 flex items-center justify-center
           font-bold text-cyan-500">
 
-            {productosFiltrados.length} productos
+            {
+              productosFiltrados.length
+            } productos
 
           </div>
 
@@ -259,7 +395,9 @@ export default function ProductosPage() {
               placeholder="Nombre"
               value={nombre}
               onChange={(e) =>
-                setNombre(e.target.value)
+                setNombre(
+                  e.target.value
+                )
               }
               className="input-premium"
             />
@@ -269,7 +407,9 @@ export default function ProductosPage() {
               placeholder="Precio"
               value={precio}
               onChange={(e) =>
-                setPrecio(e.target.value)
+                setPrecio(
+                  e.target.value
+                )
               }
               className="input-premium"
             />
@@ -277,7 +417,9 @@ export default function ProductosPage() {
             <select
               value={categoria}
               onChange={(e) =>
-                setCategoria(e.target.value)
+                setCategoria(
+                  e.target.value
+                )
               }
               className="input-premium"
             >
@@ -286,7 +428,8 @@ export default function ProductosPage() {
                 Selecciona categoría
               </option>
 
-              {categorias.map((cat) => (
+              {categorias.map(
+                (cat) => (
 
                 <option
                   key={cat.id}
@@ -304,7 +447,9 @@ export default function ProductosPage() {
               placeholder="Medidas"
               value={medidas}
               onChange={(e) =>
-                setMedidas(e.target.value)
+                setMedidas(
+                  e.target.value
+                )
               }
               className="input-premium"
             />
@@ -314,7 +459,9 @@ export default function ProductosPage() {
               placeholder="SKU"
               value={sku}
               onChange={(e) =>
-                setSku(e.target.value)
+                setSku(
+                  e.target.value
+                )
               }
               className="input-premium"
             />
@@ -324,7 +471,9 @@ export default function ProductosPage() {
               placeholder="Stock"
               value={stock}
               onChange={(e) =>
-                setStock(e.target.value)
+                setStock(
+                  e.target.value
+                )
               }
               className="input-premium"
             />
@@ -335,12 +484,12 @@ export default function ProductosPage() {
             placeholder="Etiquetas separadas por coma"
             value={etiquetas}
             onChange={(e) =>
-              setEtiquetas(e.target.value)
+              setEtiquetas(
+                e.target.value
+              )
             }
             className="input-premium mt-5 min-h-[120px]"
           />
-
-          {/* DROPZONE */}
 
           <label
             className="mt-6 border-2 border-dashed
@@ -363,14 +512,14 @@ export default function ProductosPage() {
               multiple
               accept="image/*"
               onChange={(e) =>
-                setImagenes(e.target.files)
+                setImagenes(
+                  e.target.files
+                )
               }
               className="hidden"
             />
 
           </label>
-
-          {/* PREVIEW */}
 
           {imagenes && (
 
@@ -378,7 +527,9 @@ export default function ProductosPage() {
             grid-cols-2 md:grid-cols-4
             gap-4 mt-6">
 
-              {Array.from(imagenes).map((img, i) => (
+              {Array.from(
+                imagenes
+              ).map((img, i) => (
 
                 <div
                   key={i}
@@ -386,7 +537,9 @@ export default function ProductosPage() {
                 >
 
                   <img
-                    src={URL.createObjectURL(img)}
+                    src={URL.createObjectURL(
+                      img
+                    )}
                     className="w-full h-full object-cover"
                   />
 
@@ -399,7 +552,9 @@ export default function ProductosPage() {
           )}
 
           <button
-            onClick={guardarProducto}
+            onClick={
+              guardarProducto
+            }
             disabled={loading}
             className="mt-8 bg-cyan-500 hover:bg-cyan-600
             text-white px-8 py-5 rounded-2xl
@@ -414,7 +569,7 @@ export default function ProductosPage() {
 
         </div>
 
-        {/* GRID PRODUCTOS */}
+        {/* GRID */}
 
         <div className="grid
         grid-cols-1
@@ -423,7 +578,8 @@ export default function ProductosPage() {
         xl:grid-cols-4
         gap-8">
 
-          {productosFiltrados.map((producto) => (
+          {productosFiltrados.map(
+            (producto) => (
 
             <div
               key={producto.id}
@@ -433,13 +589,12 @@ export default function ProductosPage() {
               transition"
             >
 
-              {/* IMAGEN */}
-
               <div className="aspect-square bg-[#F8F8F8]">
 
                 <img
                   src={
-                    producto.imagenes?.[0] ||
+                    producto
+                      .imagenes?.[0] ||
                     "/placeholder.jpg"
                   }
                   className="w-full h-full object-cover"
@@ -447,14 +602,17 @@ export default function ProductosPage() {
 
               </div>
 
-              {/* THUMBS */}
-
-              {producto.imagenes?.length > 1 && (
+              {producto
+                .imagenes?.length >
+                1 && (
 
                 <div className="flex gap-2 p-3 overflow-x-auto">
 
                   {producto.imagenes.map(
-                    (img: string, i: number) => (
+                    (
+                      img: string,
+                      i: number
+                    ) => (
 
                     <img
                       key={i}
@@ -468,73 +626,41 @@ export default function ProductosPage() {
 
               )}
 
-              {/* INFO */}
-
               <div className="p-6">
 
-                <div className="flex items-start justify-between gap-3">
+                <p className="text-sm text-pink-400 font-bold uppercase">
+                  {
+                    producto.categoria
+                  }
+                </p>
 
-                  <div>
-
-                    <p className="text-sm text-pink-400 font-bold uppercase">
-                      {producto.categoria}
-                    </p>
-
-                    <h3 className="text-3xl font-black text-cyan-500 mt-2">
-                      {producto.nombre}
-                    </h3>
-
-                  </div>
-
-                  {producto.stock <= 5 && (
-
-                    <span className="bg-red-100 text-red-500
-                    px-3 py-1 rounded-full text-xs font-bold">
-                      STOCK BAJO
-                    </span>
-
-                  )}
-
-                </div>
+                <h3 className="text-3xl font-black text-cyan-500 mt-2">
+                  {
+                    producto.nombre
+                  }
+                </h3>
 
                 <p className="text-gray-500 mt-3">
-                  {producto.medidas}
+                  {
+                    producto.medidas
+                  }
                 </p>
 
                 <p className="text-4xl font-black text-[#F08C8C] mt-5">
-                  ${producto.precio}
+                  $
+                  {
+                    producto.precio
+                  }
                 </p>
-
-                {/* TAGS */}
-
-                {producto.etiquetas && (
-
-                  <div className="flex flex-wrap gap-2 mt-5">
-
-                    {producto.etiquetas
-                      .split(",")
-                      .map((tag: string, i: number) => (
-
-                      <span
-                        key={i}
-                        className="bg-[#FFF0B8]
-                        text-gray-700 px-3 py-1
-                        rounded-full text-sm"
-                      >
-                        #{tag.trim()}
-                      </span>
-
-                    ))}
-
-                  </div>
-
-                )}
-
-                {/* BOTONES */}
 
                 <div className="grid grid-cols-2 gap-3 mt-8">
 
                   <button
+                    onClick={() =>
+                      abrirEditor(
+                        producto
+                      )
+                    }
                     className="bg-cyan-500 hover:bg-cyan-600
                     text-white rounded-2xl py-4 font-bold"
                   >
@@ -543,7 +669,9 @@ export default function ProductosPage() {
 
                   <button
                     onClick={() =>
-                      eliminarProducto(producto.id)
+                      eliminarProducto(
+                        producto.id
+                      )
                     }
                     className="bg-red-400 hover:bg-red-500
                     text-white rounded-2xl py-4 font-bold"
@@ -562,6 +690,167 @@ export default function ProductosPage() {
         </div>
 
       </div>
+
+      {/* MODAL */}
+
+      {editando && (
+
+        <div className="fixed inset-0 bg-black/60 z-50
+        flex items-center justify-center p-4">
+
+          <div className="bg-white w-full max-w-3xl
+          rounded-[32px] p-8 overflow-y-auto
+          max-h-[90vh]">
+
+            <div className="flex justify-between items-center mb-8">
+
+              <h2 className="text-4xl font-black text-cyan-500">
+                Editar producto
+              </h2>
+
+              <button
+                onClick={() =>
+                  setEditando(
+                    null
+                  )
+                }
+                className="text-3xl"
+              >
+                ✕
+              </button>
+
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+              <input
+                value={
+                  editNombre
+                }
+                onChange={(e) =>
+                  setEditNombre(
+                    e.target.value
+                  )
+                }
+                placeholder="Nombre"
+                className="input-premium"
+              />
+
+              <input
+                value={
+                  editPrecio
+                }
+                onChange={(e) =>
+                  setEditPrecio(
+                    e.target.value
+                  )
+                }
+                placeholder="Precio"
+                className="input-premium"
+              />
+
+              <select
+                value={
+                  editCategoria
+                }
+                onChange={(e) =>
+                  setEditCategoria(
+                    e.target.value
+                  )
+                }
+                className="input-premium"
+              >
+
+                <option value="">
+                  Categoría
+                </option>
+
+                {categorias.map(
+                  (cat) => (
+
+                  <option
+                    key={cat.id}
+                    value={
+                      cat.nombre
+                    }
+                  >
+                    {cat.nombre}
+                  </option>
+
+                ))}
+
+              </select>
+
+              <input
+                value={
+                  editMedidas
+                }
+                onChange={(e) =>
+                  setEditMedidas(
+                    e.target.value
+                  )
+                }
+                placeholder="Medidas"
+                className="input-premium"
+              />
+
+              <input
+                value={
+                  editSku
+                }
+                onChange={(e) =>
+                  setEditSku(
+                    e.target.value
+                  )
+                }
+                placeholder="SKU"
+                className="input-premium"
+              />
+
+              <input
+                value={
+                  editStock
+                }
+                onChange={(e) =>
+                  setEditStock(
+                    e.target.value
+                  )
+                }
+                placeholder="Stock"
+                className="input-premium"
+              />
+
+            </div>
+
+            <textarea
+              value={
+                editEtiquetas
+              }
+              onChange={(e) =>
+                setEditEtiquetas(
+                  e.target.value
+                )
+              }
+              placeholder="Etiquetas"
+              className="input-premium mt-5 min-h-[120px]"
+            />
+
+            <button
+              onClick={
+                guardarEdicion
+              }
+              className="mt-8 bg-cyan-500 hover:bg-cyan-600
+              text-white px-8 py-5 rounded-2xl
+              font-bold text-lg"
+            >
+              Guardar cambios
+            </button>
+
+          </div>
+
+        </div>
+
+      )}
 
     </div>
   )
