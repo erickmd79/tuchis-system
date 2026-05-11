@@ -34,6 +34,8 @@ export default function ProductosPage() {
 
   const [editando, setEditando] = useState<Producto | null>(null)
 
+  const [guardando, setGuardando] = useState(false)
+
   useEffect(() => {
     obtenerProductos()
     obtenerCategorias()
@@ -41,10 +43,15 @@ export default function ProductosPage() {
 
   const obtenerProductos = async () => {
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("productos")
       .select("*")
       .order("id", { ascending: false })
+
+    if (error) {
+      console.log(error)
+      return
+    }
 
     if (data) {
       setProductos(data)
@@ -53,10 +60,15 @@ export default function ProductosPage() {
 
   const obtenerCategorias = async () => {
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("categorias")
       .select("*")
       .order("nombre")
+
+    if (error) {
+      console.log(error)
+      return
+    }
 
     if (data) {
       setCategorias(data)
@@ -72,11 +84,21 @@ export default function ProductosPage() {
       const nombreArchivo =
         `${Date.now()}-${imagen.name}`
 
-      const { error } = await supabase.storage
-        .from("productos")
-        .upload(nombreArchivo, imagen)
+      const { error: uploadError } =
+        await supabase.storage
+          .from("productos")
+          .upload(nombreArchivo, imagen)
 
-      if (error) continue
+      if (uploadError) {
+
+        console.log(uploadError)
+
+        alert(
+          JSON.stringify(uploadError)
+        )
+
+        return null
+      }
 
       const { data } = supabase.storage
         .from("productos")
@@ -95,7 +117,14 @@ export default function ProductosPage() {
       return
     }
 
+    setGuardando(true)
+
     const urls = await subirImagenes()
+
+    if (!urls) {
+      setGuardando(false)
+      return
+    }
 
     const { error } = await supabase
       .from("productos")
@@ -116,13 +145,25 @@ export default function ProductosPage() {
       ])
 
     if (error) {
+
       console.log(error)
-      alert("Error guardando producto")
+
+      alert(
+        JSON.stringify(error)
+      )
+
+      setGuardando(false)
+
       return
     }
 
+    alert("Producto guardado")
+
     limpiarFormulario()
+
     obtenerProductos()
+
+    setGuardando(false)
   }
 
   const eliminarProducto = async (id: number) => {
@@ -133,10 +174,21 @@ export default function ProductosPage() {
 
     if (!confirmar) return
 
-    await supabase
+    const { error } = await supabase
       .from("productos")
       .delete()
       .eq("id", id)
+
+    if (error) {
+
+      console.log(error)
+
+      alert(
+        JSON.stringify(error)
+      )
+
+      return
+    }
 
     obtenerProductos()
   }
@@ -145,7 +197,7 @@ export default function ProductosPage() {
 
     if (!editando) return
 
-    await supabase
+    const { error } = await supabase
       .from("productos")
       .update({
         nombre: editando.nombre,
@@ -157,6 +209,19 @@ export default function ProductosPage() {
         etiquetas: editando.etiquetas,
       })
       .eq("id", editando.id)
+
+    if (error) {
+
+      console.log(error)
+
+      alert(
+        JSON.stringify(error)
+      )
+
+      return
+    }
+
+    alert("Producto actualizado")
 
     setEditando(null)
 
@@ -391,11 +456,40 @@ export default function ProductosPage() {
 
             </div>
 
+            {/* PREVIEW */}
+
+            {imagenes.length > 0 && (
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+
+                {imagenes.map((img, index) => (
+
+                  <div
+                    key={index}
+                    className="aspect-square rounded-2xl overflow-hidden border border-[#F4D4CF]"
+                  >
+
+                    <img
+                      src={URL.createObjectURL(img)}
+                      className="w-full h-full object-cover"
+                    />
+
+                  </div>
+
+                ))}
+
+              </div>
+
+            )}
+
             <button
               onClick={guardarProducto}
-              className="mt-6 bg-cyan-500 hover:bg-cyan-600 transition text-white px-8 py-5 rounded-2xl font-black text-lg"
+              disabled={guardando}
+              className="mt-6 bg-cyan-500 hover:bg-cyan-600 transition text-white px-8 py-5 rounded-2xl font-black text-lg disabled:opacity-50"
             >
-              Guardar producto
+              {guardando
+                ? "Guardando..."
+                : "Guardar producto"}
             </button>
 
           </div>
@@ -411,8 +505,6 @@ export default function ProductosPage() {
                 className="bg-white rounded-[32px] overflow-hidden border border-[#F4D4CF] shadow-sm"
               >
 
-                {/* IMAGEN */}
-
                 <div className="aspect-square bg-[#FFF7F5] overflow-hidden">
 
                   <img
@@ -425,8 +517,6 @@ export default function ProductosPage() {
                   />
 
                 </div>
-
-                {/* MINIATURAS */}
 
                 {producto.imagenes?.length > 1 && (
 
@@ -445,8 +535,6 @@ export default function ProductosPage() {
                   </div>
 
                 )}
-
-                {/* INFO */}
 
                 <div className="p-5">
 
@@ -478,8 +566,6 @@ export default function ProductosPage() {
 
                   </div>
 
-                  {/* ETIQUETAS */}
-
                   {producto.etiquetas?.length > 0 && (
 
                     <div className="flex flex-wrap gap-2 mt-5">
@@ -498,8 +584,6 @@ export default function ProductosPage() {
                     </div>
 
                   )}
-
-                  {/* BOTONES */}
 
                   <div className="grid grid-cols-2 gap-3 mt-6">
 
