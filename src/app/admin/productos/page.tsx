@@ -566,7 +566,7 @@ export default function ProductosPage() {
 
                   </div>
 
-                  {producto.etiquetas?.length > 0 && (
+                  {producto.etiquetas && producto.etiquetas.length > 0 && (
 
                     <div className="flex flex-wrap gap-2 mt-5">
 
