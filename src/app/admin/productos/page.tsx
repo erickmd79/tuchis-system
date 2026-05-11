@@ -1,59 +1,81 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
-import { supabase } from "../../../lib/supabase"
+import { supabase } from "@/lib/supabase"
 
-export default function ProductosAdmin() {
+export default function ProductosPage() {
 
-  const [productos, setProductos] = useState<any[]>([])
+  const [productos, setProductos] =
+    useState<any[]>([])
 
-  const [nombre, setNombre] = useState("")
-  const [precio, setPrecio] = useState("")
-  const [categoria, setCategoria] = useState("")
-  const [categorias, setCategorias] = useState<any[]>([])
-  const [medidas, setMedidas] = useState("")
-  const [imagenes, setImagenes] = useState<FileList | null>(null)
+  const [categorias, setCategorias] =
+    useState<any[]>([])
 
-  const [busqueda, setBusqueda] = useState("")
-  const [filtroCategoria, setFiltroCategoria] =
-    useState("Todas")
+  const [busqueda, setBusqueda] =
+    useState("")
+
+  const [filtroCategoria,
+    setFiltroCategoria] =
+    useState("")
+
+  const [nombre, setNombre] =
+    useState("")
+
+  const [precio, setPrecio] =
+    useState("")
+
+  const [categoria, setCategoria] =
+    useState("")
+
+  const [medidas, setMedidas] =
+    useState("")
+
+  const [imagenes,
+    setImagenes] =
+    useState<FileList | null>(null)
 
   useEffect(() => {
+
     obtenerProductos()
     obtenerCategorias()
+
   }, [])
 
   const obtenerProductos = async () => {
 
-    const { data, error } =
+    const { data } =
       await supabase
         .from("productos")
         .select("*")
-        .order("id", { ascending: false })
+        .order("id",
+          { ascending: false })
 
-    if (!error && data) {
+    if (data) {
       setProductos(data)
     }
   }
 
   const obtenerCategorias = async () => {
 
-    const { data, error } =
+    const { data } =
       await supabase
         .from("categorias")
         .select("*")
         .order("nombre")
 
-    if (!error && data) {
+    if (data) {
       setCategorias(data)
     }
   }
 
   const guardarProducto = async () => {
 
-    if (!nombre || !precio || !categoria) {
-      alert("Faltan datos")
+    if (
+      !nombre ||
+      !precio ||
+      !categoria
+    ) {
+      alert("Completa los campos")
       return
     }
 
@@ -72,7 +94,6 @@ export default function ProductosAdmin() {
             .upload(nombreArchivo, imagen)
 
         if (uploadError) {
-          console.log(uploadError)
           alert("Error subiendo imagen")
           return
         }
@@ -96,12 +117,11 @@ export default function ProductosAdmin() {
             categoria,
             medidas,
             imagenes: urls,
-          },
+          }
         ])
 
     if (error) {
-      console.log(error)
-      alert(JSON.stringify(error))
+      alert("Error guardando")
       return
     }
 
@@ -116,158 +136,18 @@ export default function ProductosAdmin() {
     obtenerProductos()
   }
 
-  const eliminarProducto = async (
-    id: number
-  ) => {
+  const eliminarProducto =
+    async (id: number) => {
 
     const confirmar =
-      confirm("¿Eliminar producto?")
+      confirm("Eliminar producto?")
 
     if (!confirmar) return
 
-    const { error } =
-      await supabase
-        .from("productos")
-        .delete()
-        .eq("id", id)
-
-    if (error) {
-      alert("Error eliminando")
-      return
-    }
-
-    obtenerProductos()
-  }
-
-  const editarProducto = async (
-    producto: any
-  ) => {
-
-    const nuevoNombre =
-      prompt(
-        "Nombre",
-        producto.nombre
-      )
-
-    if (!nuevoNombre) return
-
-    const nuevoPrecio =
-      prompt(
-        "Precio",
-        producto.precio
-      )
-
-    const nuevasMedidas =
-      prompt(
-        "Medidas",
-        producto.medidas
-      )
-
-    const nuevaCategoria =
-      prompt(
-        "Categoría",
-        producto.categoria
-      )
-
-    const { error } =
-      await supabase
-        .from("productos")
-        .update({
-          nombre: nuevoNombre,
-          precio: nuevoPrecio,
-          medidas: nuevasMedidas,
-          categoria: nuevaCategoria,
-        })
-        .eq("id", producto.id)
-
-    if (error) {
-      alert("Error editando")
-      return
-    }
-
-    obtenerProductos()
-  }
-
-  const eliminarImagen = async (
-    producto: any,
-    imagenUrl: string
-  ) => {
-
-    const confirmar =
-      confirm("¿Eliminar imagen?")
-
-    if (!confirmar) return
-
-    const nuevasImagenes =
-      producto.imagenes.filter(
-        (img: string) =>
-          img !== imagenUrl
-      )
-
-    const { error } =
-      await supabase
-        .from("productos")
-        .update({
-          imagenes: nuevasImagenes
-        })
-        .eq("id", producto.id)
-
-    if (error) {
-      alert("Error eliminando imagen")
-      return
-    }
-
-    obtenerProductos()
-  }
-
-  const agregarImagenes = async (
-    producto: any,
-    files: FileList | null
-  ) => {
-
-    if (!files) return
-
-    let nuevasUrls = [
-      ...(producto.imagenes || [])
-    ]
-
-    for (const imagen of Array.from(files)) {
-
-      const nombreArchivo =
-        `${Date.now()}-${imagen.name}`
-
-      const { error: uploadError } =
-        await supabase.storage
-          .from("productos")
-          .upload(nombreArchivo, imagen)
-
-      if (uploadError) {
-        alert("Error subiendo")
-        return
-      }
-
-      const { data } =
-        supabase.storage
-          .from("productos")
-          .getPublicUrl(nombreArchivo)
-
-      nuevasUrls.push(
-        data.publicUrl
-      )
-    }
-
-    const { error } =
-      await supabase
-        .from("productos")
-        .update({
-          imagenes: nuevasUrls
-        })
-        .eq("id", producto.id)
-
-    if (error) {
-      alert("Error actualizando")
-      return
-    }
+    await supabase
+      .from("productos")
+      .delete()
+      .eq("id", id)
 
     obtenerProductos()
   }
@@ -283,9 +163,9 @@ export default function ProductosAdmin() {
           )
 
       const coincideCategoria =
-        filtroCategoria === "Todas" ||
+        filtroCategoria === "" ||
         producto.categoria ===
-          filtroCategoria
+        filtroCategoria
 
       return (
         coincideBusqueda &&
@@ -295,282 +175,366 @@ export default function ProductosAdmin() {
 
   return (
 
-    <div className="min-h-screen bg-[#FFF8F5] p-8">
+    <div className="admin-layout">
 
-      <div className="flex gap-4 mb-8 flex-wrap">
+      <main className="main-content">
 
-        <Link
-          href="/admin"
-          className="bg-[#20B8C9]
-          text-white px-5 py-3
-          rounded-2xl font-bold"
-        >
-          Dashboard
-        </Link>
+        <div className="page-container">
 
-        <Link
-          href="/admin/productos"
-          className="bg-[#F49B93]
-          text-white px-5 py-3
-          rounded-2xl font-bold"
-        >
-          Productos
-        </Link>
+          <div>
 
-        <Link
-          href="/admin/categorias"
-          className="bg-[#FFD56B]
-          text-[#444] px-5 py-3
-          rounded-2xl font-bold"
-        >
-          Categorías
-        </Link>
+            <h1 className="title-xl">
+              Productos
+            </h1>
 
-      </div>
+            <p className="subtitle">
+              Administra tu catálogo
+            </p>
 
-      <h1 className="text-5xl font-bold text-[#20B8C9] mb-10">
-        Productos
-      </h1>
-
-      <div className="grid md:grid-cols-3 gap-4 mb-10">
-
-        <input
-          type="text"
-          placeholder="Buscar producto..."
-          value={busqueda}
-          onChange={(e) =>
-            setBusqueda(e.target.value)
-          }
-          className="w-full p-4 rounded-2xl border"
-        />
-
-        <select
-          value={filtroCategoria}
-          onChange={(e) =>
-            setFiltroCategoria(
-              e.target.value
-            )
-          }
-          className="w-full p-4 rounded-2xl border"
-        >
-
-          <option value="Todas">
-            Todas las categorías
-          </option>
-
-          {categorias.map((cat) => (
-
-            <option
-              key={cat.id}
-              value={cat.nombre}
-            >
-              {cat.nombre}
-            </option>
-
-          ))}
-
-        </select>
-
-        <div className="bg-white rounded-2xl border border-[#F8D6D0]
-        flex items-center justify-center font-bold text-[#20B8C9]">
-
-          {productosFiltrados.length} productos
-
-        </div>
-
-      </div>
-
-      <div className="bg-white p-8 rounded-3xl shadow-lg space-y-5 border border-[#F8D6D0]">
-
-        <input
-          type="text"
-          placeholder="Nombre"
-          value={nombre}
-          onChange={(e) =>
-            setNombre(e.target.value)
-          }
-          className="w-full p-4 rounded-2xl border"
-        />
-
-        <input
-          type="number"
-          placeholder="Precio"
-          value={precio}
-          onChange={(e) =>
-            setPrecio(e.target.value)
-          }
-          className="w-full p-4 rounded-2xl border"
-        />
-
-        <select
-          value={categoria}
-          onChange={(e) =>
-            setCategoria(e.target.value)
-          }
-          className="w-full border p-4 rounded-2xl"
-        >
-
-          <option value="">
-            Selecciona categoría
-          </option>
-
-          {categorias.map((cat) => (
-
-            <option
-              key={cat.id}
-              value={cat.nombre}
-            >
-              {cat.nombre}
-            </option>
-
-          ))}
-
-        </select>
-
-        <input
-          type="text"
-          placeholder="Medidas"
-          value={medidas}
-          onChange={(e) =>
-            setMedidas(e.target.value)
-          }
-          className="w-full p-4 rounded-2xl border"
-        />
-
-        <input
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={(e) =>
-            setImagenes(e.target.files)
-          }
-          className="w-full p-4 rounded-2xl border bg-white"
-        />
-
-        <button
-          onClick={guardarProducto}
-          className="bg-[#20B8C9]
-          hover:bg-[#17A7B8]
-          text-white px-8 py-4
-          rounded-2xl font-bold"
-        >
-          Guardar producto
-        </button>
-
-      </div>
-
-      <div className="mt-10 grid md:grid-cols-3 gap-6">
-
-        {productosFiltrados.map((producto) => (
+          </div>
 
           <div
-            key={producto.id}
-            className="bg-white rounded-3xl p-5 border border-[#F8D6D0]"
+            className="section-spacing"
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit,minmax(250px,1fr))",
+              gap: 18
+            }}
           >
 
-            <div className="grid grid-cols-2 gap-3">
-
-              {producto.imagenes?.map(
-                (
-                  imagen: string,
-                  index: number
-                ) => (
-
-                  <div
-                    key={index}
-                    className="relative"
-                  >
-
-                    <img
-                      src={imagen}
-                      className="w-full h-40 object-cover rounded-2xl"
-                    />
-
-                    <button
-                      onClick={() =>
-                        eliminarImagen(
-                          producto,
-                          imagen
-                        )
-                      }
-                      className="absolute top-2 right-2
-                      bg-red-500 text-white
-                      w-8 h-8 rounded-full"
-                    >
-                      ×
-                    </button>
-
-                  </div>
-
+            <input
+              type="text"
+              placeholder="Buscar producto..."
+              value={busqueda}
+              onChange={(e) =>
+                setBusqueda(
+                  e.target.value
                 )
-              )}
+              }
+            />
 
+            <select
+              value={filtroCategoria}
+              onChange={(e) =>
+                setFiltroCategoria(
+                  e.target.value
+                )
+              }
+            >
+
+              <option value="">
+                Todas las categorías
+              </option>
+
+              {categorias.map((cat) => (
+
+                <option
+                  key={cat.id}
+                  value={cat.nombre}
+                >
+                  {cat.nombre}
+                </option>
+
+              ))}
+
+            </select>
+
+            <div
+              className="card"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent:
+                  "center",
+                fontWeight: 800,
+                color: "#20B8C9"
+              }}
+            >
+              {productos.length} productos
             </div>
 
-            <div className="mt-5">
+          </div>
+
+          <div
+            className="card section-spacing"
+          >
+
+            <h2
+              className="title-lg"
+              style={{
+                color: "#20B8C9",
+                marginBottom: 24
+              }}
+            >
+              Nuevo producto
+            </h2>
+
+            <div
+              style={{
+                display: "grid",
+                gap: 18
+              }}
+            >
+
+              <input
+                type="text"
+                placeholder="Nombre"
+                value={nombre}
+                onChange={(e) =>
+                  setNombre(
+                    e.target.value
+                  )
+                }
+              />
+
+              <input
+                type="number"
+                placeholder="Precio"
+                value={precio}
+                onChange={(e) =>
+                  setPrecio(
+                    e.target.value
+                  )
+                }
+              />
+
+              <select
+                value={categoria}
+                onChange={(e) =>
+                  setCategoria(
+                    e.target.value
+                  )
+                }
+              >
+
+                <option value="">
+                  Selecciona categoría
+                </option>
+
+                {categorias.map((cat) => (
+
+                  <option
+                    key={cat.id}
+                    value={cat.nombre}
+                  >
+                    {cat.nombre}
+                  </option>
+
+                ))}
+
+              </select>
+
+              <input
+                type="text"
+                placeholder="Medidas"
+                value={medidas}
+                onChange={(e) =>
+                  setMedidas(
+                    e.target.value
+                  )
+                }
+              />
 
               <input
                 type="file"
                 multiple
                 accept="image/*"
                 onChange={(e) =>
-                  agregarImagenes(
-                    producto,
+                  setImagenes(
                     e.target.files
                   )
                 }
-                className="w-full p-3 border rounded-2xl"
               />
 
-            </div>
+              {imagenes && (
 
-            <h2 className="text-2xl font-bold mt-4 text-[#20B8C9]">
-              {producto.nombre}
-            </h2>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill,minmax(120px,1fr))",
+                    gap: 16
+                  }}
+                >
 
-            <p className="mt-2 text-gray-500">
-              {producto.medidas}
-            </p>
+                  {Array.from(imagenes)
+                    .map((imagen, i) => (
 
-            <p className="text-lg mt-2">
-              {producto.categoria}
-            </p>
+                    <div
+                      key={i}
+                      style={{
+                        position:
+                          "relative"
+                      }}
+                    >
 
-            <p className="text-3xl font-bold text-[#F49B93] mt-3">
-              ${producto.precio}
-            </p>
+                      <img
+                        src={URL.createObjectURL(imagen)}
+                        alt=""
+                        style={{
+                          width: "100%",
+                          aspectRatio: "1/1",
+                          objectFit: "cover",
+                          borderRadius: 24,
+                          border:
+                            "2px solid #F3D7D2"
+                        }}
+                      />
 
-            <div className="flex gap-3 mt-5">
+                    </div>
+
+                  ))}
+
+                </div>
+
+              )}
 
               <button
-                onClick={() =>
-                  editarProducto(producto)
+                onClick={
+                  guardarProducto
                 }
-                className="bg-[#BEE9E8]
-                px-5 py-3 rounded-2xl"
+                className="btn btn-primary"
               >
-                Editar
-              </button>
-
-              <button
-                onClick={() =>
-                  eliminarProducto(
-                    producto.id
-                  )
-                }
-                className="bg-[#FFD6D6]
-                px-5 py-3 rounded-2xl"
-              >
-                Eliminar
+                Guardar producto
               </button>
 
             </div>
 
           </div>
 
-        ))}
+          <div className="section-spacing">
 
-      </div>
+            <h2
+              className="title-lg"
+              style={{
+                color: "#20B8C9",
+                marginBottom: 24
+              }}
+            >
+              Lista de productos
+            </h2>
+
+            <div className="products-grid">
+
+              {productosFiltrados.map(
+                (producto) => (
+
+                <div
+                  key={producto.id}
+                  className="product-card"
+                >
+
+                  <div
+                    style={{
+                      position:
+                        "relative"
+                    }}
+                  >
+
+                    <img
+                      src={
+                        producto.imagenes?.[0]
+                      }
+                      alt=""
+                      style={{
+                        width: "100%",
+                        aspectRatio: "1/1",
+                        objectFit: "cover"
+                      }}
+                    />
+
+                    <div
+                      style={{
+                        position:
+                          "absolute",
+                        top: 14,
+                        right: 14,
+                        background:
+                          "#20B8C9",
+                        color: "white",
+                        padding:
+                          "8px 14px",
+                        borderRadius: 999,
+                        fontWeight: 700
+                      }}
+                    >
+                      $
+                      {producto.precio}
+                    </div>
+
+                  </div>
+
+                  <div className="product-body">
+
+                    <h3
+                      className="product-title"
+                    >
+                      {producto.nombre}
+                    </h3>
+
+                    <p
+                      style={{
+                        color: "#666",
+                        marginBottom: 8
+                      }}
+                    >
+                      {producto.categoria}
+                    </p>
+
+                    <p
+                      style={{
+                        marginBottom: 18
+                      }}
+                    >
+                      {producto.medidas}
+                    </p>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 12
+                      }}
+                    >
+
+                      <button
+                        className="btn btn-primary"
+                        style={{
+                          flex: 1
+                        }}
+                      >
+                        Editar
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          eliminarProducto(
+                            producto.id
+                          )
+                        }
+                        className="btn btn-pink"
+                        style={{
+                          flex: 1
+                        }}
+                      >
+                        Eliminar
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              ))}
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </main>
 
     </div>
   )
