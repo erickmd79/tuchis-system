@@ -7,22 +7,33 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 
 export default function Page() {
-  const [pedidos, setPedidos] = useState<any[]>([])
-  const [busqueda, setBusqueda] = useState("")
-  const [filtroEstado, setFiltroEstado] = useState("todos")
+
+  const [pedidos, setPedidos] =
+    useState<any[]>([])
+
+  const [busqueda, setBusqueda] =
+    useState("")
+
+  const [filtroEstado, setFiltroEstado] =
+    useState("todos")
 
   const router = useRouter()
 
   const cerrarSesion = async () => {
+
     await supabase.auth.signOut()
+
     router.push("/login")
   }
 
   useEffect(() => {
+
     const verificarLogin = async () => {
+
       const {
         data: { session },
-      } = await supabase.auth.getSession()
+      } =
+        await supabase.auth.getSession()
 
       if (!session) {
         router.push("/login")
@@ -30,6 +41,7 @@ export default function Page() {
     }
 
     verificarLogin()
+
   }, [router])
 
   useEffect(() => {
@@ -37,518 +49,677 @@ export default function Page() {
   }, [])
 
   const obtenerPedidos = async () => {
-    const { data, error } = await supabase
-      .from("pedidos")
-      .select("*")
-      .order("id", { ascending: false })
 
-    if (error) {
-      console.error(error)
-    } else {
-      setPedidos(data || [])
+    const { data, error } =
+      await supabase
+        .from("pedidos")
+        .select("*")
+        .order("id", {
+          ascending: false
+        })
+
+    if (!error && data) {
+      setPedidos(data)
     }
   }
 
-  const actualizarEstado = async (id: number, nuevoEstado: string) => {
-    const { error } = await supabase
-      .from("pedidos")
-      .update({ estado: nuevoEstado })
-      .eq("id", id)
+  const actualizarEstado = async (
+    id: number,
+    nuevoEstado: string
+  ) => {
 
-    if (error) {
-      console.error(error)
-      return
-    }
+    const { error } =
+      await supabase
+        .from("pedidos")
+        .update({
+          estado: nuevoEstado
+        })
+        .eq("id", id)
 
-    setPedidos((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, estado: nuevoEstado } : p
+    if (!error) {
+
+      setPedidos((prev) =>
+        prev.map((pedido) =>
+
+          pedido.id === id
+            ? {
+                ...pedido,
+                estado: nuevoEstado
+              }
+            : pedido
+        )
       )
-    )
+    }
   }
 
-  const enviarWhatsApp = (pedido: any) => {
-    let mensaje = `Hola, te comparto tu pedido:\n\n`
+  const enviarWhatsApp = (
+    pedido: any
+  ) => {
 
-    mensaje += `Cliente: ${pedido.cliente}\n`
-    mensaje += `Fecha: ${pedido.fecha}\n\n`
-    mensaje += `Productos:\n`
+    let mensaje =
+      `Hola ${pedido.cliente} 👋\n\n`
 
-    pedido.productos?.forEach((prod: any) => {
-      mensaje += `- ${prod.nombre} (${prod.cantidad} x $${prod.precio})\n`
-    })
+    mensaje +=
+      `Te compartimos tu pedido TUCHIS:\n\n`
 
-    mensaje += `\nTotal: $${pedido.total}`
+    pedido.productos?.forEach(
+      (prod: any) => {
 
-    const telefonoLimpio = pedido.telefono.replace(/\D/g, "")
-    const url = `https://wa.me/52${telefonoLimpio}?text=${encodeURIComponent(mensaje)}`
+        mensaje +=
+          `• ${prod.nombre}\n`
+
+        mensaje +=
+          `${prod.cantidad} x $${prod.precio}\n\n`
+      }
+    )
+
+    mensaje +=
+      `TOTAL: $${pedido.total}`
+
+    const url =
+      `https://wa.me/52${pedido.telefono}?text=${encodeURIComponent(mensaje)}`
 
     window.open(url, "_blank")
   }
 
-  const generarPDF = (pedido: any) => {
+  const generarPDF = (
+    pedido: any
+  ) => {
+
     const doc = new jsPDF()
-    let y = 15
 
-    const logo = "/logo.png"
-    doc.addImage(logo, "PNG", 10, 10, 40, 20)
+    doc.setFontSize(24)
 
-    doc.setFontSize(18)
-    doc.setFont("helvetica", "bold")
-    doc.text("COTIZACIÓN", 105, 25, { align: "center" })
-
-    doc.line(10, 35, 200, 35)
-    y = 45
-
-    doc.setFontSize(12)
-    doc.setFont("helvetica", "bold")
-    doc.text("Datos del cliente", 10, y)
-
-    y += 6
-    doc.setFont("helvetica", "normal")
-    doc.text(`Nombre: ${pedido.cliente}`, 10, y)
-
-    y += 6
-    doc.text(`Teléfono: ${pedido.telefono}`, 10, y)
-
-    y += 6
-    doc.text(`Fecha del evento: ${pedido.fecha}`, 10, y)
-
-    y += 10
-    doc.line(10, y, 200, y)
-    y += 10
-
-    doc.setFont("helvetica", "bold")
-    doc.text("Cant.", 10, y)
-    doc.text("Producto", 30, y)
-    doc.text("Precio", 140, y, { align: "right" })
-    doc.text("Total", 190, y, { align: "right" })
-
-    y += 4
-    doc.line(10, y, 200, y)
-    y += 6
-
-    doc.setFont("helvetica", "normal")
-
-    pedido.productos?.forEach((prod: any) => {
-      const totalProd = prod.cantidad * prod.precio
-
-      doc.text(String(prod.cantidad), 10, y)
-      doc.text(prod.nombre, 30, y)
-      doc.text(`$${prod.precio}`, 140, y, { align: "right" })
-      doc.text(`$${totalProd}`, 190, y, { align: "right" })
-
-      y += 7
-    })
-
-    y += 5
-    doc.line(10, y, 200, y)
-    y += 10
+    doc.text(
+      "TUCHIS",
+      20,
+      25
+    )
 
     doc.setFontSize(14)
-    doc.setFont("helvetica", "bold")
-    doc.text(`TOTAL: $${pedido.total}`, 190, y, { align: "right" })
 
-    y += 12
+    doc.text(
+      `Cliente: ${pedido.cliente}`,
+      20,
+      45
+    )
 
-    doc.setFontSize(10)
-    doc.setFont("helvetica", "normal")
-    doc.text("• Aparta tu pedido con anticipo", 10, y)
+    doc.text(
+      `Teléfono: ${pedido.telefono}`,
+      20,
+      55
+    )
 
-    y += 5
-    doc.text("• Ideal para fiestas y eventos infantiles", 10, y)
+    doc.text(
+      `Fecha: ${pedido.fecha}`,
+      20,
+      65
+    )
 
-    y += 10
-    doc.text("Gracias por confiar en TUCHIS", 105, y, { align: "center" })
+    let y = 90
 
-    doc.save(`TUCHIS_pedido_${pedido.id}.pdf`)
+    pedido.productos?.forEach(
+      (prod: any) => {
+
+        doc.text(
+          `${prod.nombre} (${prod.cantidad})`,
+          20,
+          y
+        )
+
+        doc.text(
+          `$${prod.precio}`,
+          160,
+          y
+        )
+
+        y += 12
+      }
+    )
+
+    y += 15
+
+    doc.setFontSize(18)
+
+    doc.text(
+      `TOTAL: $${pedido.total}`,
+      20,
+      y
+    )
+
+    doc.save(
+      `pedido-${pedido.id}.pdf`
+    )
   }
 
-  const hoy = new Date().toISOString().slice(0, 10)
+  const totalVentas =
+    pedidos.reduce(
+      (acc, pedido) =>
+        acc + Number(pedido.total),
+      0
+    )
 
-  const totalPedidos = pedidos.length
+  const pedidosHoy =
+    pedidos.filter((pedido) => {
 
-  const totalVentas = pedidos.reduce(
-    (acc, pedido) => acc + Number(pedido.total || 0),
-    0
-  )
+      const hoy =
+        new Date()
+          .toISOString()
+          .split("T")[0]
 
-  const pedidosHoy = pedidos.filter(
-    (pedido) => pedido.fecha === hoy
-  ).length
+      return pedido.fecha === hoy
+    }).length
 
-  const totalPendientes = pedidos.filter(
-    (pedido) => pedido.estado === "pendiente"
-  ).length
+  const totalPendientes =
+    pedidos.filter(
+      (pedido) =>
+        pedido.estado ===
+        "pendiente"
+    ).length
 
-  const totalPagados = pedidos.filter(
-    (pedido) => pedido.estado === "pagado"
-  ).length
+  const totalPagados =
+    pedidos.filter(
+      (pedido) =>
+        pedido.estado ===
+        "pagado"
+    ).length
 
-  const productosVendidos: Record<string, number> = {}
-
-  pedidos.forEach((pedido) => {
-    pedido.productos?.forEach((producto: any) => {
-      productosVendidos[producto.nombre] =
-        (productosVendidos[producto.nombre] || 0) +
-        Number(producto.cantidad || 0)
-    })
-  })
-
-  const productosMasVendidos = Object.entries(productosVendidos)
-    .map(([nombre, cantidad]) => ({ nombre, cantidad }))
-    .sort((a, b) => b.cantidad - a.cantidad)
-    .slice(0, 5)
-
-  const categoriasUsadas: Record<string, number> = {}
+  const productosVendidos:
+    Record<string, number> = {}
 
   pedidos.forEach((pedido) => {
-    pedido.productos?.forEach((producto: any) => {
-      if (producto.categoria) {
-        categoriasUsadas[producto.categoria] =
-          (categoriasUsadas[producto.categoria] || 0) +
-          Number(producto.cantidad || 0)
+
+    pedido.productos?.forEach(
+      (prod: any) => {
+
+        productosVendidos[
+          prod.nombre
+        ] =
+          (productosVendidos[
+            prod.nombre
+          ] || 0)
+          + prod.cantidad
       }
+    )
+  })
+
+  const topProductos =
+    Object.entries(
+      productosVendidos
+    )
+      .sort(
+        (a, b) => b[1] - a[1]
+      )
+      .slice(0, 5)
+
+  const categoriasVendidas:
+    Record<string, number> = {}
+
+  pedidos.forEach((pedido) => {
+
+    pedido.productos?.forEach(
+      (prod: any) => {
+
+        if (!prod.categoria) return
+
+        categoriasVendidas[
+          prod.categoria
+        ] =
+          (categoriasVendidas[
+            prod.categoria
+          ] || 0)
+          + prod.cantidad
+      }
+    )
+  })
+
+  const topCategorias =
+    Object.entries(
+      categoriasVendidas
+    )
+      .sort(
+        (a, b) => b[1] - a[1]
+      )
+      .slice(0, 5)
+
+  const pedidosFiltrados =
+    pedidos.filter((pedido) => {
+
+      const coincideBusqueda =
+        pedido.cliente
+          ?.toLowerCase()
+          .includes(
+            busqueda.toLowerCase()
+          )
+
+      const coincideEstado =
+        filtroEstado === "todos" ||
+        pedido.estado ===
+          filtroEstado
+
+      return (
+        coincideBusqueda &&
+        coincideEstado
+      )
     })
-  })
-
-  const categoriasMasUsadas = Object.entries(categoriasUsadas)
-    .map(([categoria, cantidad]) => ({ categoria, cantidad }))
-    .sort((a, b) => b.cantidad - a.cantidad)
-    .slice(0, 5)
-
-  const maxProducto =
-    productosMasVendidos[0]?.cantidad || 1
-
-  const maxCategoria =
-    categoriasMasUsadas[0]?.cantidad || 1
-
-  const pedidosFiltrados = pedidos.filter((pedido) => {
-    const coincideBusqueda =
-      pedido.cliente
-        ?.toLowerCase()
-        .includes(busqueda.toLowerCase()) ||
-      pedido.telefono?.includes(busqueda)
-
-    const coincideEstado =
-      filtroEstado === "todos" || pedido.estado === filtroEstado
-
-    return coincideBusqueda && coincideEstado
-  })
 
   return (
-    <div className="min-h-screen bg-[#FFF8F1] p-8">
 
-      <div className="flex gap-4 mb-8 flex-wrap">
+    <div className="min-h-screen bg-[#FFF8F5] px-4 md:px-8 py-6">
+
+      <div className="flex flex-wrap gap-3 mb-8">
+
         <Link
           href="/admin"
-          className="bg-[#20B8C9] text-white px-6 py-3 rounded-2xl font-bold"
+          className="bg-[#20B8C9]
+          text-white px-5 py-4
+          rounded-2xl font-bold"
         >
-          Pedidos
+          Dashboard
         </Link>
 
         <Link
           href="/admin/productos"
-          className="bg-[#F7AFAF] text-white px-6 py-3 rounded-2xl font-bold"
+          className="bg-[#F49B93]
+          text-white px-5 py-4
+          rounded-2xl font-bold"
         >
           Productos
         </Link>
 
         <Link
           href="/admin/categorias"
-          className="bg-[#F6D36B] text-[#444] px-6 py-3 rounded-2xl font-bold"
+          className="bg-[#FFD56B]
+          text-[#444] px-5 py-4
+          rounded-2xl font-bold"
         >
           Categorías
         </Link>
-      </div>
-
-      <div className="flex justify-between items-center mb-10 flex-wrap gap-4">
-        <div>
-          <h1 className="text-5xl font-bold text-[#18AFC4]">
-            Dashboard TUCHIS
-          </h1>
-
-          <p className="text-[#4A4A4A] mt-2">
-            Control de pedidos, ventas y productos.
-          </p>
-        </div>
 
         <button
           onClick={cerrarSesion}
-          className="bg-[#F9958E] text-white px-6 py-3 rounded-2xl font-bold"
+          className="bg-black
+          text-white px-5 py-4
+          rounded-2xl font-bold"
         >
-          Cerrar sesión
+          Salir
         </button>
+
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-5 mb-8">
+      <div className="mb-10">
 
-        <div className="bg-[#BFE4F2] rounded-3xl p-6 shadow-sm">
-          <p className="text-sm text-[#4A4A4A] mb-2">
+        <h1 className="text-4xl md:text-6xl font-black text-[#20B8C9] leading-none">
+          Dashboard TUCHIS
+        </h1>
+
+        <p className="text-gray-500 mt-3">
+          Estadísticas y pedidos
+        </p>
+
+      </div>
+
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+
+        <div className="bg-[#BEE9E8]
+        rounded-[30px] p-5">
+
+          <p className="text-sm">
             Total ventas
           </p>
 
-          <h2 className="text-4xl font-bold text-[#18AFC4]">
+          <h2 className="text-3xl md:text-4xl font-black mt-2">
             ${totalVentas}
           </h2>
+
         </div>
 
-        <div className="bg-[#F9DDD9] rounded-3xl p-6 shadow-sm">
-          <p className="text-sm text-[#4A4A4A] mb-2">
+        <div className="bg-[#FFD6D6]
+        rounded-[30px] p-5">
+
+          <p className="text-sm">
             Pedidos hoy
           </p>
 
-          <h2 className="text-4xl font-bold text-[#F9958E]">
+          <h2 className="text-3xl md:text-4xl font-black mt-2">
             {pedidosHoy}
           </h2>
+
         </div>
 
-        <div className="bg-[#F7EBD8] rounded-3xl p-6 shadow-sm">
-          <p className="text-sm text-[#4A4A4A] mb-2">
-            Total pedidos
-          </p>
+        <div className="bg-[#FFF0B8]
+        rounded-[30px] p-5">
 
-          <h2 className="text-4xl font-bold text-[#4A4A4A]">
-            {totalPedidos}
-          </h2>
-        </div>
-
-        <div className="bg-[#FFD976] rounded-3xl p-6 shadow-sm">
-          <p className="text-sm text-[#4A4A4A] mb-2">
+          <p className="text-sm">
             Pendientes
           </p>
 
-          <h2 className="text-4xl font-bold text-[#4A4A4A]">
+          <h2 className="text-3xl md:text-4xl font-black mt-2">
             {totalPendientes}
           </h2>
+
         </div>
 
-        <div className="bg-[#FFFCF8] rounded-3xl p-6 shadow-sm border border-[#F9DDD9]">
-          <p className="text-sm text-[#4A4A4A] mb-2">
+        <div className="bg-[#D7F5E8]
+        rounded-[30px] p-5">
+
+          <p className="text-sm">
             Pagados
           </p>
 
-          <h2 className="text-4xl font-bold text-[#18AFC4]">
+          <h2 className="text-3xl md:text-4xl font-black mt-2">
             {totalPagados}
           </h2>
+
         </div>
 
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+      <div className="grid xl:grid-cols-2 gap-6 mb-10">
 
-        <div className="bg-[#FFFCF8] rounded-3xl p-6 border border-[#F9DDD9] shadow-sm">
-          <h2 className="text-2xl font-bold text-[#18AFC4] mb-5">
+        <div className="bg-white rounded-[32px]
+        p-6 border border-[#F8D6D0]">
+
+          <h2 className="text-2xl font-black text-[#20B8C9] mb-6">
             Productos más vendidos
           </h2>
 
-          {productosMasVendidos.length === 0 ? (
-            <p>No hay datos todavía.</p>
-          ) : (
-            <div className="space-y-4">
-              {productosMasVendidos.map((item) => (
-                <div key={item.nombre}>
-                  <div className="flex justify-between mb-1">
-                    <span className="font-semibold">
-                      {item.nombre}
-                    </span>
+          <div className="space-y-5">
 
-                    <span>
-                      {item.cantidad}
-                    </span>
+            {topProductos.map(
+              ([nombre, cantidad]) => (
+
+                <div key={nombre}>
+
+                  <div className="flex justify-between mb-2">
+
+                    <p className="font-bold">
+                      {nombre}
+                    </p>
+
+                    <p className="font-black">
+                      {cantidad}
+                    </p>
+
                   </div>
 
-                  <div className="h-4 bg-[#F9DDD9] rounded-full overflow-hidden">
+                  <div className="w-full h-4 bg-[#F8D6D0] rounded-full overflow-hidden">
+
                     <div
-                      className="h-full bg-[#18AFC4] rounded-full"
+                      className="h-full bg-[#20B8C9]"
                       style={{
-                        width: `${(item.cantidad / maxProducto) * 100}%`,
+                        width:
+                          `${Number(cantidad) * 10}%`
                       }}
                     />
+
                   </div>
+
                 </div>
-              ))}
-            </div>
-          )}
+              )
+            )}
+
+          </div>
+
         </div>
 
-        <div className="bg-[#FFFCF8] rounded-3xl p-6 border border-[#F9DDD9] shadow-sm">
-          <h2 className="text-2xl font-bold text-[#F9958E] mb-5">
+        <div className="bg-white rounded-[32px]
+        p-6 border border-[#F8D6D0]">
+
+          <h2 className="text-2xl font-black text-[#F49B93] mb-6">
             Categorías más usadas
           </h2>
 
-          {categoriasMasUsadas.length === 0 ? (
-            <p>No hay datos todavía.</p>
-          ) : (
-            <div className="space-y-4">
-              {categoriasMasUsadas.map((item) => (
-                <div key={item.categoria}>
-                  <div className="flex justify-between mb-1">
-                    <span className="font-semibold">
-                      {item.categoria}
-                    </span>
+          <div className="space-y-5">
 
-                    <span>
-                      {item.cantidad}
-                    </span>
+            {topCategorias.map(
+              ([nombre, cantidad]) => (
+
+                <div key={nombre}>
+
+                  <div className="flex justify-between mb-2">
+
+                    <p className="font-bold">
+                      {nombre}
+                    </p>
+
+                    <p className="font-black">
+                      {cantidad}
+                    </p>
+
                   </div>
 
-                  <div className="h-4 bg-[#BFE4F2] rounded-full overflow-hidden">
+                  <div className="w-full h-4 bg-[#FFE7C5] rounded-full overflow-hidden">
+
                     <div
-                      className="h-full bg-[#F9958E] rounded-full"
+                      className="h-full bg-[#F49B93]"
                       style={{
-                        width: `${(item.cantidad / maxCategoria) * 100}%`,
+                        width:
+                          `${Number(cantidad) * 10}%`
                       }}
                     />
+
                   </div>
+
                 </div>
-              ))}
-            </div>
-          )}
+              )
+            )}
+
+          </div>
+
         </div>
 
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 mb-8">
+
         <input
           type="text"
-          placeholder="Buscar cliente o teléfono..."
+          placeholder="Buscar cliente..."
           value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          className="flex-1 px-5 py-4 rounded-2xl border border-[#F9DDD9] bg-white outline-none"
+          onChange={(e) =>
+            setBusqueda(
+              e.target.value
+            )
+          }
+          className="w-full p-4 rounded-2xl border bg-white"
         />
 
         <select
           value={filtroEstado}
-          onChange={(e) => setFiltroEstado(e.target.value)}
-          className="px-5 py-4 rounded-2xl border border-[#F9DDD9] bg-white outline-none"
+          onChange={(e) =>
+            setFiltroEstado(
+              e.target.value
+            )
+          }
+          className="w-full md:w-[250px]
+          p-4 rounded-2xl border bg-white"
         >
-          <option value="todos">Todos</option>
-          <option value="pendiente">Pendientes</option>
-          <option value="anticipo">Anticipos</option>
-          <option value="pagado">Pagados</option>
-          <option value="entregado">Entregados</option>
+
+          <option value="todos">
+            Todos
+          </option>
+
+          <option value="pendiente">
+            Pendiente
+          </option>
+
+          <option value="pagado">
+            Pagado
+          </option>
+
+          <option value="entregado">
+            Entregado
+          </option>
+
         </select>
+
       </div>
 
-      {pedidosFiltrados.length === 0 ? (
-        <p className="text-lg">
-          No hay pedidos registrados.
-        </p>
-      ) : (
-        <div className="space-y-8">
-          {pedidosFiltrados.map((pedido) => (
+      <div className="space-y-6">
+
+        {pedidosFiltrados.map(
+          (pedido) => (
+
             <div
               key={pedido.id}
-              className="bg-[#FFFCF8] rounded-3xl p-6 border border-[#F9DDD9] shadow-sm"
+              className="bg-white
+              rounded-[32px]
+              border border-[#F8D6D0]
+              p-5 md:p-7"
             >
-              <div className="flex justify-between items-start flex-wrap gap-4">
+
+              <div className="flex flex-col xl:flex-row xl:justify-between gap-5">
+
                 <div>
-                  <h2 className="text-2xl font-bold text-[#18AFC4]">
+
+                  <h2 className="text-2xl md:text-3xl font-black text-[#20B8C9]">
                     {pedido.cliente}
                   </h2>
 
-                  <p className="mt-2">
+                  <p className="mt-3">
                     📞 {pedido.telefono}
                   </p>
 
-                  <p>
+                  <p className="mt-1">
                     📅 {pedido.fecha}
                   </p>
 
-                  <p className="font-semibold mt-2 text-lg">
-                    Total: ${pedido.total}
+                  <p className="text-3xl font-black text-[#F49B93] mt-5">
+                    ${pedido.total}
                   </p>
 
-                  {pedido.notas && (
-                    <p className="mt-3">
-                      <strong>Notas:</strong> {pedido.notas}
-                    </p>
-                  )}
                 </div>
 
-                <span
-                  className={`px-4 py-2 rounded-full text-white text-sm font-semibold
-                  ${
-                    pedido.estado === "pendiente"
-                      ? "bg-gray-500"
-                      : pedido.estado === "anticipo"
-                      ? "bg-[#FFD976] text-[#4A4A4A]"
-                      : pedido.estado === "pagado"
-                      ? "bg-[#18AFC4]"
-                      : pedido.estado === "entregado"
-                      ? "bg-[#F9958E]"
-                      : "bg-gray-700"
-                  }`}
-                >
-                  {pedido.estado || "pendiente"}
-                </span>
+                <div className="flex flex-wrap gap-3">
+
+                  <button
+                    onClick={() =>
+                      actualizarEstado(
+                        pedido.id,
+                        "pendiente"
+                      )
+                    }
+                    className="bg-[#FFE7C5]
+                    px-5 py-4 rounded-2xl
+                    font-bold"
+                  >
+                    Pendiente
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      actualizarEstado(
+                        pedido.id,
+                        "pagado"
+                      )
+                    }
+                    className="bg-[#BEE9E8]
+                    px-5 py-4 rounded-2xl
+                    font-bold"
+                  >
+                    Pagado
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      actualizarEstado(
+                        pedido.id,
+                        "entregado"
+                      )
+                    }
+                    className="bg-[#FFD6D6]
+                    px-5 py-4 rounded-2xl
+                    font-bold"
+                  >
+                    Entregado
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      enviarWhatsApp(
+                        pedido
+                      )
+                    }
+                    className="bg-[#C9EACF]
+                    px-5 py-4 rounded-2xl
+                    font-bold"
+                  >
+                    WhatsApp
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      generarPDF(
+                        pedido
+                      )
+                    }
+                    className="bg-[#F7B7C3]
+                    px-5 py-4 rounded-2xl
+                    font-bold"
+                  >
+                    PDF
+                  </button>
+
+                </div>
+
               </div>
 
-              <div className="flex gap-3 mt-6 flex-wrap">
-                <button
-                  onClick={() => actualizarEstado(pedido.id, "pendiente")}
-                  className="bg-[#F9DDD9] px-5 py-3 rounded-2xl font-semibold"
-                >
-                  Pendiente
-                </button>
+              <div className="mt-7">
 
-                <button
-                  onClick={() => actualizarEstado(pedido.id, "anticipo")}
-                  className="bg-[#FFD976] px-5 py-3 rounded-2xl font-semibold"
-                >
-                  Anticipo
-                </button>
-
-                <button
-                  onClick={() => actualizarEstado(pedido.id, "pagado")}
-                  className="bg-[#18AFC4] text-white px-5 py-3 rounded-2xl font-semibold"
-                >
-                  Pagado
-                </button>
-
-                <button
-                  onClick={() => actualizarEstado(pedido.id, "entregado")}
-                  className="bg-[#F9958E] text-white px-5 py-3 rounded-2xl font-semibold"
-                >
-                  Entregado
-                </button>
-
-                <button
-                  onClick={() => enviarWhatsApp(pedido)}
-                  className="bg-[#A8D5BA] text-[#2E5E4E] px-5 py-3 rounded-2xl font-semibold"
-                >
-                  WhatsApp
-                </button>
-
-                <button
-                  onClick={() => generarPDF(pedido)}
-                  className="bg-[#F7B7C3] text-[#7A3E4D] px-5 py-3 rounded-2xl font-semibold"
-                >
-                  Descargar PDF
-                </button>
-              </div>
-
-              <div className="mt-6 bg-[#FFF8F1] rounded-3xl p-5">
-                <p className="font-bold text-[#18AFC4] mb-3">
+                <h3 className="font-black text-xl mb-4">
                   Productos
-                </p>
+                </h3>
 
-                <ul className="space-y-2">
-                  {pedido.productos?.map((prod: any, i: number) => (
-                    <li
-                      key={i}
-                      className="bg-white rounded-2xl px-4 py-3 border border-[#F9DDD9]"
-                    >
-                      {prod.nombre} — {prod.cantidad} x ${prod.precio}
-                    </li>
-                  ))}
-                </ul>
+                <div className="space-y-3">
+
+                  {pedido.productos?.map(
+                    (
+                      prod: any,
+                      index: number
+                    ) => (
+
+                      <div
+                        key={index}
+                        className="bg-[#FFF8F5]
+                        rounded-2xl p-4
+                        flex justify-between
+                        items-center"
+                      >
+
+                        <div>
+
+                          <p className="font-bold">
+                            {prod.nombre}
+                          </p>
+
+                          <p className="text-sm text-gray-500">
+                            {prod.cantidad} x ${prod.precio}
+                          </p>
+
+                        </div>
+
+                        <p className="font-black text-[#20B8C9] text-xl">
+                          $
+                          {prod.cantidad *
+                            prod.precio}
+                        </p>
+
+                      </div>
+
+                    )
+                  )}
+
+                </div>
+
               </div>
+
             </div>
-          ))}
-        </div>
-      )}
+
+          )
+        )}
+
+      </div>
 
     </div>
   )
