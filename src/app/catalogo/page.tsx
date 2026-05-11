@@ -215,21 +215,21 @@ export default function CatalogoPage() {
 
   return (
 
-    <div className="min-h-screen bg-[#FFF8F5] p-8 pb-52">
+    <div className="min-h-screen bg-[#FFF8F5] px-4 md:px-8 py-6 pb-72">
 
-      <div className="mb-10">
+      <div className="mb-8 md:mb-10">
 
-        <h1 className="text-5xl font-bold text-[#20B8C9]">
+        <h1 className="text-4xl md:text-6xl font-black text-[#20B8C9] leading-none">
           Catálogo TUCHIS
         </h1>
 
-        <p className="text-gray-500 mt-3">
+        <p className="text-gray-500 mt-3 text-sm md:text-base">
           Elige tus alcancías favoritas
         </p>
 
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4 mb-10">
+      <div className="flex flex-col md:grid md:grid-cols-2 gap-4 mb-8 md:mb-10">
 
         <input
           type="text"
@@ -240,7 +240,7 @@ export default function CatalogoPage() {
               e.target.value
             )
           }
-          className="w-full p-4 rounded-2xl border"
+          className="w-full p-4 rounded-2xl border bg-white"
         />
 
         <select
@@ -250,7 +250,7 @@ export default function CatalogoPage() {
               e.target.value
             )
           }
-          className="w-full p-4 rounded-2xl border"
+          className="w-full p-4 rounded-2xl border bg-white"
         >
 
           <option value="Todas">
@@ -272,7 +272,7 @@ export default function CatalogoPage() {
 
       </div>
 
-      <div className="grid md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
 
         {productosFiltrados.map(
           (producto) => {
@@ -288,7 +288,7 @@ export default function CatalogoPage() {
 
               <div
                 key={producto.id}
-                className="bg-white rounded-3xl overflow-hidden shadow-lg border border-[#F8D6D0]"
+                className="bg-white rounded-[32px] overflow-hidden shadow-lg border border-[#F8D6D0]"
               >
 
                 <div className="relative">
@@ -300,12 +300,12 @@ export default function CatalogoPage() {
                       ] ||
                       "/placeholder.png"
                     }
-                    className="w-full h-72 object-cover"
+                    className="w-full h-[320px] object-cover"
                   />
 
                 </div>
 
-                <div className="flex gap-2 p-3 overflow-auto">
+                <div className="flex gap-2 px-3 pt-3 overflow-x-auto">
 
                   {producto.imagenes?.map(
                     (
@@ -323,7 +323,9 @@ export default function CatalogoPage() {
                               imagen,
                           })
                         }
-                        className={`w-16 h-16 object-cover rounded-xl cursor-pointer border-2
+                        className={`min-w-[70px] w-[70px] h-[70px]
+                        object-cover rounded-2xl
+                        cursor-pointer border-4
                         ${
                           imagenesActivas[
                             producto.id
@@ -338,29 +340,29 @@ export default function CatalogoPage() {
 
                 </div>
 
-                <div className="p-5">
+                <div className="p-5 md:p-6">
 
-                  <p className="text-pink-400 font-bold text-sm">
+                  <p className="text-pink-400 font-bold text-xs md:text-sm uppercase tracking-wider">
                     {
                       producto.categoria
                     }
                   </p>
 
-                  <h2 className="text-2xl font-bold text-[#20B8C9] mt-2">
+                  <h2 className="text-2xl md:text-3xl font-black text-[#20B8C9] mt-2 leading-tight">
                     {producto.nombre}
                   </h2>
 
-                  <p className="text-gray-500 mt-2">
+                  <p className="text-gray-500 mt-3 text-sm md:text-base">
                     {producto.medidas}
                   </p>
 
-                  <p className="text-3xl font-bold text-[#F49B93] mt-4">
+                  <p className="text-3xl md:text-4xl font-black text-[#F49B93] mt-5">
                     ${producto.precio}
                   </p>
 
                   {itemCarrito ? (
 
-                    <div className="flex items-center gap-3 mt-5">
+                    <div className="flex items-center justify-center gap-4 mt-6">
 
                       <button
                         onClick={() =>
@@ -369,13 +371,13 @@ export default function CatalogoPage() {
                           )
                         }
                         className="bg-[#FFD6D6]
-                        w-10 h-10 rounded-full
-                        text-xl font-bold"
+                        w-12 h-12 rounded-full
+                        text-2xl font-bold"
                       >
                         -
                       </button>
 
-                      <span className="text-xl font-bold">
+                      <span className="text-2xl font-black">
 
                         {
                           itemCarrito.cantidad
@@ -390,8 +392,8 @@ export default function CatalogoPage() {
                           )
                         }
                         className="bg-[#BEE9E8]
-                        w-10 h-10 rounded-full
-                        text-xl font-bold"
+                        w-12 h-12 rounded-full
+                        text-2xl font-bold"
                       >
                         +
                       </button>
@@ -406,11 +408,12 @@ export default function CatalogoPage() {
                           producto
                         )
                       }
-                      className="w-full mt-5
+                      className="w-full mt-6
                       bg-[#20B8C9]
                       hover:bg-[#17A7B8]
-                      text-white py-4
-                      rounded-2xl font-bold"
+                      text-white py-5
+                      rounded-2xl font-black
+                      text-lg transition-all"
                     >
                       Agregar al carrito
                     </button>
@@ -429,23 +432,24 @@ export default function CatalogoPage() {
       {carrito.length > 0 && (
 
         <div
-          className="fixed bottom-5 left-1/2
+          className="fixed bottom-3 left-1/2
           -translate-x-1/2
-          bg-white border border-[#F8D6D0]
-          shadow-2xl rounded-3xl
-          w-[95%] md:w-[850px]
-          p-6 z-50"
+          bg-white/95 backdrop-blur-xl
+          border border-[#F8D6D0]
+          shadow-2xl rounded-[32px]
+          w-[95%] max-w-[900px]
+          p-5 md:p-6 z-50"
         >
 
-          <div className="flex justify-between items-center mb-5">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-5 mb-5">
 
             <div>
 
-              <p className="font-bold text-[#20B8C9] text-xl">
+              <p className="font-black text-[#20B8C9] text-xl md:text-2xl">
                 🛒 {totalProductos} productos
               </p>
 
-              <p className="text-[#F49B93] text-3xl font-bold mt-1">
+              <p className="text-[#F49B93] text-3xl md:text-4xl font-black mt-1">
                 ${subtotal}
               </p>
 
@@ -454,39 +458,41 @@ export default function CatalogoPage() {
             <a
               href="/pedido"
               className="bg-[#20B8C9]
-              text-white px-6 py-4
-              rounded-2xl font-bold"
+              text-white px-8 py-5
+              rounded-2xl font-black
+              text-center text-lg"
             >
               Ver pedido
             </a>
 
           </div>
 
-          <div className="max-h-56 overflow-auto space-y-3">
+          <div className="max-h-[280px] overflow-auto space-y-3">
 
             {carrito.map((item) => (
 
               <div
                 key={item.id}
                 className="bg-[#FFF8F5]
-                rounded-2xl p-4
-                flex justify-between
-                items-center"
+                rounded-3xl p-4
+                flex flex-col md:flex-row
+                md:justify-between
+                md:items-center gap-4"
               >
 
                 <div>
 
-                  <p className="font-bold">
+                  <p className="font-black text-lg">
                     {item.nombre}
                   </p>
 
-                  <p className="text-[#F49B93] font-bold">
+                  <p className="text-[#F49B93] font-black text-xl mt-1">
                     ${item.precio}
                   </p>
 
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
 
                   <button
                     onClick={() =>
@@ -495,12 +501,13 @@ export default function CatalogoPage() {
                       )
                     }
                     className="bg-[#FFD6D6]
-                    w-9 h-9 rounded-full"
+                    w-11 h-11 rounded-full
+                    text-xl font-bold"
                   >
                     -
                   </button>
 
-                  <span className="font-bold text-lg">
+                  <span className="font-black text-xl">
                     {item.cantidad}
                   </span>
 
@@ -511,7 +518,8 @@ export default function CatalogoPage() {
                       )
                     }
                     className="bg-[#BEE9E8]
-                    w-9 h-9 rounded-full"
+                    w-11 h-11 rounded-full
+                    text-xl font-bold"
                   >
                     +
                   </button>
@@ -523,8 +531,8 @@ export default function CatalogoPage() {
                       )
                     }
                     className="bg-red-500
-                    text-white px-4 py-2
-                    rounded-xl"
+                    text-white px-5 py-3
+                    rounded-2xl font-bold"
                   >
                     Eliminar
                   </button>
