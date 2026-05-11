@@ -5,61 +5,26 @@ import Link from "next/link"
 export default function AdminPage() {
 
   return (
-    <div className="min-h-screen bg-[#FFF9F7]">
 
-      {/* HEADER */}
+    <div className="w-full">
 
-      <div className="w-full bg-black text-white sticky top-0 z-50">
+      {/* MAIN CONTAINER */}
 
-        <div className="max-w-7xl mx-auto px-4 py-4 flex gap-8 overflow-x-auto">
-
-          <Link href="/">
-            <span className="font-bold whitespace-nowrap">
-              Inicio
-            </span>
-          </Link>
-
-          <Link href="/catalogo">
-            <span className="font-bold whitespace-nowrap">
-              Catálogo
-            </span>
-          </Link>
-
-          <Link href="/pedido">
-            <span className="font-bold whitespace-nowrap">
-              Pedido
-            </span>
-          </Link>
-
-          <Link href="/admin">
-            <span className="font-bold whitespace-nowrap text-cyan-400">
-              Admin
-            </span>
-          </Link>
-
-        </div>
-
-      </div>
-
-      {/* MAIN */}
-
-      <div className="max-w-7xl mx-auto p-4 md:p-8">
-
-        {/* TOP */}
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-6 md:py-10">
 
         <div className="flex flex-col lg:flex-row gap-8">
 
           {/* SIDEBAR */}
 
-          <aside className="w-full lg:w-[280px] flex-shrink-0">
+          <aside className="w-full lg:w-[280px] lg:flex-shrink-0">
 
-            <div className="bg-white rounded-[32px] border border-[#F4D4CF] shadow-sm p-6 sticky top-28">
+            <div className="bg-white rounded-[32px] border border-[#F4D4CF] shadow-sm p-6 lg:sticky lg:top-28">
 
-              <h1 className="text-5xl font-black text-cyan-500">
+              <h1 className="text-4xl md:text-5xl font-black text-cyan-500">
                 TUCHIS
               </h1>
 
-              <p className="text-gray-500 mt-2">
+              <p className="text-gray-500 mt-2 text-base">
                 Admin Panel
               </p>
 
@@ -67,28 +32,28 @@ export default function AdminPage() {
 
                 <Link
                   href="/admin"
-                  className="bg-cyan-500 text-white px-5 py-4 rounded-2xl font-bold text-center"
+                  className="bg-cyan-500 text-white px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
                 >
                   📊 Dashboard
                 </Link>
 
                 <Link
                   href="/admin/productos"
-                  className="bg-[#FFE0DD] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center"
+                  className="bg-[#FFE0DD] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
                 >
                   🧸 Productos
                 </Link>
 
                 <Link
                   href="/admin/categorias"
-                  className="bg-[#FFE9A8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center"
+                  className="bg-[#FFE9A8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
                 >
                   🗂 Categorías
                 </Link>
 
                 <Link
                   href="/catalogo"
-                  className="bg-[#D9F5F8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center"
+                  className="bg-[#D9F5F8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
                 >
                   🛒 Ver catálogo
                 </Link>
@@ -103,15 +68,15 @@ export default function AdminPage() {
 
           <main className="flex-1 min-w-0">
 
-            {/* TITULO */}
+            {/* HEADER */}
 
             <div className="mb-10">
 
-              <h2 className="text-5xl md:text-7xl font-black text-cyan-500 leading-none">
+              <h2 className="text-5xl md:text-7xl font-black text-cyan-500 leading-none break-words">
                 Dashboard
               </h2>
 
-              <p className="text-gray-500 text-lg mt-3">
+              <p className="text-gray-500 text-base md:text-lg mt-4">
                 Bienvenido al panel administrativo TUCHIS
               </p>
 
@@ -119,46 +84,54 @@ export default function AdminPage() {
 
             {/* STATS */}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
 
-              <div className="rounded-[32px] p-8 bg-[#D9F5F8]">
-                <h3 className="text-gray-700 text-xl font-semibold">
+              <div className="rounded-[32px] p-6 md:p-8 bg-[#D9F5F8] min-h-[180px] flex flex-col justify-between">
+
+                <h3 className="text-gray-700 text-lg md:text-xl font-semibold">
                   Total ventas
                 </h3>
 
-                <p className="text-5xl font-black mt-4">
+                <p className="text-4xl md:text-5xl font-black mt-6">
                   $12,450
                 </p>
+
               </div>
 
-              <div className="rounded-[32px] p-8 bg-[#FFE0E0]">
-                <h3 className="text-gray-700 text-xl font-semibold">
+              <div className="rounded-[32px] p-6 md:p-8 bg-[#FFE0E0] min-h-[180px] flex flex-col justify-between">
+
+                <h3 className="text-gray-700 text-lg md:text-xl font-semibold">
                   Pedidos hoy
                 </h3>
 
-                <p className="text-5xl font-black mt-4">
+                <p className="text-4xl md:text-5xl font-black mt-6">
                   24
                 </p>
+
               </div>
 
-              <div className="rounded-[32px] p-8 bg-[#FFF0B8]">
-                <h3 className="text-gray-700 text-xl font-semibold">
+              <div className="rounded-[32px] p-6 md:p-8 bg-[#FFF0B8] min-h-[180px] flex flex-col justify-between">
+
+                <h3 className="text-gray-700 text-lg md:text-xl font-semibold">
                   Pendientes
                 </h3>
 
-                <p className="text-5xl font-black mt-4">
+                <p className="text-4xl md:text-5xl font-black mt-6">
                   8
                 </p>
+
               </div>
 
-              <div className="rounded-[32px] p-8 bg-[#DDF5EA]">
-                <h3 className="text-gray-700 text-xl font-semibold">
+              <div className="rounded-[32px] p-6 md:p-8 bg-[#DDF5EA] min-h-[180px] flex flex-col justify-between">
+
+                <h3 className="text-gray-700 text-lg md:text-xl font-semibold">
                   Pagados
                 </h3>
 
-                <p className="text-5xl font-black mt-4">
+                <p className="text-4xl md:text-5xl font-black mt-6">
                   16
                 </p>
+
               </div>
 
             </div>
@@ -167,21 +140,28 @@ export default function AdminPage() {
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-10">
 
-              {/* MÁS VENDIDOS */}
+              {/* PRODUCTOS */}
 
-              <div className="bg-white rounded-[32px] border border-[#F4D4CF] p-8">
+              <div className="bg-white rounded-[32px] border border-[#F4D4CF] p-6 md:p-8 shadow-sm">
 
-                <h3 className="text-4xl font-black text-cyan-500 mb-8">
+                <h3 className="text-3xl md:text-4xl font-black text-cyan-500 mb-8">
                   Productos más vendidos
                 </h3>
 
-                <div className="space-y-6">
+                <div className="space-y-8">
 
                   <div>
 
-                    <div className="flex justify-between mb-2 font-bold">
-                      <span>Unicornio</span>
-                      <span>20</span>
+                    <div className="flex items-center justify-between gap-4 mb-3 font-bold text-sm md:text-base">
+
+                      <span className="truncate">
+                        Unicornio
+                      </span>
+
+                      <span>
+                        20
+                      </span>
+
                     </div>
 
                     <div className="h-5 rounded-full bg-[#FFE0DD] overflow-hidden">
@@ -194,9 +174,16 @@ export default function AdminPage() {
 
                   <div>
 
-                    <div className="flex justify-between mb-2 font-bold">
-                      <span>Capibara</span>
-                      <span>15</span>
+                    <div className="flex items-center justify-between gap-4 mb-3 font-bold text-sm md:text-base">
+
+                      <span className="truncate">
+                        Capibara
+                      </span>
+
+                      <span>
+                        15
+                      </span>
+
                     </div>
 
                     <div className="h-5 rounded-full bg-[#FFE0DD] overflow-hidden">
@@ -211,21 +198,28 @@ export default function AdminPage() {
 
               </div>
 
-              {/* CATEGORIAS */}
+              {/* CATEGORÍAS */}
 
-              <div className="bg-white rounded-[32px] border border-[#F4D4CF] p-8">
+              <div className="bg-white rounded-[32px] border border-[#F4D4CF] p-6 md:p-8 shadow-sm">
 
-                <h3 className="text-4xl font-black text-[#F08C8C] mb-8">
+                <h3 className="text-3xl md:text-4xl font-black text-[#F08C8C] mb-8">
                   Categorías más usadas
                 </h3>
 
-                <div className="space-y-6">
+                <div className="space-y-8">
 
                   <div>
 
-                    <div className="flex justify-between mb-2 font-bold">
-                      <span>Animales</span>
-                      <span>35</span>
+                    <div className="flex items-center justify-between gap-4 mb-3 font-bold text-sm md:text-base">
+
+                      <span className="truncate">
+                        Animales
+                      </span>
+
+                      <span>
+                        35
+                      </span>
+
                     </div>
 
                     <div className="h-5 rounded-full bg-[#FFF0B8] overflow-hidden">
@@ -238,9 +232,16 @@ export default function AdminPage() {
 
                   <div>
 
-                    <div className="flex justify-between mb-2 font-bold">
-                      <span>Disney</span>
-                      <span>18</span>
+                    <div className="flex items-center justify-between gap-4 mb-3 font-bold text-sm md:text-base">
+
+                      <span className="truncate">
+                        Disney
+                      </span>
+
+                      <span>
+                        18
+                      </span>
+
                     </div>
 
                     <div className="h-5 rounded-full bg-[#FFF0B8] overflow-hidden">
@@ -259,33 +260,33 @@ export default function AdminPage() {
 
             {/* ACTIVIDAD */}
 
-            <div className="bg-white rounded-[32px] border border-[#F4D4CF] p-8 mt-8">
+            <div className="bg-white rounded-[32px] border border-[#F4D4CF] p-6 md:p-8 mt-8 shadow-sm">
 
-              <h3 className="text-4xl font-black text-cyan-500 mb-8">
+              <h3 className="text-3xl md:text-4xl font-black text-cyan-500 mb-8">
                 Actividad reciente
               </h3>
 
               <div className="space-y-6">
 
-                <div className="border-b border-[#F4D4CF] pb-4">
+                <div className="border-b border-[#F4D4CF] pb-5">
 
                   <p className="font-bold text-lg">
                     Pedido nuevo recibido
                   </p>
 
-                  <p className="text-gray-500">
+                  <p className="text-gray-500 mt-2">
                     Hace unos minutos
                   </p>
 
                 </div>
 
-                <div className="border-b border-[#F4D4CF] pb-4">
+                <div className="border-b border-[#F4D4CF] pb-5">
 
                   <p className="font-bold text-lg">
                     Producto actualizado
                   </p>
 
-                  <p className="text-gray-500">
+                  <p className="text-gray-500 mt-2">
                     Hace 1 hora
                   </p>
 
@@ -302,5 +303,6 @@ export default function AdminPage() {
       </div>
 
     </div>
+
   )
 }
