@@ -15,6 +15,9 @@ export default function CatalogoPage() {
   const [categorias, setCategorias] =
     useState<any[]>([])
 
+  const [imagenesActivas, setImagenesActivas] =
+    useState<any>({})
+
   useEffect(() => {
 
     obtenerProductos()
@@ -40,7 +43,18 @@ export default function CatalogoPage() {
         })
 
     if (!error && data) {
+
       setProductos(data)
+
+      let iniciales: any = {}
+
+      data.forEach((producto) => {
+
+        iniciales[producto.id] =
+          producto.imagenes?.[0]
+      })
+
+      setImagenesActivas(iniciales)
     }
   }
 
@@ -277,14 +291,52 @@ export default function CatalogoPage() {
                 className="bg-white rounded-3xl overflow-hidden shadow-lg border border-[#F8D6D0]"
               >
 
-                <img
-                  src={
-                    producto
-                      .imagenes?.[0] ||
-                    "/placeholder.png"
-                  }
-                  className="w-full h-64 object-cover"
-                />
+                <div className="relative">
+
+                  <img
+                    src={
+                      imagenesActivas[
+                        producto.id
+                      ] ||
+                      "/placeholder.png"
+                    }
+                    className="w-full h-72 object-cover"
+                  />
+
+                </div>
+
+                <div className="flex gap-2 p-3 overflow-auto">
+
+                  {producto.imagenes?.map(
+                    (
+                      imagen: string,
+                      index: number
+                    ) => (
+
+                      <img
+                        key={index}
+                        src={imagen}
+                        onClick={() =>
+                          setImagenesActivas({
+                            ...imagenesActivas,
+                            [producto.id]:
+                              imagen,
+                          })
+                        }
+                        className={`w-16 h-16 object-cover rounded-xl cursor-pointer border-2
+                        ${
+                          imagenesActivas[
+                            producto.id
+                          ] === imagen
+                            ? "border-[#20B8C9]"
+                            : "border-transparent"
+                        }`}
+                      />
+
+                    )
+                  )}
+
+                </div>
 
                 <div className="p-5">
 
