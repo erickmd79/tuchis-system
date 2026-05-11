@@ -1,283 +1,245 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 
-export default function Page() {
-
-  const [menuAbierto, setMenuAbierto] =
-    useState(false)
-
-  const router = useRouter()
-
-  useEffect(() => {
-
-    const verificarLogin = async () => {
-
-      const {
-        data: { session },
-      } =
-        await supabase.auth.getSession()
-
-      if (!session) {
-        router.push("/login")
-      }
-    }
-
-    verificarLogin()
-
-  }, [router])
-
-  const cerrarSesion = async () => {
-
-    await supabase.auth.signOut()
-
-    router.push("/login")
-  }
+export default function AdminPage() {
 
   return (
 
-    <div className="min-h-screen bg-[#FFF8F5] flex">
+    <div className="admin-layout">
 
-      {menuAbierto && (
+      <aside className="sidebar">
 
-        <div
-          onClick={() =>
-            setMenuAbierto(false)
-          }
-          className="fixed inset-0 bg-black/40 z-40 lg:hidden"
-        />
+        <div>
 
-      )}
+          <h1 className="title-lg text-[#20B8C9]">
+            TUCHIS
+          </h1>
 
-      <aside
-        className={`
-        fixed lg:sticky top-0 left-0
-        h-screen w-[280px]
-        bg-white border-r border-[#F8D6D0]
-        z-50 transition-transform duration-300
-        overflow-y-auto
+          <p className="subtitle">
+            Admin Panel
+          </p>
 
-        ${
-          menuAbierto
-            ? "translate-x-0"
-            : "-translate-x-full lg:translate-x-0"
-        }
-        `}
-      >
+        </div>
 
-        <div className="p-6">
+        <div className="sidebar-nav">
 
-          <div className="flex items-center justify-between">
+          <Link
+            href="/admin"
+            className="sidebar-link bg-[#20B8C9] text-white"
+          >
+            📊 Dashboard
+          </Link>
 
-            <div>
+          <Link
+            href="/admin/productos"
+            className="sidebar-link bg-[#F9D6D2]"
+          >
+            🧸 Productos
+          </Link>
 
-              <h1 className="text-4xl font-black text-[#20B8C9]">
-                TUCHIS
-              </h1>
+          <Link
+            href="/admin/categorias"
+            className="sidebar-link bg-[#FFF0B8]"
+          >
+            🏷️ Categorías
+          </Link>
 
-              <p className="text-gray-500 mt-1 text-sm">
-                Admin Panel
-              </p>
-
-            </div>
-
-            <button
-              onClick={() =>
-                setMenuAbierto(false)
-              }
-              className="lg:hidden text-3xl"
-            >
-              ×
-            </button>
-
-          </div>
-
-          <div className="mt-10 flex flex-col gap-4">
-
-            <Link
-              href="/admin"
-              className="bg-[#20B8C9]
-              text-white px-5 py-4
-              rounded-2xl font-bold"
-            >
-              📊 Dashboard
-            </Link>
-
-            <Link
-              href="/admin/productos"
-              className="bg-[#F9DDD9]
-              px-5 py-4 rounded-2xl
-              font-bold"
-            >
-              🧸 Productos
-            </Link>
-
-            <Link
-              href="/admin/categorias"
-              className="bg-[#FFF0B8]
-              px-5 py-4 rounded-2xl
-              font-bold"
-            >
-              🏷️ Categorías
-            </Link>
-
-            <Link
-              href="/catalogo"
-              className="bg-[#BEE9E8]
-              px-5 py-4 rounded-2xl
-              font-bold"
-            >
-              🛒 Ver catálogo
-            </Link>
-
-            <button
-              onClick={cerrarSesion}
-              className="bg-black text-white
-              px-5 py-4 rounded-2xl
-              font-bold mt-6"
-            >
-              🚪 Cerrar sesión
-            </button>
-
-          </div>
+          <Link
+            href="/catalogo"
+            className="sidebar-link bg-[#BEE9E8]"
+          >
+            🛒 Catálogo
+          </Link>
 
         </div>
 
       </aside>
 
-      <main className="flex-1 min-w-0">
+      <main className="main-content">
 
-        <div className="max-w-[1600px] mx-auto p-4 md:p-8">
+        <div className="page-container">
 
-          <div className="flex items-center gap-4 mb-8">
+          <div className="mobile-topbar">
 
-            <button
-              onClick={() =>
-                setMenuAbierto(true)
-              }
-              className="lg:hidden
-              bg-white border border-[#F8D6D0]
-              w-14 h-14 rounded-2xl
-              text-3xl shrink-0"
-            >
+            <h2 className="text-3xl font-black text-[#20B8C9]">
+              TUCHIS
+            </h2>
+
+            <button className="btn btn-primary">
               ☰
             </button>
 
-            <div className="min-w-0">
+          </div>
 
-              <h1 className="text-4xl md:text-6xl font-black text-[#20B8C9] leading-none break-words">
-                Dashboard
-              </h1>
+          <div>
 
-              <p className="text-gray-500 mt-2">
-                Bienvenido al panel TUCHIS
-              </p>
+            <h1 className="title-xl">
+              Dashboard
+            </h1>
+
+            <p className="subtitle">
+              Bienvenido al panel administrativo TUCHIS
+            </p>
+
+          </div>
+
+          <div className="grid-cards section-spacing">
+
+            <div
+              className="stat-card"
+              style={{
+                background: "#BEE9E8"
+              }}
+            >
+
+              <p>Total ventas</p>
+
+              <h2>$12,450</h2>
+
+            </div>
+
+            <div
+              className="stat-card"
+              style={{
+                background: "#FFD6D6"
+              }}
+            >
+
+              <p>Pedidos hoy</p>
+
+              <h2>24</h2>
+
+            </div>
+
+            <div
+              className="stat-card"
+              style={{
+                background: "#FFF0B8"
+              }}
+            >
+
+              <p>Pendientes</p>
+
+              <h2>8</h2>
+
+            </div>
+
+            <div
+              className="stat-card"
+              style={{
+                background: "#D7F5E8"
+              }}
+            >
+
+              <p>Pagados</p>
+
+              <h2>16</h2>
 
             </div>
 
           </div>
 
-          <div className="
-          grid
-          grid-cols-1
-          sm:grid-cols-2
-          xl:grid-cols-4
-          gap-5
-          ">
+          <div
+            className="section-spacing"
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit,minmax(340px,1fr))",
+              gap: "24px"
+            }}
+          >
 
-            <div className="bg-[#BEE9E8]
-            rounded-[30px] p-6">
+            <div className="card">
 
-              <p className="text-sm">
-                Total ventas
-              </p>
-
-              <h2 className="text-4xl font-black mt-3">
-                $0
-              </h2>
-
-            </div>
-
-            <div className="bg-[#FFD6D6]
-            rounded-[30px] p-6">
-
-              <p className="text-sm">
-                Pedidos hoy
-              </p>
-
-              <h2 className="text-4xl font-black mt-3">
-                0
-              </h2>
-
-            </div>
-
-            <div className="bg-[#FFF0B8]
-            rounded-[30px] p-6">
-
-              <p className="text-sm">
-                Pendientes
-              </p>
-
-              <h2 className="text-4xl font-black mt-3">
-                0
-              </h2>
-
-            </div>
-
-            <div className="bg-[#D7F5E8]
-            rounded-[30px] p-6">
-
-              <p className="text-sm">
-                Pagados
-              </p>
-
-              <h2 className="text-4xl font-black mt-3">
-                0
-              </h2>
-
-            </div>
-
-          </div>
-
-          <div className="
-          mt-10
-          grid
-          grid-cols-1
-          xl:grid-cols-2
-          gap-6
-          ">
-
-            <div className="bg-white
-            rounded-[32px]
-            border border-[#F8D6D0]
-            p-6 md:p-8">
-
-              <h2 className="text-2xl md:text-3xl font-black text-[#20B8C9]">
+              <h2
+                className="title-lg"
+                style={{
+                  color: "#20B8C9"
+                }}
+              >
                 Productos más vendidos
               </h2>
 
-              <div className="mt-6 space-y-5">
+              <div className="section-spacing">
 
                 <div>
 
-                  <div className="flex justify-between mb-2">
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent:
+                        "space-between",
+                      marginBottom: 10
+                    }}
+                  >
 
-                    <p className="font-bold">
-                      Unicornio
-                    </p>
+                    <strong>Unicornio</strong>
 
-                    <p className="font-black">
-                      20
-                    </p>
+                    <strong>42</strong>
 
                   </div>
 
-                  <div className="w-full h-4 bg-[#F8D6D0] rounded-full overflow-hidden">
+                  <div
+                    style={{
+                      width: "100%",
+                      height: 18,
+                      background: "#F9D6D2",
+                      borderRadius: 999
+                    }}
+                  >
 
-                    <div className="h-full w-[70%] bg-[#20B8C9]" />
+                    <div
+                      style={{
+                        width: "80%",
+                        height: "100%",
+                        background: "#20B8C9",
+                        borderRadius: 999
+                      }}
+                    />
+
+                  </div>
+
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 24
+                  }}
+                >
+
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent:
+                        "space-between",
+                      marginBottom: 10
+                    }}
+                  >
+
+                    <strong>Labubu</strong>
+
+                    <strong>30</strong>
+
+                  </div>
+
+                  <div
+                    style={{
+                      width: "100%",
+                      height: 18,
+                      background: "#F9D6D2",
+                      borderRadius: 999
+                    }}
+                  >
+
+                    <div
+                      style={{
+                        width: "60%",
+                        height: "100%",
+                        background: "#20B8C9",
+                        borderRadius: 999
+                      }}
+                    />
 
                   </div>
 
@@ -287,34 +249,96 @@ export default function Page() {
 
             </div>
 
-            <div className="bg-white
-            rounded-[32px]
-            border border-[#F8D6D0]
-            p-6 md:p-8">
+            <div className="card">
 
-              <h2 className="text-2xl md:text-3xl font-black text-[#F49B93]">
+              <h2
+                className="title-lg"
+                style={{
+                  color: "#F49B93"
+                }}
+              >
                 Categorías más usadas
               </h2>
 
-              <div className="mt-6 space-y-5">
+              <div className="section-spacing">
 
                 <div>
 
-                  <div className="flex justify-between mb-2">
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent:
+                        "space-between",
+                      marginBottom: 10
+                    }}
+                  >
 
-                    <p className="font-bold">
-                      Animales
-                    </p>
+                    <strong>Animales</strong>
 
-                    <p className="font-black">
-                      35
-                    </p>
+                    <strong>60%</strong>
 
                   </div>
 
-                  <div className="w-full h-4 bg-[#FFE7C5] rounded-full overflow-hidden">
+                  <div
+                    style={{
+                      width: "100%",
+                      height: 18,
+                      background: "#FFF0B8",
+                      borderRadius: 999
+                    }}
+                  >
 
-                    <div className="h-full w-[85%] bg-[#F49B93]" />
+                    <div
+                      style={{
+                        width: "60%",
+                        height: "100%",
+                        background: "#F49B93",
+                        borderRadius: 999
+                      }}
+                    />
+
+                  </div>
+
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 24
+                  }}
+                >
+
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent:
+                        "space-between",
+                      marginBottom: 10
+                    }}
+                  >
+
+                    <strong>Disney</strong>
+
+                    <strong>35%</strong>
+
+                  </div>
+
+                  <div
+                    style={{
+                      width: "100%",
+                      height: 18,
+                      background: "#FFF0B8",
+                      borderRadius: 999
+                    }}
+                  >
+
+                    <div
+                      style={{
+                        width: "35%",
+                        height: "100%",
+                        background: "#F49B93",
+                        borderRadius: 999
+                      }}
+                    />
 
                   </div>
 
@@ -326,42 +350,97 @@ export default function Page() {
 
           </div>
 
-          <div className="
-          mt-10
-          bg-white
-          rounded-[32px]
-          border border-[#F8D6D0]
-          p-6 md:p-8
-          ">
+          <div className="card section-spacing">
 
-            <h2 className="text-2xl md:text-3xl font-black text-[#20B8C9]">
-              Actividad reciente
-            </h2>
+            <div
+              style={{
+                display: "flex",
+                justifyContent:
+                  "space-between",
+                alignItems: "center",
+                marginBottom: 24
+              }}
+            >
 
-            <div className="mt-6 space-y-4">
+              <h2
+                className="title-lg"
+                style={{
+                  color: "#20B8C9"
+                }}
+              >
+                Actividad reciente
+              </h2>
 
-              <div className="bg-[#FFF8F5]
-              rounded-2xl p-5">
+              <button className="btn btn-primary">
+                Ver todo
+              </button>
 
-                <p className="font-bold">
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 18
+              }}
+            >
+
+              <div
+                style={{
+                  padding: 20,
+                  borderRadius: 24,
+                  background: "#FFF8F5",
+                  border:
+                    "2px solid #F3D7D2"
+                }}
+              >
+
+                <strong>
                   Pedido nuevo recibido
-                </p>
+                </strong>
 
-                <p className="text-gray-500 mt-1 text-sm">
+                <p className="subtitle">
                   Hace unos minutos
                 </p>
 
               </div>
 
-              <div className="bg-[#FFF8F5]
-              rounded-2xl p-5">
+              <div
+                style={{
+                  padding: 20,
+                  borderRadius: 24,
+                  background: "#FFF8F5",
+                  border:
+                    "2px solid #F3D7D2"
+                }}
+              >
 
-                <p className="font-bold">
+                <strong>
                   Producto actualizado
+                </strong>
+
+                <p className="subtitle">
+                  Hace 1 hora
                 </p>
 
-                <p className="text-gray-500 mt-1 text-sm">
-                  Hace 1 hora
+              </div>
+
+              <div
+                style={{
+                  padding: 20,
+                  borderRadius: 24,
+                  background: "#FFF8F5",
+                  border:
+                    "2px solid #F3D7D2"
+                }}
+              >
+
+                <strong>
+                  Categoría agregada
+                </strong>
+
+                <p className="subtitle">
+                  Hace 3 horas
                 </p>
 
               </div>
