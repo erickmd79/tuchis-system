@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { supabase } from "../../../lib/supabase"
+import { useEffect, useMemo, useState } from "react"
+import { supabase } from "../../../../lib/supabase"
 
 export default function ProductosPage() {
 
@@ -12,25 +12,15 @@ export default function ProductosPage() {
   const [precio, setPrecio] = useState("")
   const [categoria, setCategoria] = useState("")
   const [medidas, setMedidas] = useState("")
-  const [imagenes, setImagenes] = useState<FileList | null>(null)
-
   const [sku, setSku] = useState("")
-  const [stock, setStock] = useState(0)
-
+  const [stock, setStock] = useState("")
   const [etiquetas, setEtiquetas] = useState("")
-  const [badges, setBadges] = useState("")
-
-  const [destacado, setDestacado] = useState(false)
+  const [imagenes, setImagenes] = useState<FileList | null>(null)
 
   const [busqueda, setBusqueda] = useState("")
   const [filtroCategoria, setFiltroCategoria] = useState("")
 
-  const [modalEditar, setModalEditar] = useState(false)
-  const [productoEditando, setProductoEditando] = useState<any>(null)
-
-  const [pagina, setPagina] = useState(1)
-
-  const productosPorPagina = 6
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     obtenerProductos()
@@ -44,7 +34,9 @@ export default function ProductosPage() {
       .select("*")
       .order("id", { ascending: false })
 
-    if (data) setProductos(data)
+    if (data) {
+      setProductos(data)
+    }
   }
 
   const obtenerCategorias = async () => {
@@ -52,98 +44,97 @@ export default function ProductosPage() {
     const { data } = await supabase
       .from("categorias")
       .select("*")
+      .order("nombre")
 
-    if (data) setCategorias(data)
-  }
-
-  const subirImagenes = async () => {
-
-    let urls: string[] = []
-
-    if (!imagenes) return urls
-
-    for (const imagen of Array.from(imagenes)) {
-
-      const nombreArchivo =
-        `${Date.now()}-${imagen.name}`
-
-      const { error } =
-        await supabase.storage
-          .from("productos")
-          .upload(nombreArchivo, imagen)
-
-      if (error) continue
-
-      const { data } = supabase.storage
-        .from("productos")
-        .getPublicUrl(nombreArchivo)
-
-      urls.push(data.publicUrl)
+    if (data) {
+      setCategorias(data)
     }
-
-    return urls
   }
 
   const guardarProducto = async () => {
 
-    const urls = await subirImagenes()
-
-    const { error } =
-      await supabase
-        .from("productos")
-        .insert([
-          {
-            nombre,
-            precio,
-            categoria,
-            medidas,
-            imagenes: urls,
-            sku,
-            stock,
-            destacado,
-            etiquetas:
-              etiquetas
-                .split(",")
-                .map((e) => e.trim()),
-
-            badges:
-              badges
-                .split(",")
-                .map((b) => b.trim()),
-
-            variantes: [],
-          }
-        ])
-
-    if (error) {
-      alert("Error guardando")
+    if (!nombre || !precio || !categoria) {
+      alert("Completa los campos")
       return
     }
 
-    alert("Producto guardado")
+    setLoading(true)
 
-    limpiarFormulario()
+    try {
 
-    obtenerProductos()
-  }
+      let urls: string[] = []
 
-  const limpiarFormulario = () => {
+      if (imagenes) {
 
-    setNombre("")
-    setPrecio("")
-    setCategoria("")
-    setMedidas("")
-    setSku("")
-    setStock(0)
-    setEtiquetas("")
-    setBadges("")
-    setDestacado(false)
+        for (const imagen of Array.from(imagenes)) {
+
+          const nombreArchivo =
+            `${Date.now()}-${imagen.name}`
+
+          const { error: uploadError } =
+            await supabase.storage
+              .from("productos")
+              .upload(nombreArchivo, imagen)
+
+          if (uploadError) {
+            console.log(uploadError)
+            continue
+          }
+
+          const { data } =
+            supabase.storage
+              .from("productos")
+              .getPublicUrl(nombreArchivo)
+
+          urls.push(data.publicUrl)
+        }
+      }
+
+      const { error } =
+        await supabase
+          .from("productos")
+          .insert([
+            {
+              nombre,
+              precio,
+              categoria,
+              medidas,
+              sku,
+              stock,
+              etiquetas,
+              imagenes: urls,
+            },
+          ])
+
+      if (error) {
+        console.log(error)
+        alert("Error guardando producto")
+        return
+      }
+
+      alert("Producto guardado")
+
+      setNombre("")
+      setPrecio("")
+      setCategoria("")
+      setMedidas("")
+      setSku("")
+      setStock("")
+      setEtiquetas("")
+      setImagenes(null)
+
+      obtenerProductos()
+
+    } finally {
+
+      setLoading(false)
+    }
   }
 
   const eliminarProducto = async (id: number) => {
 
     const confirmar =
-      confirm("Eliminar producto?")
+      confirm("¿Eliminar producto?")
 
     if (!confirmar) return
 
@@ -155,178 +146,54 @@ export default function ProductosPage() {
     obtenerProductos()
   }
 
-  const abrirEditar = (producto: any) => {
+  const productosFiltrados = useMemo(() => {
 
-    setProductoEditando(producto)
+    return productos.filter((producto) => {
 
-    setNombre(producto.nombre)
-    setPrecio(producto.precio)
-    setCategoria(producto.categoria)
-    setMedidas(producto.medidas)
+      const coincideBusqueda =
+        producto.nombre
+          ?.toLowerCase()
+          .includes(busqueda.toLowerCase())
 
-    setSku(producto.sku || "")
-    setStock(producto.stock || 0)
+      const coincideCategoria =
+        filtroCategoria === "" ||
+        producto.categoria === filtroCategoria
 
-    setEtiquetas(
-      producto.etiquetas?.join(", ") || ""
-    )
-
-    setBadges(
-      producto.badges?.join(", ") || ""
-    )
-
-    setDestacado(producto.destacado)
-
-    setModalEditar(true)
-  }
-
-  const actualizarProducto = async () => {
-
-    let nuevasUrls: string[] = []
-
-    if (imagenes) {
-      nuevasUrls = await subirImagenes()
-    }
-
-    const imagenesFinales = [
-      ...(productoEditando.imagenes || []),
-      ...nuevasUrls,
-    ]
-
-    await supabase
-      .from("productos")
-      .update({
-        nombre,
-        precio,
-        categoria,
-        medidas,
-        sku,
-        stock,
-        destacado,
-        etiquetas:
-          etiquetas
-            .split(",")
-            .map((e) => e.trim()),
-
-        badges:
-          badges
-            .split(",")
-            .map((b) => b.trim()),
-
-        imagenes: imagenesFinales,
-      })
-      .eq("id", productoEditando.id)
-
-    setModalEditar(false)
-
-    obtenerProductos()
-  }
-
-  const eliminarImagen = async (
-    index: number
-  ) => {
-
-    const nuevas =
-      productoEditando.imagenes.filter(
-        (_: any, i: number) => i !== index
+      return (
+        coincideBusqueda &&
+        coincideCategoria
       )
-
-    setProductoEditando({
-      ...productoEditando,
-      imagenes: nuevas,
     })
 
-    await supabase
-      .from("productos")
-      .update({
-        imagenes: nuevas,
-      })
-      .eq("id", productoEditando.id)
-
-    obtenerProductos()
-  }
-
-  const moverImagen = async (
-    index: number,
-    direccion: "arriba" | "abajo"
-  ) => {
-
-    let imgs = [...productoEditando.imagenes]
-
-    if (
-      direccion === "arriba" &&
-      index > 0
-    ) {
-
-      ;[
-        imgs[index - 1],
-        imgs[index]
-      ] = [
-        imgs[index],
-        imgs[index - 1]
-      ]
-    }
-
-    if (
-      direccion === "abajo" &&
-      index < imgs.length - 1
-    ) {
-
-      ;[
-        imgs[index + 1],
-        imgs[index]
-      ] = [
-        imgs[index],
-        imgs[index + 1]
-      ]
-    }
-
-    setProductoEditando({
-      ...productoEditando,
-      imagenes: imgs,
-    })
-
-    await supabase
-      .from("productos")
-      .update({
-        imagenes: imgs,
-      })
-      .eq("id", productoEditando.id)
-  }
-
-  const filtrados = productos.filter((p) => {
-
-    const coincideBusqueda =
-      p.nombre
-        .toLowerCase()
-        .includes(busqueda.toLowerCase())
-
-    const coincideCategoria =
-      filtroCategoria === "" ||
-      p.categoria === filtroCategoria
-
-    return (
-      coincideBusqueda &&
-      coincideCategoria
-    )
-  })
-
-  const inicio =
-    (pagina - 1) * productosPorPagina
-
-  const visibles =
-    filtrados.slice(
-      inicio,
-      inicio + productosPorPagina
-    )
+  }, [
+    productos,
+    busqueda,
+    filtroCategoria,
+  ])
 
   return (
 
-    <div className="min-h-screen bg-[#FFF9F7] p-4 md:p-10">
+    <div className="min-h-screen bg-[#FFF9F7]">
 
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
 
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
+        {/* HEADER */}
+
+        <div className="mb-10">
+
+          <h1 className="text-5xl md:text-7xl font-black text-cyan-500">
+            Productos
+          </h1>
+
+          <p className="text-gray-500 text-lg mt-3">
+            Administra tu catálogo premium
+          </p>
+
+        </div>
+
+        {/* FILTROS */}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
 
           <input
             type="text"
@@ -335,7 +202,8 @@ export default function ProductosPage() {
             onChange={(e) =>
               setBusqueda(e.target.value)
             }
-            className="flex-1 bg-white border border-[#F8D6D0] rounded-2xl p-4"
+            className="bg-white border border-[#F4D4CF]
+            rounded-2xl px-5 py-4 outline-none"
           />
 
           <select
@@ -343,7 +211,8 @@ export default function ProductosPage() {
             onChange={(e) =>
               setFiltroCategoria(e.target.value)
             }
-            className="bg-white border border-[#F8D6D0] rounded-2xl p-4"
+            className="bg-white border border-[#F4D4CF]
+            rounded-2xl px-5 py-4 outline-none"
           >
 
             <option value="">
@@ -351,25 +220,39 @@ export default function ProductosPage() {
             </option>
 
             {categorias.map((cat) => (
+
               <option
                 key={cat.id}
                 value={cat.nombre}
               >
                 {cat.nombre}
               </option>
+
             ))}
 
           </select>
 
+          <div className="bg-white border border-[#F4D4CF]
+          rounded-2xl px-5 py-4 flex items-center justify-center
+          font-bold text-cyan-500">
+
+            {productosFiltrados.length} productos
+
+          </div>
+
         </div>
 
-        <div className="bg-white rounded-3xl p-6 shadow-lg border border-[#F8D6D0] mb-10">
+        {/* FORM */}
 
-          <h1 className="text-4xl font-black text-[#20B8C9] mb-6">
+        <div className="bg-white rounded-[32px]
+        border border-[#F4D4CF]
+        shadow-sm p-6 md:p-8 mb-10">
+
+          <h2 className="text-3xl font-black text-cyan-500 mb-8">
             Crear producto
-          </h1>
+          </h2>
 
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
             <input
               type="text"
@@ -404,12 +287,14 @@ export default function ProductosPage() {
               </option>
 
               {categorias.map((cat) => (
+
                 <option
                   key={cat.id}
                   value={cat.nombre}
                 >
                   {cat.nombre}
                 </option>
+
               ))}
 
             </select>
@@ -439,52 +324,39 @@ export default function ProductosPage() {
               placeholder="Stock"
               value={stock}
               onChange={(e) =>
-                setStock(Number(e.target.value))
-              }
-              className="input-premium"
-            />
-
-            <input
-              type="text"
-              placeholder="Etiquetas separadas por coma"
-              value={etiquetas}
-              onChange={(e) =>
-                setEtiquetas(e.target.value)
-              }
-              className="input-premium"
-            />
-
-            <input
-              type="text"
-              placeholder="Badges separadas por coma"
-              value={badges}
-              onChange={(e) =>
-                setBadges(e.target.value)
+                setStock(e.target.value)
               }
               className="input-premium"
             />
 
           </div>
 
-          <div className="mt-6">
+          <textarea
+            placeholder="Etiquetas separadas por coma"
+            value={etiquetas}
+            onChange={(e) =>
+              setEtiquetas(e.target.value)
+            }
+            className="input-premium mt-5 min-h-[120px]"
+          />
 
-            <label className="flex items-center gap-3">
+          {/* DROPZONE */}
 
-              <input
-                type="checkbox"
-                checked={destacado}
-                onChange={(e) =>
-                  setDestacado(e.target.checked)
-                }
-              />
+          <label
+            className="mt-6 border-2 border-dashed
+            border-cyan-300 rounded-[28px]
+            p-10 flex flex-col items-center justify-center
+            text-center cursor-pointer hover:bg-cyan-50
+            transition block"
+          >
 
-              Producto destacado
+            <p className="text-2xl font-bold text-cyan-500">
+              Arrastra imágenes aquí
+            </p>
 
-            </label>
-
-          </div>
-
-          <div className="mt-6 border-2 border-dashed border-[#20B8C9] rounded-3xl p-10 bg-[#F7FFFF]">
+            <p className="text-gray-500 mt-2">
+              o haz click para subir
+            </p>
 
             <input
               type="file"
@@ -493,85 +365,178 @@ export default function ProductosPage() {
               onChange={(e) =>
                 setImagenes(e.target.files)
               }
+              className="hidden"
             />
 
-          </div>
+          </label>
+
+          {/* PREVIEW */}
+
+          {imagenes && (
+
+            <div className="grid
+            grid-cols-2 md:grid-cols-4
+            gap-4 mt-6">
+
+              {Array.from(imagenes).map((img, i) => (
+
+                <div
+                  key={i}
+                  className="aspect-square rounded-3xl overflow-hidden bg-[#F7F7F7]"
+                >
+
+                  <img
+                    src={URL.createObjectURL(img)}
+                    className="w-full h-full object-cover"
+                  />
+
+                </div>
+
+              ))}
+
+            </div>
+
+          )}
 
           <button
             onClick={guardarProducto}
-            className="mt-6 bg-[#20B8C9] hover:bg-[#18AFC4] text-white px-8 py-4 rounded-2xl font-bold"
+            disabled={loading}
+            className="mt-8 bg-cyan-500 hover:bg-cyan-600
+            text-white px-8 py-5 rounded-2xl
+            font-bold text-lg transition"
           >
-            Guardar producto
+
+            {loading
+              ? "Guardando..."
+              : "Guardar producto"}
+
           </button>
 
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* GRID PRODUCTOS */}
 
-          {visibles.map((producto) => (
+        <div className="grid
+        grid-cols-1
+        sm:grid-cols-2
+        lg:grid-cols-3
+        xl:grid-cols-4
+        gap-8">
+
+          {productosFiltrados.map((producto) => (
 
             <div
               key={producto.id}
-              className="bg-white rounded-3xl overflow-hidden shadow-lg border border-[#F8D6D0]"
+              className="bg-white rounded-[32px]
+              overflow-hidden border border-[#F4D4CF]
+              shadow-sm hover:shadow-xl
+              transition"
             >
 
-              <div className="relative">
+              {/* IMAGEN */}
+
+              <div className="aspect-square bg-[#F8F8F8]">
 
                 <img
                   src={
-                    producto.imagenes?.[0]
+                    producto.imagenes?.[0] ||
+                    "/placeholder.jpg"
                   }
-                  className="w-full h-64 object-cover hover:scale-105 transition"
+                  className="w-full h-full object-cover"
                 />
-
-                {producto.destacado && (
-
-                  <div className="absolute top-3 left-3 bg-yellow-400 text-black px-3 py-1 rounded-full text-xs font-bold">
-                    DESTACADO
-                  </div>
-
-                )}
 
               </div>
 
-              <div className="p-5">
+              {/* THUMBS */}
 
-                <h2 className="text-2xl font-black text-[#20B8C9]">
-                  {producto.nombre}
-                </h2>
+              {producto.imagenes?.length > 1 && (
 
-                <p className="text-gray-500">
-                  {producto.categoria}
-                </p>
+                <div className="flex gap-2 p-3 overflow-x-auto">
 
-                <p className="text-3xl font-black mt-3">
-                  ${producto.precio}
-                </p>
+                  {producto.imagenes.map(
+                    (img: string, i: number) => (
 
-                <div className="mt-3 flex flex-wrap gap-2">
+                    <img
+                      key={i}
+                      src={img}
+                      className="w-16 h-16 rounded-xl object-cover border"
+                    />
 
-                  {producto.badges?.map(
-                    (badge: string, i: number) => (
+                  ))}
 
-                      <span
-                        key={i}
-                        className="bg-pink-200 text-pink-800 px-3 py-1 rounded-full text-xs"
-                      >
-                        {badge}
-                      </span>
+                </div>
 
-                    )
+              )}
+
+              {/* INFO */}
+
+              <div className="p-6">
+
+                <div className="flex items-start justify-between gap-3">
+
+                  <div>
+
+                    <p className="text-sm text-pink-400 font-bold uppercase">
+                      {producto.categoria}
+                    </p>
+
+                    <h3 className="text-3xl font-black text-cyan-500 mt-2">
+                      {producto.nombre}
+                    </h3>
+
+                  </div>
+
+                  {producto.stock <= 5 && (
+
+                    <span className="bg-red-100 text-red-500
+                    px-3 py-1 rounded-full text-xs font-bold">
+                      STOCK BAJO
+                    </span>
+
                   )}
 
                 </div>
 
-                <div className="flex gap-3 mt-6">
+                <p className="text-gray-500 mt-3">
+                  {producto.medidas}
+                </p>
+
+                <p className="text-4xl font-black text-[#F08C8C] mt-5">
+                  ${producto.precio}
+                </p>
+
+                {/* TAGS */}
+
+                {producto.etiquetas && (
+
+                  <div className="flex flex-wrap gap-2 mt-5">
+
+                    {producto.etiquetas
+                      .split(",")
+                      .map((tag: string, i: number) => (
+
+                      <span
+                        key={i}
+                        className="bg-[#FFF0B8]
+                        text-gray-700 px-3 py-1
+                        rounded-full text-sm"
+                      >
+                        #{tag.trim()}
+                      </span>
+
+                    ))}
+
+                  </div>
+
+                )}
+
+                {/* BOTONES */}
+
+                <div className="grid grid-cols-2 gap-3 mt-8">
 
                   <button
-                    onClick={() =>
-                      abrirEditar(producto)
-                    }
-                    className="flex-1 bg-[#20B8C9] text-white py-3 rounded-2xl font-bold"
+                    className="bg-cyan-500 hover:bg-cyan-600
+                    text-white rounded-2xl py-4 font-bold"
                   >
                     Editar
                   </button>
@@ -580,7 +545,8 @@ export default function ProductosPage() {
                     onClick={() =>
                       eliminarProducto(producto.id)
                     }
-                    className="flex-1 bg-red-400 text-white py-3 rounded-2xl font-bold"
+                    className="bg-red-400 hover:bg-red-500
+                    text-white rounded-2xl py-4 font-bold"
                   >
                     Eliminar
                   </button>
@@ -595,137 +561,7 @@ export default function ProductosPage() {
 
         </div>
 
-        <div className="flex justify-center gap-3 mt-10">
-
-          <button
-            onClick={() =>
-              setPagina(pagina - 1)
-            }
-            disabled={pagina === 1}
-            className="px-5 py-3 rounded-2xl bg-white border"
-          >
-            ←
-          </button>
-
-          <button
-            onClick={() =>
-              setPagina(pagina + 1)
-            }
-            disabled={
-              inicio + productosPorPagina >=
-              filtrados.length
-            }
-            className="px-5 py-3 rounded-2xl bg-white border"
-          >
-            →
-          </button>
-
-        </div>
-
       </div>
-
-      {modalEditar && (
-
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 overflow-auto">
-
-          <div className="bg-white rounded-3xl p-6 max-w-5xl w-full">
-
-            <div className="flex justify-between mb-6">
-
-              <h2 className="text-3xl font-black text-[#20B8C9]">
-                Editar producto
-              </h2>
-
-              <button
-                onClick={() =>
-                  setModalEditar(false)
-                }
-              >
-                ✕
-              </button>
-
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-
-              {productoEditando?.imagenes?.map(
-                (img: string, index: number) => (
-
-                  <div
-                    key={index}
-                    className="relative"
-                  >
-
-                    <img
-                      src={img}
-                      className="w-full h-72 object-cover rounded-3xl"
-                    />
-
-                    <div className="absolute top-3 right-3 flex gap-2">
-
-                      <button
-                        onClick={() =>
-                          moverImagen(
-                            index,
-                            "arriba"
-                          )
-                        }
-                        className="bg-white rounded-full w-10 h-10"
-                      >
-                        ↑
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          moverImagen(
-                            index,
-                            "abajo"
-                          )
-                        }
-                        className="bg-white rounded-full w-10 h-10"
-                      >
-                        ↓
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          eliminarImagen(index)
-                        }
-                        className="bg-red-500 text-white rounded-full w-10 h-10"
-                      >
-                        ✕
-                      </button>
-
-                    </div>
-
-                  </div>
-
-                )
-              )}
-
-            </div>
-
-            <input
-              type="file"
-              multiple
-              className="mt-6"
-              onChange={(e) =>
-                setImagenes(e.target.files)
-              }
-            />
-
-            <button
-              onClick={actualizarProducto}
-              className="mt-6 bg-[#20B8C9] text-white px-8 py-4 rounded-2xl font-bold"
-            >
-              Guardar cambios
-            </button>
-
-          </div>
-
-        </div>
-
-      )}
 
     </div>
   )
