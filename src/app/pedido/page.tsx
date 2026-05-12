@@ -445,7 +445,6 @@ ${contenido}
 >
   Entregado
 </button>
-                  </button>
 
                   <button
                     onClick={() =>
