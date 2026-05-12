@@ -651,10 +651,11 @@ ${contenido}
         Guardar cambios
       </button>
 
+      </div>
+
     </div>
 
- 
-)}
+  )}
     </div>
   )
 }
