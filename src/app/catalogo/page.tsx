@@ -3,6 +3,15 @@
 import { useEffect, useState } from "react"
 import { supabase } from "../../lib/supabase"
 
+const limpiarMedidas = (valor: string) =>
+  valor.replace(/\s*cm\s*$/i, "").trim()
+
+const mostrarMedidas = (valor?: string) => {
+  const medidas = limpiarMedidas(String(valor || ""))
+
+  return medidas ? `${medidas} cm` : ""
+}
+
 export default function CatalogoPage() {
 
   const [productos, setProductos] = useState<any[]>([])
@@ -115,6 +124,9 @@ export default function CatalogoPage() {
         ...carrito,
         {
           ...producto,
+          precio:
+            producto.precio_menudeo ??
+            producto.precio,
           cantidad: 1,
         },
       ])
@@ -277,6 +289,14 @@ export default function CatalogoPage() {
         {productosFiltrados.map(
           (producto) => {
 
+            const precioMenudeo =
+              producto.precio_menudeo ??
+              producto.precio
+
+            const precioMayoreo =
+              producto.precio_mayoreo ??
+              producto.precio
+
             const itemCarrito =
               carrito.find(
                 (item) =>
@@ -353,12 +373,26 @@ export default function CatalogoPage() {
                   </h2>
 
                   <p className="text-gray-500 mt-3 text-sm md:text-base">
-                    {producto.medidas}
+                    {mostrarMedidas(producto.medidas)}
                   </p>
 
-                  <p className="text-3xl md:text-4xl font-black text-[#F49B93] mt-5">
-                    ${producto.precio}
-                  </p>
+                  <div className="mt-5 space-y-1">
+
+                    <p className="text-3xl md:text-4xl font-black text-[#F49B93]">
+                      Menudeo ${precioMenudeo}
+                    </p>
+
+                    <p className="text-xl md:text-2xl font-black text-[#20B8C9]">
+                      Mayoreo ${precioMayoreo}
+                    </p>
+
+                    {producto.modalidad && (
+                      <p className="inline-flex mt-2 rounded-full bg-[#FFE1EC] px-3 py-1 text-xs font-black uppercase text-pink-500">
+                        {producto.modalidad}
+                      </p>
+                    )}
+
+                  </div>
 
                   {itemCarrito ? (
 

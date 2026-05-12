@@ -3,13 +3,31 @@
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "../../../lib/supabase"
 
+const MODALIDADES = [
+  "Blanca",
+  "Pintada",
+  "Kit",
+  "Evento",
+]
+
+const limpiarMedidas = (valor: string) =>
+  valor.replace(/\s*cm\s*$/i, "").trim()
+
+const mostrarMedidas = (valor?: string) => {
+  const medidas = limpiarMedidas(String(valor || ""))
+
+  return medidas ? `${medidas} cm` : ""
+}
+
 export default function ProductosPage() {
 
   const [productos, setProductos] = useState<any[]>([])
   const [categorias, setCategorias] = useState<any[]>([])
 
   const [nombre, setNombre] = useState("")
-  const [precio, setPrecio] = useState("")
+  const [precioMenudeo, setPrecioMenudeo] = useState("")
+  const [precioMayoreo, setPrecioMayoreo] = useState("")
+  const [modalidad, setModalidad] = useState("")
   const [categoria, setCategoria] = useState("")
   const [medidas, setMedidas] = useState("")
   const [sku, setSku] = useState("")
@@ -83,9 +101,12 @@ export default function ProductosPage() {
           .insert([
             {
               nombre,
-              precio: Number(precio),
+              precio: Number(precioMenudeo),
+              precio_menudeo: Number(precioMenudeo),
+              precio_mayoreo: Number(precioMayoreo),
+              modalidad,
               categoria,
-              medidas,
+              medidas: limpiarMedidas(medidas),
               sku,
               stock,
               etiquetas:
@@ -107,7 +128,9 @@ export default function ProductosPage() {
       alert("Producto guardado")
 
       setNombre("")
-      setPrecio("")
+      setPrecioMenudeo("")
+      setPrecioMayoreo("")
+      setModalidad("")
       setCategoria("")
       setMedidas("")
       setSku("")
@@ -170,13 +193,46 @@ export default function ProductosPage() {
 
           <input
             type="number"
-            placeholder="Precio"
-            value={precio}
+            placeholder="Precio menudeo"
+            value={precioMenudeo}
             onChange={(e) =>
-              setPrecio(e.target.value)
+              setPrecioMenudeo(e.target.value)
             }
             className="input-premium"
           />
+
+          <input
+            type="number"
+            placeholder="Precio mayoreo"
+            value={precioMayoreo}
+            onChange={(e) =>
+              setPrecioMayoreo(e.target.value)
+            }
+            className="input-premium"
+          />
+
+          <select
+            value={modalidad}
+            onChange={(e) =>
+              setModalidad(e.target.value)
+            }
+            className="input-premium"
+          >
+
+            <option value="">
+              Selecciona modalidad
+            </option>
+
+            {MODALIDADES.map((opcion) => (
+              <option
+                key={opcion}
+                value={opcion}
+              >
+                {opcion}
+              </option>
+            ))}
+
+          </select>
 
           <select
             value={categoria}
@@ -201,15 +257,23 @@ export default function ProductosPage() {
 
           </select>
 
-          <input
-            type="text"
-            placeholder="Medidas"
-            value={medidas}
-            onChange={(e) =>
-              setMedidas(e.target.value)
-            }
-            className="input-premium"
-          />
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Medidas"
+              value={medidas}
+              onChange={(e) =>
+                setMedidas(
+                  limpiarMedidas(e.target.value)
+                )
+              }
+              className="input-premium pr-14"
+            />
+
+            <span className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-400 font-bold pointer-events-none">
+              cm
+            </span>
+          </div>
 
           <input
             type="text"
@@ -350,12 +414,26 @@ export default function ProductosPage() {
               </h3>
 
               <p className="text-zinc-500 mt-2">
-                {producto.medidas}
+                {mostrarMedidas(producto.medidas)}
               </p>
 
-              <p className="text-5xl font-black text-rose-300 mt-5">
-                ${producto.precio}
-              </p>
+              <div className="mt-5 space-y-2">
+
+                <p className="text-4xl font-black text-rose-300">
+                  Menudeo ${producto.precio_menudeo ?? producto.precio}
+                </p>
+
+                <p className="text-2xl font-black text-cyan-500">
+                  Mayoreo ${producto.precio_mayoreo ?? producto.precio}
+                </p>
+
+                {producto.modalidad && (
+                  <p className="inline-flex mt-1 bg-pink-100 text-pink-500 px-3 py-1 rounded-full text-sm font-black uppercase">
+                    {producto.modalidad}
+                  </p>
+                )}
+
+              </div>
 
               {(producto.etiquetas?.length ?? 0) > 0 && (
 
@@ -380,7 +458,20 @@ export default function ProductosPage() {
 
                 <button
                   onClick={() =>
-                    setProductoEditando(producto)
+                    setProductoEditando({
+                      ...producto,
+                      precio_menudeo:
+                        producto.precio_menudeo ??
+                        producto.precio ??
+                        "",
+                      precio_mayoreo:
+                        producto.precio_mayoreo ?? "",
+                      modalidad:
+                        producto.modalidad ?? "",
+                      medidas: limpiarMedidas(
+                        String(producto.medidas || "")
+                      ),
+                    })
                   }
                   className="bg-cyan-500 hover:bg-cyan-600 text-white py-4 rounded-2xl font-black transition"
                 >
@@ -446,20 +537,74 @@ export default function ProductosPage() {
 
   <div>
     <label className="block text-sm font-semibold text-zinc-500 mb-2">
-      Precio
+      Precio menudeo
     </label>
 
     <input
       type="number"
-      value={productoEditando.precio}
+      value={
+        productoEditando.precio_menudeo ??
+        productoEditando.precio ??
+        ""
+      }
       onChange={(e) =>
         setProductoEditando({
           ...productoEditando,
-          precio: e.target.value,
+          precio_menudeo: e.target.value,
         })
       }
       className="input-premium"
     />
+  </div>
+
+  <div>
+    <label className="block text-sm font-semibold text-zinc-500 mb-2">
+      Precio mayoreo
+    </label>
+
+    <input
+      type="number"
+      value={productoEditando.precio_mayoreo ?? ""}
+      onChange={(e) =>
+        setProductoEditando({
+          ...productoEditando,
+          precio_mayoreo: e.target.value,
+        })
+      }
+      className="input-premium"
+    />
+  </div>
+
+  <div>
+    <label className="block text-sm font-semibold text-zinc-500 mb-2">
+      Modalidad
+    </label>
+
+    <select
+      value={productoEditando.modalidad ?? ""}
+      onChange={(e) =>
+        setProductoEditando({
+          ...productoEditando,
+          modalidad: e.target.value,
+        })
+      }
+      className="input-premium"
+    >
+
+      <option value="">
+        Selecciona modalidad
+      </option>
+
+      {MODALIDADES.map((opcion) => (
+        <option
+          key={opcion}
+          value={opcion}
+        >
+          {opcion}
+        </option>
+      ))}
+
+    </select>
   </div>
 
   <div>
@@ -499,17 +644,25 @@ export default function ProductosPage() {
       Medidas
     </label>
 
-    <input
-      type="text"
-      value={productoEditando.medidas}
-      onChange={(e) =>
-        setProductoEditando({
-          ...productoEditando,
-          medidas: e.target.value,
-        })
-      }
-      className="input-premium"
-    />
+    <div className="relative">
+      <input
+        type="text"
+        value={limpiarMedidas(
+          String(productoEditando.medidas || "")
+        )}
+        onChange={(e) =>
+          setProductoEditando({
+            ...productoEditando,
+            medidas: limpiarMedidas(e.target.value),
+          })
+        }
+        className="input-premium pr-14"
+      />
+
+      <span className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-400 font-bold pointer-events-none">
+        cm
+      </span>
+    </div>
   </div>
 
   <div>
@@ -696,7 +849,23 @@ export default function ProductosPage() {
       ),
 
       precio: Number(
-        productoEditando.precio || 0
+        productoEditando.precio_menudeo ??
+        productoEditando.precio ??
+        0
+      ),
+
+      precio_menudeo: Number(
+        productoEditando.precio_menudeo ??
+        productoEditando.precio ??
+        0
+      ),
+
+      precio_mayoreo: Number(
+        productoEditando.precio_mayoreo || 0
+      ),
+
+      modalidad: String(
+        productoEditando.modalidad || ""
       ),
 
       categoria: String(
@@ -704,7 +873,9 @@ export default function ProductosPage() {
       ),
 
       medidas: String(
-        productoEditando.medidas || ""
+        limpiarMedidas(
+          String(productoEditando.medidas || "")
+        )
       ),
 
       sku: String(
