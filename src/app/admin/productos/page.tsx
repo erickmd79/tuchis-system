@@ -426,110 +426,154 @@ export default function ProductosPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-              <input
-                type="text"
-                value={productoEditando.nombre}
-                onChange={(e) =>
-                  setProductoEditando({
-                    ...productoEditando,
-                    nombre: e.target.value,
-                  })
-                }
-                className="input-premium"
-              />
+  <div>
+    <label className="block text-sm font-semibold text-zinc-500 mb-2">
+      Nombre
+    </label>
 
-              <input
-                type="number"
-                value={productoEditando.precio}
-                onChange={(e) =>
-                  setProductoEditando({
-                    ...productoEditando,
-                    precio: e.target.value,
-                  })
-                }
-                className="input-premium"
-              />
+    <input
+      type="text"
+      value={productoEditando.nombre}
+      onChange={(e) =>
+        setProductoEditando({
+          ...productoEditando,
+          nombre: e.target.value,
+        })
+      }
+      className="input-premium"
+    />
+  </div>
 
-              <select
-                value={productoEditando.categoria}
-                onChange={(e) =>
-                  setProductoEditando({
-                    ...productoEditando,
-                    categoria: e.target.value,
-                  })
-                }
-                className="input-premium"
-              >
+  <div>
+    <label className="block text-sm font-semibold text-zinc-500 mb-2">
+      Precio
+    </label>
 
-                <option value="">
-                  Selecciona categoría
-                </option>
+    <input
+      type="number"
+      value={productoEditando.precio}
+      onChange={(e) =>
+        setProductoEditando({
+          ...productoEditando,
+          precio: e.target.value,
+        })
+      }
+      className="input-premium"
+    />
+  </div>
 
-                {categorias.map((cat: any) => (
-                  <option
-                    key={cat.id}
-                    value={cat.nombre}
-                  >
-                    {cat.nombre}
-                  </option>
-                ))}
+  <div>
+    <label className="block text-sm font-semibold text-zinc-500 mb-2">
+      Categoría
+    </label>
 
-              </select>
+    <select
+      value={productoEditando.categoria}
+      onChange={(e) =>
+        setProductoEditando({
+          ...productoEditando,
+          categoria: e.target.value,
+        })
+      }
+      className="input-premium"
+    >
 
-              <input
-                type="text"
-                value={productoEditando.medidas}
-                onChange={(e) =>
-                  setProductoEditando({
-                    ...productoEditando,
-                    medidas: e.target.value,
-                  })
-                }
-                className="input-premium"
-              />
+      <option value="">
+        Selecciona categoría
+      </option>
 
-              <input
-                type="text"
-                value={productoEditando.sku || ""}
-                onChange={(e) =>
-                  setProductoEditando({
-                    ...productoEditando,
-                    sku: e.target.value,
-                  })
-                }
-                className="input-premium"
-              />
+      {categorias.map((cat: any) => (
+        <option
+          key={cat.id}
+          value={cat.nombre}
+        >
+          {cat.nombre}
+        </option>
+      ))}
 
-              <input
-                type="number"
-                value={productoEditando.stock || 0}
-                onChange={(e) =>
-                  setProductoEditando({
-                    ...productoEditando,
-                    stock: Number(e.target.value),
-                  })
-                }
-                className="input-premium"
-              />
+    </select>
+  </div>
 
-            </div>
+  <div>
+    <label className="block text-sm font-semibold text-zinc-500 mb-2">
+      Medidas
+    </label>
 
-            <textarea
-              value={
-                productoEditando.etiquetas
-                  ? productoEditando.etiquetas.join(", ")
-                  : ""
-              }
-              onChange={(e) =>
-                setProductoEditando({
-                  ...productoEditando,
-                  etiquetas: e.target.value
-                    .split(",")
-                    .map((t) => t.trim()),
-                })
-              }
-              className="input-premium min-h-[120px] mt-6"
-            />
+    <input
+      type="text"
+      value={productoEditando.medidas}
+      onChange={(e) =>
+        setProductoEditando({
+          ...productoEditando,
+          medidas: e.target.value,
+        })
+      }
+      className="input-premium"
+    />
+  </div>
+
+  <div>
+    <label className="block text-sm font-semibold text-zinc-500 mb-2">
+      SKU
+    </label>
+
+    <input
+      type="text"
+      value={productoEditando.sku || ""}
+      onChange={(e) =>
+        setProductoEditando({
+          ...productoEditando,
+          sku: e.target.value,
+        })
+      }
+      className="input-premium"
+    />
+  </div>
+
+  <div>
+    <label className="block text-sm font-semibold text-zinc-500 mb-2">
+      Stock
+    </label>
+
+    <input
+      type="number"
+      value={productoEditando.stock || 0}
+      onChange={(e) =>
+        setProductoEditando({
+          ...productoEditando,
+          stock: Number(e.target.value),
+        })
+      }
+      className="input-premium"
+    />
+  </div>
+
+</div>
+
+            <div className="mt-6">
+
+  <label className="block text-sm font-semibold text-zinc-500 mb-2">
+    Etiquetas
+  </label>
+
+  <textarea
+    value={
+      productoEditando.etiquetas
+        ? productoEditando.etiquetas.join(", ")
+        : ""
+    }
+    onChange={(e) =>
+      setProductoEditando({
+        ...productoEditando,
+        etiquetas: e.target.value
+          .split(",")
+          .map((t) => t.trim()),
+      })
+    }
+    className="input-premium min-h-[120px]"
+  />
+
+</div>
 
             <div className="mt-8">
 
