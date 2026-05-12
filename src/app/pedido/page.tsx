@@ -202,9 +202,31 @@ ${contenido}
 
     <div className="space-y-8 px-4 md:px-8 py-6 max-w-7xl mx-auto">
 
-      <h1 className="page-title">
-        Pedidos
-      </h1>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+  <h1 className="page-title">
+    Pedidos
+  </h1>
+
+  <button
+    onClick={() => window.location.href = "/catalogo"}
+    className="
+      bg-cyan-500
+      hover:bg-cyan-600
+      text-white
+      px-6
+      py-4
+      rounded-2xl
+      font-black
+      text-lg
+      shadow-lg
+      transition
+    "
+  >
+    + Nuevo pedido
+  </button>
+
+</div>
 
       <div className="section-card">
 
