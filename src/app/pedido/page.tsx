@@ -435,7 +435,7 @@ ${contenido}
     )
   }
   className={`
-    py-3 rounded-2xl font-bold text-white
+    py-3 rounded-2xl font-bold text-black
     ${
       pedido.estado === "entregado"
         ? "bg-[#CDB4DB]"
