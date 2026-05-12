@@ -1,7 +1,6 @@
 alter table public.productos
   add column if not exists precio_menudeo numeric,
-  add column if not exists precio_mayoreo numeric,
-  add column if not exists modalidad text;
+  add column if not exists precio_mayoreo numeric;
 
 update public.productos
 set precio_menudeo = precio

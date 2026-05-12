@@ -3,6 +3,13 @@
 import { useEffect, useState } from "react"
 import { supabase } from "../../lib/supabase"
 
+const MODALIDADES = [
+  "Blanca",
+  "Pintada",
+  "Kit",
+  "Evento",
+]
+
 export default function Page() {
 
   const [carrito, setCarrito] = useState<any[]>([])
@@ -45,6 +52,29 @@ export default function Page() {
     0
   )
 
+  const actualizarModalidadCarrito = (
+    index: number,
+    modalidad: string
+  ) => {
+
+    const actualizado =
+      carrito.map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              modalidad,
+            }
+          : item
+      )
+
+    setCarrito(actualizado)
+
+    localStorage.setItem(
+      "carrito",
+      JSON.stringify(actualizado)
+    )
+  }
+
   const guardarPedido = async (pedido: any) => {
 
     const { error } =
@@ -62,6 +92,7 @@ export default function Page() {
                 nombre: p.nombre,
                 precio: p.precio,
                 cantidad: p.cantidad,
+                modalidad: p.modalidad,
               })),
 
             total: pedido.total,
@@ -85,6 +116,23 @@ export default function Page() {
     if (!nombre || !telefono || !fecha) {
 
       alert("Faltan datos del cliente")
+      return
+    }
+
+    if (carrito.length === 0) {
+
+      alert("Agrega productos al pedido")
+      return
+    }
+
+    const faltaModalidad =
+      carrito.some(
+        (item) => !item.modalidad
+      )
+
+    if (faltaModalidad) {
+
+      alert("Selecciona la modalidad de todos los productos")
       return
     }
 
@@ -157,7 +205,7 @@ export default function Page() {
       pedido.productos
         .map(
           (p: any) =>
-            `• ${p.nombre} x${p.cantidad}`
+            `• ${p.nombre} (${p.modalidad || "Sin modalidad"}) x${p.cantidad}`
         )
         .join("%0A")
 
@@ -193,6 +241,7 @@ export default function Page() {
         .map(
           (p: any) =>
             `${p.nombre}
+             ${p.modalidad || "Sin modalidad"}
              x${p.cantidad}
              $${p.precio}`
         )
@@ -321,6 +370,32 @@ ${contenido}
                   ${item.precio}
                 </p>
 
+                <select
+                  value={item.modalidad || ""}
+                  onChange={(e) =>
+                    actualizarModalidadCarrito(
+                      index,
+                      e.target.value
+                    )
+                  }
+                  className="input-premium mt-4"
+                >
+
+                  <option value="">
+                    Selecciona modalidad
+                  </option>
+
+                  {MODALIDADES.map((opcion) => (
+                    <option
+                      key={opcion}
+                      value={opcion}
+                    >
+                      {opcion}
+                    </option>
+                  ))}
+
+                </select>
+
               </div>
             ))}
 
@@ -381,6 +456,12 @@ ${contenido}
                           className="text-zinc-700"
                         >
                           • {p.nombre}
+                          {p.modalidad && (
+                            <>
+                              {" - "}
+                              {p.modalidad}
+                            </>
+                          )}
                           {" x "}
                           {p.cantidad}
                         </div>

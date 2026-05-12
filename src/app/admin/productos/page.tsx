@@ -3,13 +3,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "../../../lib/supabase"
 
-const MODALIDADES = [
-  "Blanca",
-  "Pintada",
-  "Kit",
-  "Evento",
-]
-
 const limpiarMedidas = (valor: string) =>
   valor.replace(/\s*cm\s*$/i, "").trim()
 
@@ -27,7 +20,6 @@ export default function ProductosPage() {
   const [nombre, setNombre] = useState("")
   const [precioMenudeo, setPrecioMenudeo] = useState("")
   const [precioMayoreo, setPrecioMayoreo] = useState("")
-  const [modalidad, setModalidad] = useState("")
   const [categoria, setCategoria] = useState("")
   const [medidas, setMedidas] = useState("")
   const [sku, setSku] = useState("")
@@ -104,7 +96,6 @@ export default function ProductosPage() {
               precio: Number(precioMenudeo),
               precio_menudeo: Number(precioMenudeo),
               precio_mayoreo: Number(precioMayoreo),
-              modalidad,
               categoria,
               medidas: limpiarMedidas(medidas),
               sku,
@@ -130,7 +121,6 @@ export default function ProductosPage() {
       setNombre("")
       setPrecioMenudeo("")
       setPrecioMayoreo("")
-      setModalidad("")
       setCategoria("")
       setMedidas("")
       setSku("")
@@ -210,29 +200,6 @@ export default function ProductosPage() {
             }
             className="input-premium"
           />
-
-          <select
-            value={modalidad}
-            onChange={(e) =>
-              setModalidad(e.target.value)
-            }
-            className="input-premium"
-          >
-
-            <option value="">
-              Selecciona modalidad
-            </option>
-
-            {MODALIDADES.map((opcion) => (
-              <option
-                key={opcion}
-                value={opcion}
-              >
-                {opcion}
-              </option>
-            ))}
-
-          </select>
 
           <select
             value={categoria}
@@ -427,12 +394,6 @@ export default function ProductosPage() {
                   Mayoreo ${producto.precio_mayoreo ?? producto.precio}
                 </p>
 
-                {producto.modalidad && (
-                  <p className="inline-flex mt-1 bg-pink-100 text-pink-500 px-3 py-1 rounded-full text-sm font-black uppercase">
-                    {producto.modalidad}
-                  </p>
-                )}
-
               </div>
 
               {(producto.etiquetas?.length ?? 0) > 0 && (
@@ -466,8 +427,6 @@ export default function ProductosPage() {
                         "",
                       precio_mayoreo:
                         producto.precio_mayoreo ?? "",
-                      modalidad:
-                        producto.modalidad ?? "",
                       medidas: limpiarMedidas(
                         String(producto.medidas || "")
                       ),
@@ -573,38 +532,6 @@ export default function ProductosPage() {
       }
       className="input-premium"
     />
-  </div>
-
-  <div>
-    <label className="block text-sm font-semibold text-zinc-500 mb-2">
-      Modalidad
-    </label>
-
-    <select
-      value={productoEditando.modalidad ?? ""}
-      onChange={(e) =>
-        setProductoEditando({
-          ...productoEditando,
-          modalidad: e.target.value,
-        })
-      }
-      className="input-premium"
-    >
-
-      <option value="">
-        Selecciona modalidad
-      </option>
-
-      {MODALIDADES.map((opcion) => (
-        <option
-          key={opcion}
-          value={opcion}
-        >
-          {opcion}
-        </option>
-      ))}
-
-    </select>
   </div>
 
   <div>
@@ -862,10 +789,6 @@ export default function ProductosPage() {
 
       precio_mayoreo: Number(
         productoEditando.precio_mayoreo || 0
-      ),
-
-      modalidad: String(
-        productoEditando.modalidad || ""
       ),
 
       categoria: String(

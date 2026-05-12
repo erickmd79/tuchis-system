@@ -127,6 +127,7 @@ export default function CatalogoPage() {
           precio:
             producto.precio_menudeo ??
             producto.precio,
+          modalidad: "",
           cantidad: 1,
         },
       ])
@@ -386,12 +387,6 @@ export default function CatalogoPage() {
                       Mayoreo ${precioMayoreo}
                     </p>
 
-                    {producto.modalidad && (
-                      <p className="inline-flex mt-2 rounded-full bg-[#FFE1EC] px-3 py-1 text-xs font-black uppercase text-pink-500">
-                        {producto.modalidad}
-                      </p>
-                    )}
-
                   </div>
 
                   {itemCarrito ? (
@@ -496,7 +491,7 @@ export default function CatalogoPage() {
               rounded-2xl font-black
               text-center text-lg"
             >
-              Ver pedido
+              Ver pedidos
             </a>
 
           </div>

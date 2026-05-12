@@ -27,7 +27,7 @@ export default function RootLayout({
           </Link>
 
           <Link href="/pedido">
-            Pedido
+            Pedidos
           </Link>
 
           <Link href="/admin">
