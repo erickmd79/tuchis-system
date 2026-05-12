@@ -7,6 +7,8 @@ export default function Page() {
 
   const [carrito, setCarrito] = useState<any[]>([])
   const [pedidos, setPedidos] = useState<any[]>([])
+  const [pedidoEditando, setPedidoEditando] =
+  useState<any>(null)
 
   const [nombre, setNombre] = useState("")
   const [telefono, setTelefono] = useState("")
@@ -114,6 +116,20 @@ export default function Page() {
     alert("Pedido guardado correctamente")
   }
 
+  const eliminarPedido = async (id: number) => {
+
+  const confirmar =
+    confirm("¿Eliminar pedido?")
+
+  if (!confirmar) return
+
+  await supabase
+    .from("pedidos")
+    .delete()
+    .eq("id", id)
+
+  obtenerPedidos()
+}
   const cambiarEstado = async (
     id: number,
     estado: string
@@ -448,6 +464,40 @@ ${contenido}
                     PDF
                   </button>
 
+                  <button
+  onClick={() =>
+    setPedidoEditando(pedido)
+  }
+  className="
+    bg-cyan-500
+    hover:bg-cyan-600
+    text-white
+    py-3
+    rounded-2xl
+    font-bold
+    transition
+  "
+>
+  Editar
+</button>
+
+<button
+  onClick={() =>
+    eliminarPedido(pedido.id)
+  }
+  className="
+    bg-red-500
+    hover:bg-red-600
+    text-white
+    py-3
+    rounded-2xl
+    font-bold
+    transition
+  "
+>
+  Eliminar
+</button>
+
                 </div>
 
               </div>
@@ -458,7 +508,153 @@ ${contenido}
         </div>
 
       </div>
+{pedidoEditando && (
 
+  <div className="
+    fixed inset-0 z-50
+    bg-black/50
+    backdrop-blur-sm
+    flex items-center justify-center
+    p-4
+  ">
+
+    <div className="
+      bg-white
+      w-full
+      max-w-3xl
+      rounded-[32px]
+      p-8
+      shadow-2xl
+      max-h-[90vh]
+      overflow-y-auto
+    ">
+
+      <div className="
+        flex items-center justify-between
+        mb-8
+      ">
+
+        <h2 className="
+          text-4xl
+          font-black
+          text-cyan-600
+        ">
+          Editar pedido
+        </h2>
+
+        <button
+          onClick={() =>
+            setPedidoEditando(null)
+          }
+          className="
+            text-4xl
+            text-zinc-400
+          "
+        >
+          ×
+        </button>
+
+      </div>
+
+      <div className="space-y-5">
+
+        <input
+          type="text"
+          value={pedidoEditando.cliente}
+          onChange={(e) =>
+            setPedidoEditando({
+              ...pedidoEditando,
+              cliente: e.target.value,
+            })
+          }
+          className="input-premium"
+        />
+
+        <input
+          type="text"
+          value={pedidoEditando.telefono}
+          onChange={(e) =>
+            setPedidoEditando({
+              ...pedidoEditando,
+              telefono: e.target.value,
+            })
+          }
+          className="input-premium"
+        />
+
+        <input
+          type="date"
+          value={pedidoEditando.fecha}
+          onChange={(e) =>
+            setPedidoEditando({
+              ...pedidoEditando,
+              fecha: e.target.value,
+            })
+          }
+          className="input-premium"
+        />
+
+        <textarea
+          value={pedidoEditando.notas || ""}
+          onChange={(e) =>
+            setPedidoEditando({
+              ...pedidoEditando,
+              notas: e.target.value,
+            })
+          }
+          className="
+            input-premium
+            min-h-[120px]
+          "
+        />
+
+      </div>
+
+      <button
+        onClick={async () => {
+
+          const { error } =
+            await supabase
+              .from("pedidos")
+              .update({
+                cliente:
+                  pedidoEditando.cliente,
+
+                telefono:
+                  pedidoEditando.telefono,
+
+                fecha:
+                  pedidoEditando.fecha,
+
+                notas:
+                  pedidoEditando.notas,
+              })
+              .eq("id", pedidoEditando.id)
+
+          if (error) {
+
+            alert("Error actualizando")
+            return
+          }
+
+          alert("Pedido actualizado")
+
+          setPedidoEditando(null)
+
+          obtenerPedidos()
+        }}
+        className="
+          btn-primary
+          mt-8
+        "
+      >
+        Guardar cambios
+      </button>
+
+    </div>
+
+ 
+)}
     </div>
   )
 }
