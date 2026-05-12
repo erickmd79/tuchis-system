@@ -439,7 +439,7 @@ ${contenido}
                       ${
                         pedido.estado === "entregado"
                           ? "bg-cyan-300"
-                          : "bg-zinc-100"
+                          : bg-[#CDB4DB]
                       }
                     `}
                   >
