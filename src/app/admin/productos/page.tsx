@@ -643,20 +643,48 @@ export default function ProductosPage() {
               <button
                 onClick={async () => {
 
-                  const { error } =
-                    await supabase
-                      .from("productos")
-                      .update({
-                        nombre: productoEditando.nombre,
-                        precio: productoEditando.precio,
-                        categoria: productoEditando.categoria,
-                        medidas: productoEditando.medidas,
-                        sku: productoEditando.sku,
-                        stock: productoEditando.stock,
-                        etiquetas: productoEditando.etiquetas,
-                        imagenes: productoEditando.imagenes,
-                      })
-                      .eq("id", productoEditando.id)
+                  const { data, error } =
+  await supabase
+    .from("productos")
+    .update({
+      nombre: String(
+        productoEditando.nombre || ""
+      ),
+
+      precio: Number(
+        productoEditando.precio || 0
+      ),
+
+      categoria: String(
+        productoEditando.categoria || ""
+      ),
+
+      medidas: String(
+        productoEditando.medidas || ""
+      ),
+
+      sku: String(
+        productoEditando.sku || ""
+      ),
+
+      stock: Number(
+        productoEditando.stock || 0
+      ),
+
+      etiquetas: Array.isArray(
+        productoEditando.etiquetas
+      )
+        ? productoEditando.etiquetas
+        : [],
+
+      imagenes: Array.isArray(
+        productoEditando.imagenes
+      )
+        ? productoEditando.imagenes
+        : [],
+    })
+    .eq("id", productoEditando.id)
+    .select()
 
                   if (error) {
                     console.log(error)
@@ -664,7 +692,8 @@ export default function ProductosPage() {
                     return
                   }
 
-                  alert("Producto actualizado")
+                  console.log(data)
+alert("Producto actualizado")
 
                   setProductoEditando(null)
 
