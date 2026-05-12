@@ -131,17 +131,25 @@ export default function Page() {
   obtenerPedidos()
 }
   const cambiarEstado = async (
-    id: number,
-    estado: string
-  ) => {
+  id: number,
+  estado: string
+) => {
 
-    await supabase
-      .from("pedidos")
-      .update({ estado })
-      .eq("id", id)
+  const { error } = await supabase
+    .from("pedidos")
+    .update({
+      estado,
+    })
+    .eq("id", id)
 
-    obtenerPedidos()
+  if (error) {
+    console.log(error)
+    alert("Error actualizando estado")
+    return
   }
+
+  await obtenerPedidos()
+}
 
   const enviarWhatsApp = (pedido: any) => {
 
@@ -611,45 +619,38 @@ ${contenido}
       </div>
 
       <button
-        onClick={async () => {
+  onClick={async () => {
 
-          const { error } =
-            await supabase
-              .from("pedidos")
-              .update({
-                cliente:
-                  pedidoEditando.cliente,
+    const { error } = await supabase
+      .from("pedidos")
+      .update({
+        cliente: pedidoEditando.cliente,
+        telefono: pedidoEditando.telefono,
+        fecha: pedidoEditando.fecha,
+        notas: pedidoEditando.notas,
+        total: pedidoEditando.total,
+      })
+      .eq("id", pedidoEditando.id)
 
-                telefono:
-                  pedidoEditando.telefono,
+    if (error) {
+      console.log(error)
+      alert("Error actualizando")
+      return
+    }
 
-                fecha:
-                  pedidoEditando.fecha,
+    alert("Pedido actualizado")
 
-                notas:
-                  pedidoEditando.notas,
-              })
-              .eq("id", pedidoEditando.id)
+    setPedidoEditando(null)
 
-          if (error) {
-
-            alert("Error actualizando")
-            return
-          }
-
-          alert("Pedido actualizado")
-
-          setPedidoEditando(null)
-
-          obtenerPedidos()
-        }}
-        className="
-          btn-primary
-          mt-8
-        "
-      >
-        Guardar cambios
-      </button>
+    await obtenerPedidos()
+  }}
+  className="
+    btn-primary
+    mt-8
+  "
+>
+  Guardar cambios
+</button>
 
       </div>
 
