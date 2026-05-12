@@ -427,23 +427,24 @@ ${contenido}
                     Pagado
                   </button>
 
-                  <button
-                    onClick={() =>
-                      cambiarEstado(
-                        pedido.id,
-                        "entregado"
-                      )
-                    }
-                    className={`
-                      py-3 rounded-2xl font-bold
-                      ${
-                        pedido.estado === "entregado"
-                          ? "bg-cyan-300"
-                          : bg-[#CDB4DB]
-                      }
-                    `}
-                  >
-                    Entregado
+                 <button
+  onClick={() =>
+    cambiarEstado(
+      pedido.id,
+      "entregado"
+    )
+  }
+  className={`
+    py-3 rounded-2xl font-bold text-white
+    ${
+      pedido.estado === "entregado"
+        ? "bg-[#CDB4DB]"
+        : "bg-gray-200 text-black"
+    }
+  `}
+>
+  Entregado
+</button>
                   </button>
 
                   <button
