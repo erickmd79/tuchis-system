@@ -409,56 +409,316 @@ export default function Page() {
     )
   }
 
-  const generarPDF = (pedido: any) => {
+ const generarPDF = (pedido: any) => {
 
-    const contenido =
+  const folio =
+    `TCH-${pedido.id}`
+
+  const fechaActual =
+    new Date().toLocaleDateString()
+
+  const productosHTML =
+    pedido.productos
+      .map(
+        (p: any) => `
+
+        <div style="
+          display:flex;
+          gap:20px;
+          align-items:center;
+          background:white;
+          border-radius:24px;
+          padding:20px;
+          margin-bottom:18px;
+          border:1px solid #F5D3CD;
+        ">
+
+          ${
+            p.imagen
+              ? `
+                <img
+                  src="${p.imagen}"
+                  style="
+                    width:90px;
+                    height:90px;
+                    object-fit:cover;
+                    border-radius:20px;
+                  "
+                />
+              `
+              : ""
+          }
+
+          <div style="flex:1;">
+
+            <h3 style="
+              margin:0;
+              color:#27B6C7;
+              font-size:24px;
+              font-weight:900;
+            ">
+              ${p.nombre}
+            </h3>
+
+            <p style="
+              margin:8px 0;
+              color:#666;
+              font-size:16px;
+            ">
+              ${p.modalidad || "Sin modalidad"}
+            </p>
+
+            <p style="
+              margin:0;
+              font-size:18px;
+              font-weight:bold;
+            ">
+              ${p.cantidad} x $${p.precio}
+            </p>
+
+          </div>
+
+        </div>
       `
-      PEDIDO TUCHIS
+      )
+      .join("")
 
-      Cliente:
-      ${pedido.cliente}
+  const ventana =
+    window.open("", "_blank")
 
-      Teléfono:
-      ${pedido.telefono}
+  if (!ventana) return
 
-      Fecha:
-      ${pedido.fecha}
+  ventana.document.write(`
 
-      -----------------------
+    <html>
 
-      ${pedido.productos
-        .map(
-          (p: any) =>
-            `${p.nombre}
-             ${p.modalidad || "Sin modalidad"}
-             x${p.cantidad}
-             $${p.precio}`
-        )
-        .join("\n\n")}
+      <head>
 
-      -----------------------
+        <title>
+          Pedido ${folio}
+        </title>
 
-      TOTAL:
-      $${pedido.total}
-      `
+      </head>
 
-    const ventana =
-      window.open("", "_blank")
-
-    if (!ventana) return
-
-    ventana.document.write(`
-      <pre style="
-        font-size:18px;
-        padding:40px;
-        font-family:sans-serif;
+      <body style="
+        margin:0;
+        padding:0;
+        background:#FFF7F5;
+        font-family:Arial, sans-serif;
       ">
-${contenido}
-      </pre>
-    `)
 
-    ventana.print()
-  }
+        <div style="
+          max-width:900px;
+          margin:auto;
+          padding:50px;
+        ">
+
+          <!-- HEADER -->
+
+          <div style="
+            background:linear-gradient(
+              135deg,
+              #27B6C7,
+              #F8B4C0
+            );
+
+            border-radius:40px;
+            padding:50px;
+            color:white;
+            margin-bottom:40px;
+          ">
+
+            <h1 style="
+              margin:0;
+              font-size:64px;
+              font-weight:900;
+            ">
+              TUCHIS
+            </h1>
+
+            <p style="
+              margin-top:10px;
+              font-size:24px;
+            ">
+              Pedido premium
+            </p>
+
+          </div>
+
+          <!-- INFO -->
+
+          <div style="
+            background:white;
+            border-radius:32px;
+            padding:35px;
+            margin-bottom:30px;
+            border:1px solid #F5D3CD;
+          ">
+
+            <div style="
+              display:grid;
+              grid-template-columns:
+                repeat(2,1fr);
+              gap:20px;
+            ">
+
+              <div>
+
+                <p style="
+                  color:#999;
+                  margin:0 0 8px 0;
+                ">
+                  Cliente
+                </p>
+
+                <h2 style="
+                  margin:0;
+                  color:#27B6C7;
+                ">
+                  ${pedido.cliente}
+                </h2>
+
+              </div>
+
+              <div>
+
+                <p style="
+                  color:#999;
+                  margin:0 0 8px 0;
+                ">
+                  Teléfono
+                </p>
+
+                <h2 style="margin:0;">
+                  ${pedido.telefono}
+                </h2>
+
+              </div>
+
+              <div>
+
+                <p style="
+                  color:#999;
+                  margin:0 0 8px 0;
+                ">
+                  Fecha
+                </p>
+
+                <h2 style="margin:0;">
+                  ${pedido.fecha}
+                </h2>
+
+              </div>
+
+              <div>
+
+                <p style="
+                  color:#999;
+                  margin:0 0 8px 0;
+                ">
+                  Folio
+                </p>
+
+                <h2 style="
+                  margin:0;
+                  color:#F59AA3;
+                ">
+                  ${folio}
+                </h2>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- PRODUCTOS -->
+
+          <div>
+
+            ${productosHTML}
+
+          </div>
+
+          <!-- TOTAL -->
+
+          <div style="
+            background:#27B6C7;
+            color:white;
+            border-radius:32px;
+            padding:40px;
+            margin-top:40px;
+            text-align:center;
+          ">
+
+            <p style="
+              margin:0;
+              font-size:24px;
+            ">
+              Total
+            </p>
+
+            <h2 style="
+              margin:10px 0 0 0;
+              font-size:64px;
+              font-weight:900;
+            ">
+              $${pedido.total}
+            </h2>
+
+          </div>
+
+          <!-- WHATSAPP -->
+
+          <div style="
+            text-align:center;
+            margin-top:40px;
+          ">
+
+            <a
+              href="
+                https://wa.me/52${pedido.telefono}
+              "
+              style="
+                display:inline-block;
+                background:#25D366;
+                color:white;
+                text-decoration:none;
+                padding:18px 32px;
+                border-radius:20px;
+                font-size:20px;
+                font-weight:bold;
+              "
+            >
+              WhatsApp
+            </a>
+
+          </div>
+
+          <!-- FOOTER -->
+
+          <div style="
+            text-align:center;
+            margin-top:50px;
+            color:#999;
+          ">
+
+            Generado el
+            ${fechaActual}
+
+          </div>
+
+        </div>
+
+      </body>
+
+    </html>
+  `)
+
+  ventana.document.close()
+
+  ventana.print()
+}
 
   return (
 
