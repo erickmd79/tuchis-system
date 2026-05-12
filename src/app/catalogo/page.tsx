@@ -12,6 +12,39 @@ const mostrarMedidas = (valor?: string) => {
   return medidas ? `${medidas} cm` : ""
 }
 
+const numero = (valor: any) =>
+  Number(valor || 0)
+
+const obtenerPrecioMenudeo = (producto: any) =>
+  numero(producto.precio_menudeo ?? producto.precio)
+
+const obtenerPrecioMayoreo = (producto: any) =>
+  numero(producto.precio_mayoreo ?? producto.precio)
+
+const obtenerMinimoMayoreo = (producto: any) =>
+  numero(producto.minimo_mayoreo)
+
+const obtenerPrecioPorCantidad = (
+  producto: any,
+  cantidad: number
+) => {
+  const minimoMayoreo =
+    obtenerMinimoMayoreo(producto)
+
+  const precioMayoreo =
+    obtenerPrecioMayoreo(producto)
+
+  if (
+    minimoMayoreo > 0 &&
+    cantidad >= minimoMayoreo &&
+    precioMayoreo > 0
+  ) {
+    return precioMayoreo
+  }
+
+  return obtenerPrecioMenudeo(producto)
+}
+
 export default function CatalogoPage() {
 
   const [productos, setProductos] = useState<any[]>([])
@@ -108,11 +141,20 @@ export default function CatalogoPage() {
         carrito.map((item) =>
 
           item.id === producto.id
-            ? {
-                ...item,
-                cantidad:
-                  item.cantidad + 1,
-              }
+            ? (() => {
+                const cantidad =
+                  item.cantidad + 1
+
+                return {
+                  ...item,
+                  cantidad,
+                  precio:
+                    obtenerPrecioPorCantidad(
+                      item,
+                      cantidad
+                    ),
+                }
+              })()
             : item
         )
 
@@ -125,8 +167,10 @@ export default function CatalogoPage() {
         {
           ...producto,
           precio:
-            producto.precio_menudeo ??
-            producto.precio,
+            obtenerPrecioPorCantidad(
+              producto,
+              1
+            ),
           modalidad: "",
           cantidad: 1,
         },
@@ -142,11 +186,20 @@ export default function CatalogoPage() {
       carrito.map((item) =>
 
         item.id === id
-          ? {
-              ...item,
-              cantidad:
-                item.cantidad + 1,
-            }
+          ? (() => {
+              const cantidad =
+                item.cantidad + 1
+
+              return {
+                ...item,
+                cantidad,
+                precio:
+                  obtenerPrecioPorCantidad(
+                    item,
+                    cantidad
+                  ),
+              }
+            })()
           : item
       )
 
@@ -162,11 +215,20 @@ export default function CatalogoPage() {
         .map((item) =>
 
           item.id === id
-            ? {
-                ...item,
-                cantidad:
-                  item.cantidad - 1,
-              }
+            ? (() => {
+                const cantidad =
+                  item.cantidad - 1
+
+                return {
+                  ...item,
+                  cantidad,
+                  precio:
+                    obtenerPrecioPorCantidad(
+                      item,
+                      cantidad
+                    ),
+                }
+              })()
             : item
         )
         .filter(
@@ -200,8 +262,8 @@ export default function CatalogoPage() {
     carrito.reduce(
       (acc, item) =>
         acc +
-        item.precio *
-          item.cantidad,
+        numero(item.precio) *
+          numero(item.cantidad),
       0
     )
 
@@ -291,12 +353,13 @@ export default function CatalogoPage() {
           (producto) => {
 
             const precioMenudeo =
-              producto.precio_menudeo ??
-              producto.precio
+              obtenerPrecioMenudeo(producto)
 
             const precioMayoreo =
-              producto.precio_mayoreo ??
-              producto.precio
+              obtenerPrecioMayoreo(producto)
+
+            const minimoMayoreo =
+              obtenerMinimoMayoreo(producto)
 
             const itemCarrito =
               carrito.find(
@@ -386,6 +449,12 @@ export default function CatalogoPage() {
                     <p className="text-xl md:text-2xl font-black text-[#20B8C9]">
                       Mayoreo ${precioMayoreo}
                     </p>
+
+                    {minimoMayoreo > 0 && (
+                      <p className="text-xs md:text-sm font-black uppercase text-gray-400">
+                        Desde {minimoMayoreo} piezas
+                      </p>
+                    )}
 
                   </div>
 
@@ -518,6 +587,12 @@ export default function CatalogoPage() {
                   <p className="text-[#F49B93] font-black text-xl mt-1">
                     ${item.precio}
                   </p>
+
+                  {obtenerMinimoMayoreo(item) > 0 && (
+                    <p className="text-xs font-black uppercase text-gray-400 mt-1">
+                      Mayoreo desde {item.minimo_mayoreo} piezas
+                    </p>
+                  )}
 
                 </div>
 

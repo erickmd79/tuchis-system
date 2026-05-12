@@ -10,12 +10,60 @@ const MODALIDADES = [
   "Evento",
 ]
 
+const numero = (valor: any) =>
+  Number(valor || 0)
+
+const obtenerPrecioMenudeo = (producto: any) =>
+  numero(producto.precio_menudeo ?? producto.precio)
+
+const obtenerPrecioMayoreo = (producto: any) =>
+  numero(producto.precio_mayoreo ?? producto.precio)
+
+const obtenerMinimoMayoreo = (producto: any) =>
+  numero(producto.minimo_mayoreo)
+
+const obtenerPrecioPorCantidad = (
+  producto: any,
+  cantidad: number
+) => {
+  const minimoMayoreo =
+    obtenerMinimoMayoreo(producto)
+
+  const precioMayoreo =
+    obtenerPrecioMayoreo(producto)
+
+  if (
+    minimoMayoreo > 0 &&
+    cantidad >= minimoMayoreo &&
+    precioMayoreo > 0
+  ) {
+    return precioMayoreo
+  }
+
+  return obtenerPrecioMenudeo(producto)
+}
+
+const calcularTotalProductos = (
+  productos: any[] = []
+) =>
+  productos.reduce(
+    (acc, item) =>
+      acc +
+      numero(item.precio) *
+        numero(item.cantidad),
+    0
+  )
+
 export default function Page() {
 
   const [carrito, setCarrito] = useState<any[]>([])
   const [pedidos, setPedidos] = useState<any[]>([])
+  const [productosDisponibles, setProductosDisponibles] =
+    useState<any[]>([])
   const [pedidoEditando, setPedidoEditando] =
   useState<any>(null)
+  const [productoParaAgregar, setProductoParaAgregar] =
+    useState("")
 
   const [nombre, setNombre] = useState("")
   const [telefono, setTelefono] = useState("")
@@ -32,6 +80,7 @@ export default function Page() {
     setCarrito(data)
 
     obtenerPedidos()
+    obtenerProductos()
 
   }, [])
 
@@ -46,11 +95,19 @@ export default function Page() {
     if (data) setPedidos(data)
   }
 
-  const total = carrito.reduce(
-    (acc, item) =>
-      acc + item.precio * item.cantidad,
-    0
-  )
+  const obtenerProductos = async () => {
+
+    const { data } =
+      await supabase
+        .from("productos")
+        .select("*")
+        .order("nombre")
+
+    if (data) setProductosDisponibles(data)
+  }
+
+  const total =
+    calcularTotalProductos(carrito)
 
   const actualizarModalidadCarrito = (
     index: number,
@@ -89,10 +146,14 @@ export default function Page() {
 
             productos:
               pedido.productos.map((p: any) => ({
+                producto_id: p.producto_id ?? p.id,
                 nombre: p.nombre,
                 precio: p.precio,
                 cantidad: p.cantidad,
                 modalidad: p.modalidad,
+                precio_menudeo: p.precio_menudeo,
+                precio_mayoreo: p.precio_mayoreo,
+                minimo_mayoreo: p.minimo_mayoreo,
               })),
 
             total: pedido.total,
@@ -198,6 +259,134 @@ export default function Page() {
 
   await obtenerPedidos()
 }
+
+  const prepararProductoPedido = (
+    producto: any,
+    cantidad = 1
+  ) => ({
+    producto_id: producto.producto_id ?? producto.id,
+    nombre: producto.nombre,
+    cantidad,
+    modalidad: producto.modalidad || "",
+    precio_menudeo:
+      producto.precio_menudeo ??
+      producto.precio,
+    precio_mayoreo:
+      producto.precio_mayoreo ??
+      producto.precio,
+    minimo_mayoreo:
+      producto.minimo_mayoreo || 0,
+    precio:
+      obtenerPrecioPorCantidad(
+        producto,
+        cantidad
+      ),
+  })
+
+  const abrirEditorPedido = (pedido: any) => {
+
+    setProductoParaAgregar("")
+
+    setPedidoEditando({
+      ...pedido,
+      estado: pedido.estado || "pendiente",
+      productos: Array.isArray(pedido.productos)
+        ? pedido.productos.map((producto: any) => ({
+            ...producto,
+            cantidad: numero(producto.cantidad) || 1,
+            precio: numero(producto.precio),
+            modalidad: producto.modalidad || "",
+          }))
+        : [],
+    })
+  }
+
+  const actualizarProductoPedido = (
+    index: number,
+    cambios: any,
+    recalcularPrecio = false
+  ) => {
+
+    if (!pedidoEditando) return
+
+    const productos =
+      (pedidoEditando.productos || []).map(
+        (producto: any, productoIndex: number) => {
+
+          if (productoIndex !== index) {
+            return producto
+          }
+
+          const actualizado = {
+            ...producto,
+            ...cambios,
+          }
+
+          if (recalcularPrecio) {
+            actualizado.precio =
+              obtenerPrecioPorCantidad(
+                actualizado,
+                numero(actualizado.cantidad)
+              )
+          }
+
+          return actualizado
+        }
+      )
+
+    setPedidoEditando({
+      ...pedidoEditando,
+      productos,
+      total: calcularTotalProductos(productos),
+    })
+  }
+
+  const quitarProductoPedido = (
+    index: number
+  ) => {
+
+    if (!pedidoEditando) return
+
+    const productos =
+      (pedidoEditando.productos || []).filter(
+        (_: any, productoIndex: number) =>
+          productoIndex !== index
+      )
+
+    setPedidoEditando({
+      ...pedidoEditando,
+      productos,
+      total: calcularTotalProductos(productos),
+    })
+  }
+
+  const agregarProductoPedido = () => {
+
+    if (!pedidoEditando || !productoParaAgregar) {
+      return
+    }
+
+    const producto =
+      productosDisponibles.find(
+        (item) =>
+          String(item.id) === productoParaAgregar
+      )
+
+    if (!producto) return
+
+    const productos = [
+      ...(pedidoEditando.productos || []),
+      prepararProductoPedido(producto),
+    ]
+
+    setPedidoEditando({
+      ...pedidoEditando,
+      productos,
+      total: calcularTotalProductos(productos),
+    })
+
+    setProductoParaAgregar("")
+  }
 
   const enviarWhatsApp = (pedido: any) => {
 
@@ -553,9 +742,9 @@ ${contenido}
                     PDF
                   </button>
 
-                  <button
+<button
   onClick={() =>
-    setPedidoEditando(pedido)
+    abrirEditorPedido(pedido)
   }
   className="
     bg-cyan-500
@@ -610,7 +799,7 @@ ${contenido}
     <div className="
       bg-white
       w-full
-      max-w-3xl
+      max-w-5xl
       rounded-[32px]
       p-8
       shadow-2xl
@@ -697,10 +886,209 @@ ${contenido}
           "
         />
 
+        <select
+          value={pedidoEditando.estado || "pendiente"}
+          onChange={(e) =>
+            setPedidoEditando({
+              ...pedidoEditando,
+              estado: e.target.value,
+            })
+          }
+          className="input-premium"
+        >
+          <option value="pendiente">
+            Pendiente
+          </option>
+          <option value="pagado">
+            Pagado
+          </option>
+          <option value="entregado">
+            Entregado
+          </option>
+        </select>
+
+      </div>
+
+      <div className="mt-8 space-y-5">
+
+        <h3 className="text-2xl font-black text-cyan-600">
+          Productos del pedido
+        </h3>
+
+        {(pedidoEditando.productos || []).map(
+          (producto: any, index: number) => (
+
+            <div
+              key={index}
+              className="rounded-3xl border border-[#FFD9D4] p-5 bg-[#FFF8F5] space-y-4"
+            >
+
+              <input
+                type="text"
+                value={producto.nombre || ""}
+                onChange={(e) =>
+                  actualizarProductoPedido(
+                    index,
+                    {
+                      nombre: e.target.value,
+                    }
+                  )
+                }
+                className="input-premium"
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+
+                <input
+                  type="number"
+                  min="1"
+                  value={producto.cantidad || 1}
+                  onChange={(e) =>
+                    actualizarProductoPedido(
+                      index,
+                      {
+                        cantidad:
+                          Number(e.target.value) || 1,
+                      },
+                      true
+                    )
+                  }
+                  className="input-premium"
+                />
+
+                <input
+                  type="number"
+                  value={producto.precio || 0}
+                  onChange={(e) =>
+                    actualizarProductoPedido(
+                      index,
+                      {
+                        precio:
+                          Number(e.target.value) || 0,
+                      }
+                    )
+                  }
+                  className="input-premium"
+                />
+
+                <select
+                  value={producto.modalidad || ""}
+                  onChange={(e) =>
+                    actualizarProductoPedido(
+                      index,
+                      {
+                        modalidad: e.target.value,
+                      }
+                    )
+                  }
+                  className="input-premium"
+                >
+
+                  <option value="">
+                    Modalidad
+                  </option>
+
+                  {MODALIDADES.map((opcion) => (
+                    <option
+                      key={opcion}
+                      value={opcion}
+                    >
+                      {opcion}
+                    </option>
+                  ))}
+
+                </select>
+
+                <button
+                  onClick={() =>
+                    quitarProductoPedido(index)
+                  }
+                  className="bg-red-500 hover:bg-red-600 text-white rounded-2xl font-black transition px-5 py-4"
+                >
+                  Quitar
+                </button>
+
+              </div>
+
+              <p className="text-sm font-black uppercase text-zinc-500">
+                Subtotal: ${numero(producto.precio) * numero(producto.cantidad)}
+                {Number(producto.minimo_mayoreo || 0) > 0 && (
+                  <>
+                    {" · "}
+                    Mayoreo desde {producto.minimo_mayoreo} piezas
+                  </>
+                )}
+              </p>
+
+            </div>
+          )
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4">
+
+          <select
+            value={productoParaAgregar}
+            onChange={(e) =>
+              setProductoParaAgregar(e.target.value)
+            }
+            className="input-premium"
+          >
+
+            <option value="">
+              Selecciona producto para agregar
+            </option>
+
+            {productosDisponibles.map((producto) => (
+              <option
+                key={producto.id}
+                value={producto.id}
+              >
+                {producto.nombre}
+              </option>
+            ))}
+
+          </select>
+
+          <button
+            onClick={agregarProductoPedido}
+            className="btn-primary"
+          >
+            Agregar producto
+          </button>
+
+        </div>
+
+        <div className="text-4xl font-black text-rose-300">
+          Total: ${calcularTotalProductos(
+            pedidoEditando.productos || []
+          )}
+        </div>
+
       </div>
 
       <button
   onClick={async () => {
+
+    const productos =
+      pedidoEditando.productos || []
+
+    if (productos.length === 0) {
+      alert("El pedido necesita al menos un producto")
+      return
+    }
+
+    const faltaModalidad =
+      productos.some(
+        (producto: any) => !producto.modalidad
+      )
+
+    if (faltaModalidad) {
+      alert("Selecciona la modalidad de todos los productos")
+      return
+    }
+
+    const totalActualizado =
+      calcularTotalProductos(productos)
 
     const { error } = await supabase
       .from("pedidos")
@@ -709,7 +1097,19 @@ ${contenido}
         telefono: pedidoEditando.telefono,
         fecha: pedidoEditando.fecha,
         notas: pedidoEditando.notas,
-        total: pedidoEditando.total,
+        estado: pedidoEditando.estado,
+        productos:
+          productos.map((producto: any) => ({
+            producto_id: producto.producto_id,
+            nombre: producto.nombre,
+            precio: numero(producto.precio),
+            cantidad: numero(producto.cantidad),
+            modalidad: producto.modalidad,
+            precio_menudeo: producto.precio_menudeo,
+            precio_mayoreo: producto.precio_mayoreo,
+            minimo_mayoreo: producto.minimo_mayoreo,
+          })),
+        total: totalActualizado,
       })
       .eq("id", pedidoEditando.id)
 

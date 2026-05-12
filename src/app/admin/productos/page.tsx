@@ -20,6 +20,7 @@ export default function ProductosPage() {
   const [nombre, setNombre] = useState("")
   const [precioMenudeo, setPrecioMenudeo] = useState("")
   const [precioMayoreo, setPrecioMayoreo] = useState("")
+  const [minimoMayoreo, setMinimoMayoreo] = useState("")
   const [categoria, setCategoria] = useState("")
   const [medidas, setMedidas] = useState("")
   const [sku, setSku] = useState("")
@@ -96,6 +97,7 @@ export default function ProductosPage() {
               precio: Number(precioMenudeo),
               precio_menudeo: Number(precioMenudeo),
               precio_mayoreo: Number(precioMayoreo),
+              minimo_mayoreo: Number(minimoMayoreo),
               categoria,
               medidas: limpiarMedidas(medidas),
               sku,
@@ -121,6 +123,7 @@ export default function ProductosPage() {
       setNombre("")
       setPrecioMenudeo("")
       setPrecioMayoreo("")
+      setMinimoMayoreo("")
       setCategoria("")
       setMedidas("")
       setSku("")
@@ -197,6 +200,16 @@ export default function ProductosPage() {
             value={precioMayoreo}
             onChange={(e) =>
               setPrecioMayoreo(e.target.value)
+            }
+            className="input-premium"
+          />
+
+          <input
+            type="number"
+            placeholder="Mínimo mayoreo (piezas)"
+            value={minimoMayoreo}
+            onChange={(e) =>
+              setMinimoMayoreo(e.target.value)
             }
             className="input-premium"
           />
@@ -394,6 +407,12 @@ export default function ProductosPage() {
                   Mayoreo ${producto.precio_mayoreo ?? producto.precio}
                 </p>
 
+                {Number(producto.minimo_mayoreo || 0) > 0 && (
+                  <p className="text-sm font-black uppercase text-zinc-500">
+                    Desde {producto.minimo_mayoreo} piezas
+                  </p>
+                )}
+
               </div>
 
               {(producto.etiquetas?.length ?? 0) > 0 && (
@@ -427,6 +446,8 @@ export default function ProductosPage() {
                         "",
                       precio_mayoreo:
                         producto.precio_mayoreo ?? "",
+                      minimo_mayoreo:
+                        producto.minimo_mayoreo ?? "",
                       medidas: limpiarMedidas(
                         String(producto.medidas || "")
                       ),
@@ -528,6 +549,24 @@ export default function ProductosPage() {
         setProductoEditando({
           ...productoEditando,
           precio_mayoreo: e.target.value,
+        })
+      }
+      className="input-premium"
+    />
+  </div>
+
+  <div>
+    <label className="block text-sm font-semibold text-zinc-500 mb-2">
+      Mínimo mayoreo (piezas)
+    </label>
+
+    <input
+      type="number"
+      value={productoEditando.minimo_mayoreo ?? ""}
+      onChange={(e) =>
+        setProductoEditando({
+          ...productoEditando,
+          minimo_mayoreo: e.target.value,
         })
       }
       className="input-premium"
@@ -789,6 +828,10 @@ export default function ProductosPage() {
 
       precio_mayoreo: Number(
         productoEditando.precio_mayoreo || 0
+      ),
+
+      minimo_mayoreo: Number(
+        productoEditando.minimo_mayoreo || 0
       ),
 
       categoria: String(
