@@ -45,6 +45,50 @@ const obtenerPrecioPorCantidad = (
   return obtenerPrecioMenudeo(producto)
 }
 
+const prepararItemCarrito = (
+  item: any,
+  productos: any[] = []
+) => {
+  const productoActual =
+    productos.find(
+      (producto) =>
+        String(producto.id) ===
+        String(item.id ?? item.producto_id)
+    ) || {}
+
+  const cantidad =
+    Math.max(1, numero(item.cantidad) || 1)
+
+  const itemConPrecios = {
+    ...productoActual,
+    ...item,
+    cantidad,
+    precio_menudeo:
+      productoActual.precio_menudeo ??
+      item.precio_menudeo ??
+      productoActual.precio ??
+      item.precio,
+    precio_mayoreo:
+      productoActual.precio_mayoreo ??
+      item.precio_mayoreo ??
+      productoActual.precio ??
+      item.precio,
+    minimo_mayoreo:
+      productoActual.minimo_mayoreo ??
+      item.minimo_mayoreo ??
+      0,
+  }
+
+  return {
+    ...itemConPrecios,
+    precio:
+      obtenerPrecioPorCantidad(
+        itemConPrecios,
+        cantidad
+      ),
+  }
+}
+
 export default function CatalogoPage() {
 
   const [productos, setProductos] = useState<any[]>([])
@@ -87,6 +131,19 @@ export default function CatalogoPage() {
     if (!error && data) {
 
       setProductos(data)
+
+      const carritoGuardado =
+        JSON.parse(
+          localStorage.getItem("carrito") || "[]"
+        )
+
+      if (carritoGuardado.length > 0) {
+        guardarCarrito(
+          carritoGuardado.map((item: any) =>
+            prepararItemCarrito(item, data)
+          )
+        )
+      }
 
       let iniciales: any = {}
 
@@ -145,15 +202,13 @@ export default function CatalogoPage() {
                 const cantidad =
                   item.cantidad + 1
 
-                return {
-                  ...item,
-                  cantidad,
-                  precio:
-                    obtenerPrecioPorCantidad(
-                      item,
-                      cantidad
-                    ),
-                }
+                return prepararItemCarrito(
+                  {
+                    ...item,
+                    cantidad,
+                  },
+                  productos
+                )
               })()
             : item
         )
@@ -164,16 +219,14 @@ export default function CatalogoPage() {
 
       guardarCarrito([
         ...carrito,
-        {
-          ...producto,
-          precio:
-            obtenerPrecioPorCantidad(
-              producto,
-              1
-            ),
-          modalidad: "",
-          cantidad: 1,
-        },
+        prepararItemCarrito(
+          {
+            ...producto,
+            modalidad: "",
+            cantidad: 1,
+          },
+          productos
+        ),
       ])
     }
   }
@@ -190,15 +243,13 @@ export default function CatalogoPage() {
               const cantidad =
                 item.cantidad + 1
 
-              return {
-                ...item,
-                cantidad,
-                precio:
-                  obtenerPrecioPorCantidad(
-                    item,
-                    cantidad
-                  ),
-              }
+              return prepararItemCarrito(
+                {
+                  ...item,
+                  cantidad,
+                },
+                productos
+              )
             })()
           : item
       )
@@ -219,15 +270,13 @@ export default function CatalogoPage() {
                 const cantidad =
                   item.cantidad - 1
 
-                return {
-                  ...item,
-                  cantidad,
-                  precio:
-                    obtenerPrecioPorCantidad(
-                      item,
-                      cantidad
-                    ),
-                }
+                return prepararItemCarrito(
+                  {
+                    ...item,
+                    cantidad,
+                  },
+                  productos
+                )
               })()
             : item
         )
