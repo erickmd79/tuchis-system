@@ -54,6 +54,50 @@ const calcularTotalProductos = (
     0
   )
 
+const obtenerFechaLocal = () => {
+  const fecha = new Date()
+  const offset = fecha.getTimezoneOffset()
+  const local =
+    new Date(fecha.getTime() - offset * 60000)
+
+  return local.toISOString().slice(0, 10)
+}
+
+const formatearFecha = (valor?: string) => {
+  if (!valor) return ""
+
+  const soloFecha =
+    String(valor).split("T")[0]
+
+  const [anio, mes, dia] =
+    soloFecha.split("-").map(Number)
+
+  if (!anio || !mes || !dia) {
+    return String(valor)
+  }
+
+  return new Date(
+    anio,
+    mes - 1,
+    dia
+  ).toLocaleDateString("es-MX", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })
+}
+
+const obtenerFechaPedido = (pedido: any) =>
+  pedido.fecha_pedido ||
+  pedido.created_at ||
+  pedido.fecha_creacion ||
+  ""
+
+const obtenerFechaEntrega = (pedido: any) =>
+  pedido.fecha_entrega ||
+  pedido.fecha ||
+  ""
+
 export default function Page() {
 
   const [carrito, setCarrito] = useState<any[]>([])
@@ -106,8 +150,68 @@ export default function Page() {
     if (data) setProductosDisponibles(data)
   }
 
+  const prepararProductoPedido = (
+    producto: any,
+    cantidad = numero(producto.cantidad) || 1
+  ) => {
+    const productoActual =
+      productosDisponibles.find(
+        (item) =>
+          String(item.id) ===
+          String(
+            producto.producto_id ??
+            producto.id
+          )
+      ) || {}
+
+    const piezas =
+      Math.max(1, numero(cantidad) || 1)
+
+    const productoConPrecios = {
+      ...productoActual,
+      ...producto,
+      producto_id:
+        producto.producto_id ??
+        producto.id ??
+        productoActual.id,
+      nombre:
+        producto.nombre ??
+        productoActual.nombre,
+      cantidad: piezas,
+      modalidad: producto.modalidad || "",
+      precio_menudeo:
+        productoActual.precio_menudeo ??
+        producto.precio_menudeo ??
+        productoActual.precio ??
+        producto.precio,
+      precio_mayoreo:
+        productoActual.precio_mayoreo ??
+        producto.precio_mayoreo ??
+        productoActual.precio ??
+        producto.precio,
+      minimo_mayoreo:
+        productoActual.minimo_mayoreo ??
+        producto.minimo_mayoreo ??
+        0,
+    }
+
+    return {
+      ...productoConPrecios,
+      precio:
+        obtenerPrecioPorCantidad(
+          productoConPrecios,
+          piezas
+        ),
+    }
+  }
+
+  const carritoConPrecios =
+    carrito.map((item) =>
+      prepararProductoPedido(item)
+    )
+
   const total =
-    calcularTotalProductos(carrito)
+    calcularTotalProductos(carritoConPrecios)
 
   const actualizarModalidadCarrito = (
     index: number,
@@ -117,10 +221,10 @@ export default function Page() {
     const actualizado =
       carrito.map((item, itemIndex) =>
         itemIndex === index
-          ? {
+          ? prepararProductoPedido({
               ...item,
               modalidad,
-            }
+            })
           : item
       )
 
@@ -148,8 +252,8 @@ export default function Page() {
               pedido.productos.map((p: any) => ({
                 producto_id: p.producto_id ?? p.id,
                 nombre: p.nombre,
-                precio: p.precio,
-                cantidad: p.cantidad,
+                precio: numero(p.precio),
+                cantidad: numero(p.cantidad),
                 modalidad: p.modalidad,
                 precio_menudeo: p.precio_menudeo,
                 precio_mayoreo: p.precio_mayoreo,
@@ -180,14 +284,14 @@ export default function Page() {
       return
     }
 
-    if (carrito.length === 0) {
+    if (carritoConPrecios.length === 0) {
 
       alert("Agrega productos al pedido")
       return
     }
 
     const faltaModalidad =
-      carrito.some(
+      carritoConPrecios.some(
         (item) => !item.modalidad
       )
 
@@ -202,8 +306,11 @@ export default function Page() {
       telefono,
       fecha,
       notas,
-      productos: carrito,
-      total,
+      productos: carritoConPrecios,
+      total:
+        calcularTotalProductos(
+          carritoConPrecios
+        ),
     }
 
     const ok =
@@ -260,29 +367,6 @@ export default function Page() {
   await obtenerPedidos()
 }
 
-  const prepararProductoPedido = (
-    producto: any,
-    cantidad = 1
-  ) => ({
-    producto_id: producto.producto_id ?? producto.id,
-    nombre: producto.nombre,
-    cantidad,
-    modalidad: producto.modalidad || "",
-    precio_menudeo:
-      producto.precio_menudeo ??
-      producto.precio,
-    precio_mayoreo:
-      producto.precio_mayoreo ??
-      producto.precio,
-    minimo_mayoreo:
-      producto.minimo_mayoreo || 0,
-    precio:
-      obtenerPrecioPorCantidad(
-        producto,
-        cantidad
-      ),
-  })
-
   const abrirEditorPedido = (pedido: any) => {
 
     setProductoParaAgregar("")
@@ -291,12 +375,15 @@ export default function Page() {
       ...pedido,
       estado: pedido.estado || "pendiente",
       productos: Array.isArray(pedido.productos)
-        ? pedido.productos.map((producto: any) => ({
-            ...producto,
-            cantidad: numero(producto.cantidad) || 1,
-            precio: numero(producto.precio),
-            modalidad: producto.modalidad || "",
-          }))
+        ? pedido.productos.map((producto: any) =>
+            prepararProductoPedido({
+              ...producto,
+              cantidad:
+                numero(producto.cantidad) || 1,
+              modalidad:
+                producto.modalidad || "",
+            })
+          )
         : [],
     })
   }
@@ -396,329 +483,329 @@ export default function Page() {
           (p: any) =>
             `• ${p.nombre} (${p.modalidad || "Sin modalidad"}) x${p.cantidad}`
         )
-        .join("%0A")
+        .join("\n")
+
+    const fechaPedido =
+      formatearFecha(
+        obtenerFechaPedido(pedido)
+      ) || "Sin fecha"
+
+    const fechaEntrega =
+      formatearFecha(
+        obtenerFechaEntrega(pedido)
+      ) || "Sin fecha"
+
+    const notas =
+      pedido.notas
+        ? `\nNotas: ${pedido.notas}`
+        : ""
 
     const mensaje =
-      `Hola ${pedido.cliente}%0A%0A` +
-      `Tu pedido:%0A${productos}%0A%0A` +
-      `Total: $${pedido.total}`
+      `Hola ${pedido.cliente}\n\n` +
+      `Fecha de pedido: ${fechaPedido}\n` +
+      `Fecha de entrega: ${fechaEntrega}\n` +
+      `Tu pedido:\n${productos}\n\n` +
+      `Total: $${pedido.total}${notas}`
 
     window.open(
-      `https://wa.me/52${pedido.telefono}?text=${mensaje}`,
+      `https://wa.me/52${pedido.telefono}?text=${encodeURIComponent(mensaje)}`,
       "_blank"
     )
   }
 
- const generarPDF = (pedido: any) => {
+  const generarPDF = (pedido: any) => {
 
-  const folio =
-    `TCH-${pedido.id}`
+    const folio =
+      `TCH-${pedido.id}`
 
-  const fechaActual =
-    new Date().toLocaleDateString()
+    const fechaActual =
+      new Date().toLocaleDateString()
 
-  const productosHTML =
-    pedido.productos
-      .map(
-        (p: any) => `
+    const fechaPedido =
+      formatearFecha(
+        obtenerFechaPedido(pedido)
+      ) || "Sin fecha"
 
-        <div style="
-          display:flex;
-          gap:20px;
-          align-items:center;
-          background:white;
-          border-radius:24px;
-          padding:20px;
-          margin-bottom:18px;
-          border:1px solid #F5D3CD;
-        ">
+    const fechaEntrega =
+      formatearFecha(
+        obtenerFechaEntrega(pedido)
+      ) || "Sin fecha"
 
-          ${
-            p.imagen
-              ? `
-                <img
-                  src="${p.imagen}"
-                  style="
-                    width:90px;
-                    height:90px;
-                    object-fit:cover;
-                    border-radius:20px;
-                  "
-                />
-              `
-              : ""
-          }
-
-          <div style="flex:1;">
-
-            <h3 style="
-              margin:0;
-              color:#27B6C7;
-              font-size:24px;
-              font-weight:900;
-            ">
-              ${p.nombre}
-            </h3>
-
-            <p style="
-              margin:8px 0;
-              color:#666;
-              font-size:16px;
-            ">
-              ${p.modalidad || "Sin modalidad"}
-            </p>
-
-            <p style="
-              margin:0;
-              font-size:18px;
-              font-weight:bold;
-            ">
-              ${p.cantidad} x $${p.precio}
-            </p>
-
-          </div>
-
-        </div>
-      `
-      )
-      .join("")
-
-  const ventana =
-    window.open("", "_blank")
-
-  if (!ventana) return
-
-  ventana.document.write(`
-
-    <html>
-
-      <head>
-
-        <title>
-          Pedido ${folio}
-        </title>
-
-      </head>
-
-      <body style="
-        margin:0;
-        padding:0;
-        background:#FFF7F5;
-        font-family:Arial, sans-serif;
-      ">
-
-        <div style="
-          max-width:900px;
-          margin:auto;
-          padding:50px;
-        ">
-
-          <!-- HEADER -->
-
-          <div style="
-            background:linear-gradient(
-              135deg,
-              #27B6C7,
-              #F8B4C0
-            );
-
-            border-radius:40px;
-            padding:50px;
-            color:white;
-            margin-bottom:40px;
-          ">
-
-            <h1 style="
-              margin:0;
-              font-size:64px;
-              font-weight:900;
-            ">
-              TUCHIS
-            </h1>
-
-            <p style="
-              margin-top:10px;
-              font-size:24px;
-            ">
-              Pedido premium
-            </p>
-
-          </div>
-
-          <!-- INFO -->
-
-          <div style="
-            background:white;
-            border-radius:32px;
-            padding:35px;
-            margin-bottom:30px;
-            border:1px solid #F5D3CD;
-          ">
-
+    const productosHTML =
+      pedido.productos
+        .map(
+          (p: any) => `
             <div style="
-              display:grid;
-              grid-template-columns:
-                repeat(2,1fr);
+              display:flex;
               gap:20px;
+              align-items:center;
+              background:white;
+              border-radius:24px;
+              padding:20px;
+              margin-bottom:18px;
+              border:1px solid #F5D3CD;
             ">
+              ${
+                p.imagen
+                  ? `
+                    <img
+                      src="${p.imagen}"
+                      style="
+                        width:90px;
+                        height:90px;
+                        object-fit:cover;
+                        border-radius:20px;
+                      "
+                    />
+                  `
+                  : ""
+              }
 
-              <div>
-
-                <p style="
-                  color:#999;
-                  margin:0 0 8px 0;
-                ">
-                  Cliente
-                </p>
-
-                <h2 style="
+              <div style="flex:1;">
+                <h3 style="
                   margin:0;
                   color:#27B6C7;
+                  font-size:24px;
+                  font-weight:900;
                 ">
-                  ${pedido.cliente}
-                </h2>
-
-              </div>
-
-              <div>
+                  ${p.nombre}
+                </h3>
 
                 <p style="
-                  color:#999;
-                  margin:0 0 8px 0;
+                  margin:8px 0;
+                  color:#666;
+                  font-size:16px;
                 ">
-                  Teléfono
+                  ${p.modalidad || "Sin modalidad"}
                 </p>
-
-                <h2 style="margin:0;">
-                  ${pedido.telefono}
-                </h2>
-
-              </div>
-
-              <div>
 
                 <p style="
-                  color:#999;
-                  margin:0 0 8px 0;
-                ">
-                  Fecha
-                </p>
-
-                <h2 style="margin:0;">
-                  ${pedido.fecha}
-                </h2>
-
-              </div>
-
-              <div>
-
-                <p style="
-                  color:#999;
-                  margin:0 0 8px 0;
-                ">
-                  Folio
-                </p>
-
-                <h2 style="
                   margin:0;
-                  color:#F59AA3;
+                  font-size:18px;
+                  font-weight:bold;
                 ">
-                  ${folio}
-                </h2>
-
+                  ${p.cantidad} x $${p.precio}
+                </p>
               </div>
+            </div>
+          `
+        )
+        .join("")
 
+    const ventana =
+      window.open("", "_blank")
+
+    if (!ventana) return
+
+    ventana.document.write(`
+      <html>
+        <head>
+          <title>
+            Pedido ${folio}
+          </title>
+        </head>
+
+        <body style="
+          margin:0;
+          padding:0;
+          background:#FFF7F5;
+          font-family:Arial, sans-serif;
+        ">
+          <div style="
+            max-width:900px;
+            margin:auto;
+            padding:50px;
+          ">
+            <div style="
+              background:linear-gradient(
+                135deg,
+                #27B6C7,
+                #F8B4C0
+              );
+              border-radius:40px;
+              padding:50px;
+              color:white;
+              margin-bottom:40px;
+            ">
+              <h1 style="
+                margin:0;
+                font-size:64px;
+                font-weight:900;
+              ">
+                TUCHIS
+              </h1>
+
+              <p style="
+                margin-top:10px;
+                font-size:24px;
+              ">
+                Pedido premium
+              </p>
             </div>
 
-          </div>
-
-          <!-- PRODUCTOS -->
-
-          <div>
-
-            ${productosHTML}
-
-          </div>
-
-          <!-- TOTAL -->
-
-          <div style="
-            background:#27B6C7;
-            color:white;
-            border-radius:32px;
-            padding:40px;
-            margin-top:40px;
-            text-align:center;
-          ">
-
-            <p style="
-              margin:0;
-              font-size:24px;
+            <div style="
+              background:white;
+              border-radius:32px;
+              padding:35px;
+              margin-bottom:30px;
+              border:1px solid #F5D3CD;
             ">
-              Total
-            </p>
+              <div style="
+                display:grid;
+                grid-template-columns:
+                  repeat(2,1fr);
+                gap:20px;
+              ">
+                <div>
+                  <p style="
+                    color:#999;
+                    margin:0 0 8px 0;
+                  ">
+                    Cliente
+                  </p>
 
-            <h2 style="
-              margin:10px 0 0 0;
-              font-size:64px;
-              font-weight:900;
+                  <h2 style="
+                    margin:0;
+                    color:#27B6C7;
+                  ">
+                    ${pedido.cliente}
+                  </h2>
+                </div>
+
+                <div>
+                  <p style="
+                    color:#999;
+                    margin:0 0 8px 0;
+                  ">
+                    Teléfono
+                  </p>
+
+                  <h2 style="margin:0;">
+                    ${pedido.telefono}
+                  </h2>
+                </div>
+
+                <div>
+                  <p style="
+                    color:#999;
+                    margin:0 0 8px 0;
+                  ">
+                    Fecha de pedido
+                  </p>
+
+                  <h2 style="margin:0;">
+                    ${fechaPedido}
+                  </h2>
+                </div>
+
+                <div>
+                  <p style="
+                    color:#999;
+                    margin:0 0 8px 0;
+                  ">
+                    Fecha de entrega
+                  </p>
+
+                  <h2 style="margin:0;">
+                    ${fechaEntrega}
+                  </h2>
+                </div>
+
+                <div>
+                  <p style="
+                    color:#999;
+                    margin:0 0 8px 0;
+                  ">
+                    Folio
+                  </p>
+
+                  <h2 style="
+                    margin:0;
+                    color:#F59AA3;
+                  ">
+                    ${folio}
+                  </h2>
+                </div>
+
+                <div>
+                  <p style="
+                    color:#999;
+                    margin:0 0 8px 0;
+                  ">
+                    Notas
+                  </p>
+
+                  <h2 style="margin:0;">
+                    ${pedido.notas || "Sin notas"}
+                  </h2>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              ${productosHTML}
+            </div>
+
+            <div style="
+              background:#27B6C7;
+              color:white;
+              border-radius:32px;
+              padding:40px;
+              margin-top:40px;
+              text-align:center;
             ">
-              $${pedido.total}
-            </h2>
+              <p style="
+                margin:0;
+                font-size:24px;
+              ">
+                Total
+              </p>
 
+              <h2 style="
+                margin:10px 0 0 0;
+                font-size:64px;
+                font-weight:900;
+              ">
+                $${pedido.total}
+              </h2>
+            </div>
+
+            <div style="
+              text-align:center;
+              margin-top:40px;
+            ">
+              <a
+                href="https://wa.me/52${pedido.telefono}"
+                style="
+                  display:inline-block;
+                  background:#25D366;
+                  color:white;
+                  text-decoration:none;
+                  padding:18px 32px;
+                  border-radius:20px;
+                  font-size:20px;
+                  font-weight:bold;
+                "
+              >
+                WhatsApp
+              </a>
+            </div>
+
+            <div style="
+              text-align:center;
+              margin-top:50px;
+              color:#999;
+            ">
+              Generado el ${fechaActual}
+            </div>
           </div>
+        </body>
+      </html>
+    `)
 
-          <!-- WHATSAPP -->
-
-          <div style="
-            text-align:center;
-            margin-top:40px;
-          ">
-
-            <a
-              href="
-                https://wa.me/52${pedido.telefono}
-              "
-              style="
-                display:inline-block;
-                background:#25D366;
-                color:white;
-                text-decoration:none;
-                padding:18px 32px;
-                border-radius:20px;
-                font-size:20px;
-                font-weight:bold;
-              "
-            >
-              WhatsApp
-            </a>
-
-          </div>
-
-          <!-- FOOTER -->
-
-          <div style="
-            text-align:center;
-            margin-top:50px;
-            color:#999;
-          ">
-
-            Generado el
-            ${fechaActual}
-
-          </div>
-
-        </div>
-
-      </body>
-
-    </html>
-  `)
-
-  ventana.document.close()
-
-  ventana.print()
-}
+    ventana.document.close()
+    ventana.print()
+  }
 
   return (
 
@@ -778,14 +865,30 @@ export default function Page() {
             className="input-premium"
           />
 
-          <input
-            type="date"
-            value={fecha}
-            onChange={(e) =>
-              setFecha(e.target.value)
-            }
-            className="input-premium"
-          />
+          <div className="rounded-3xl border border-[#FFD9D4] bg-white p-5">
+            <p className="text-sm font-black uppercase text-zinc-400">
+              Fecha de pedido
+            </p>
+
+            <p className="text-xl font-black text-cyan-600 mt-1">
+              {formatearFecha(obtenerFechaLocal())}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-zinc-500 mb-2">
+              Fecha de entrega
+            </label>
+
+            <input
+              type="date"
+              value={fecha}
+              onChange={(e) =>
+                setFecha(e.target.value)
+              }
+              className="input-premium"
+            />
+          </div>
 
           <textarea
             placeholder="Notas del pedido"
@@ -798,11 +901,11 @@ export default function Page() {
 
         </div>
 
-        {carrito.length > 0 && (
+        {carritoConPrecios.length > 0 && (
 
           <div className="mt-8 space-y-4">
 
-            {carrito.map((item, index) => (
+            {carritoConPrecios.map((item, index) => (
 
               <div
                 key={index}
@@ -818,6 +921,12 @@ export default function Page() {
                   {" x "}
                   ${item.precio}
                 </p>
+
+                {Number(item.minimo_mayoreo || 0) > 0 && (
+                  <p className="text-xs font-black uppercase text-zinc-400 mt-2">
+                    Mayoreo desde {item.minimo_mayoreo} piezas
+                  </p>
+                )}
 
                 <select
                   value={item.modalidad || ""}
@@ -891,9 +1000,28 @@ export default function Page() {
                     {pedido.telefono}
                   </p>
 
-                  <p className="text-zinc-500">
-                    {pedido.fecha}
-                  </p>
+                  <div className="mt-3 space-y-1 text-zinc-500">
+                    <p>
+                      Pedido: {formatearFecha(
+                        obtenerFechaPedido(pedido)
+                      ) || "Sin fecha"}
+                    </p>
+
+                    <p>
+                      Entrega: {formatearFecha(
+                        obtenerFechaEntrega(pedido)
+                      ) || "Sin fecha"}
+                    </p>
+                  </div>
+
+                  {pedido.notas && (
+                    <p className="mt-4 text-zinc-600 whitespace-pre-wrap">
+                      <span className="font-black text-cyan-600">
+                        Notas:{" "}
+                      </span>
+                      {pedido.notas}
+                    </p>
+                  )}
 
                   <div className="mt-5 space-y-2">
 
@@ -1120,19 +1248,40 @@ export default function Page() {
           className="input-premium"
         />
 
-        <input
-          type="date"
-          value={pedidoEditando.fecha}
-          onChange={(e) =>
-            setPedidoEditando({
-              ...pedidoEditando,
-              fecha: e.target.value,
-            })
-          }
-          className="input-premium"
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="rounded-3xl border border-[#FFD9D4] bg-[#FFF8F5] p-5">
+            <p className="text-sm font-black uppercase text-zinc-400">
+              Fecha de pedido
+            </p>
+
+            <p className="text-xl font-black text-cyan-600 mt-1">
+              {formatearFecha(
+                obtenerFechaPedido(pedidoEditando)
+              ) || "Sin fecha"}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-zinc-500 mb-2">
+              Fecha de entrega
+            </label>
+
+            <input
+              type="date"
+              value={pedidoEditando.fecha}
+              onChange={(e) =>
+                setPedidoEditando({
+                  ...pedidoEditando,
+                  fecha: e.target.value,
+                })
+              }
+              className="input-premium"
+            />
+          </div>
+        </div>
 
         <textarea
+          placeholder="Notas del pedido"
           value={pedidoEditando.notas || ""}
           onChange={(e) =>
             setPedidoEditando({
