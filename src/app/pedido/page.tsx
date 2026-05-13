@@ -98,6 +98,19 @@ const obtenerFechaEntrega = (pedido: any) =>
   pedido.fecha ||
   ""
 
+const escaparHTML = (valor: any) =>
+  String(valor ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;")
+
+const obtenerImagenProducto = (producto: any) =>
+  producto.imagen ||
+  producto.imagenes?.[0] ||
+  ""
+
 export default function Page() {
 
   const [carrito, setCarrito] = useState<any[]>([])
@@ -106,8 +119,12 @@ export default function Page() {
     useState<any[]>([])
   const [pedidoEditando, setPedidoEditando] =
   useState<any>(null)
-  const [productoParaAgregar, setProductoParaAgregar] =
+  const [catalogoPedidoAbierto, setCatalogoPedidoAbierto] =
+    useState(false)
+  const [busquedaCatalogoPedido, setBusquedaCatalogoPedido] =
     useState("")
+  const [categoriaCatalogoPedido, setCategoriaCatalogoPedido] =
+    useState("Todas")
 
   const [nombre, setNombre] = useState("")
   const [telefono, setTelefono] = useState("")
@@ -213,6 +230,35 @@ export default function Page() {
   const total =
     calcularTotalProductos(carritoConPrecios)
 
+  const categoriasCatalogoPedido =
+    Array.from(
+      new Set(
+        productosDisponibles
+          .map((producto) => producto.categoria)
+          .filter(Boolean)
+      )
+    )
+
+  const productosCatalogoPedido =
+    productosDisponibles.filter((producto) => {
+      const coincideBusqueda =
+        producto.nombre
+          ?.toLowerCase()
+          .includes(
+            busquedaCatalogoPedido.toLowerCase()
+          )
+
+      const coincideCategoria =
+        categoriaCatalogoPedido === "Todas" ||
+        producto.categoria ===
+          categoriaCatalogoPedido
+
+      return (
+        coincideBusqueda &&
+        coincideCategoria
+      )
+    })
+
   const actualizarModalidadCarrito = (
     index: number,
     modalidad: string
@@ -258,6 +304,7 @@ export default function Page() {
                 precio_menudeo: p.precio_menudeo,
                 precio_mayoreo: p.precio_mayoreo,
                 minimo_mayoreo: p.minimo_mayoreo,
+                imagenes: p.imagenes || [],
               })),
 
             total: pedido.total,
@@ -369,7 +416,9 @@ export default function Page() {
 
   const abrirEditorPedido = (pedido: any) => {
 
-    setProductoParaAgregar("")
+    setCatalogoPedidoAbierto(false)
+    setBusquedaCatalogoPedido("")
+    setCategoriaCatalogoPedido("Todas")
 
     setPedidoEditando({
       ...pedido,
@@ -447,19 +496,13 @@ export default function Page() {
     })
   }
 
-  const agregarProductoPedido = () => {
+  const agregarProductoPedido = (
+    producto: any
+  ) => {
 
-    if (!pedidoEditando || !productoParaAgregar) {
+    if (!pedidoEditando || !producto) {
       return
     }
-
-    const producto =
-      productosDisponibles.find(
-        (item) =>
-          String(item.id) === productoParaAgregar
-      )
-
-    if (!producto) return
 
     const productos = [
       ...(pedidoEditando.productos || []),
@@ -471,8 +514,6 @@ export default function Page() {
       productos,
       total: calcularTotalProductos(productos),
     })
-
-    setProductoParaAgregar("")
   }
 
   const enviarWhatsApp = (pedido: any) => {
@@ -521,6 +562,9 @@ export default function Page() {
     const fechaActual =
       new Date().toLocaleDateString()
 
+    const logoUrl =
+      `${window.location.origin}/logo.png`
+
     const fechaPedido =
       formatearFecha(
         obtenerFechaPedido(pedido)
@@ -531,64 +575,63 @@ export default function Page() {
         obtenerFechaEntrega(pedido)
       ) || "Sin fecha"
 
+    const productos =
+      Array.isArray(pedido.productos)
+        ? pedido.productos
+        : []
+
     const productosHTML =
-      pedido.productos
+      productos
         .map(
-          (p: any) => `
-            <div style="
-              display:flex;
-              gap:20px;
-              align-items:center;
-              background:white;
-              border-radius:24px;
-              padding:20px;
-              margin-bottom:18px;
-              border:1px solid #F5D3CD;
-            ">
+          (p: any, index: number) => {
+            const imagen =
+              obtenerImagenProducto(p)
+
+            const subtotal =
+              numero(p.precio) *
+              numero(p.cantidad)
+
+            return `
+            <article class="product-row">
               ${
-                p.imagen
+                imagen
                   ? `
                     <img
-                      src="${p.imagen}"
-                      style="
-                        width:90px;
-                        height:90px;
-                        object-fit:cover;
-                        border-radius:20px;
-                      "
+                      src="${escaparHTML(imagen)}"
+                      alt=""
+                      class="product-image"
                     />
                   `
-                  : ""
+                  : `
+                    <div class="product-empty">
+                      ${index + 1}
+                    </div>
+                  `
               }
 
-              <div style="flex:1;">
-                <h3 style="
-                  margin:0;
-                  color:#27B6C7;
-                  font-size:24px;
-                  font-weight:900;
-                ">
-                  ${p.nombre}
+              <div>
+                <h3>
+                  ${escaparHTML(p.nombre)}
                 </h3>
 
-                <p style="
-                  margin:8px 0;
-                  color:#666;
-                  font-size:16px;
-                ">
-                  ${p.modalidad || "Sin modalidad"}
-                </p>
-
-                <p style="
-                  margin:0;
-                  font-size:18px;
-                  font-weight:bold;
-                ">
-                  ${p.cantidad} x $${p.precio}
+                <p class="product-meta">
+                  ${escaparHTML(p.modalidad || "Sin modalidad")}
+                  · ${numero(p.cantidad)} pza.
                 </p>
               </div>
-            </div>
+
+              <div class="product-price">
+                <strong>
+                  $${subtotal}
+                </strong>
+
+                <span>
+                  $${numero(p.precio)} c/u
+                </span>
+              </div>
+            </article>
           `
+          }
         )
         .join("")
 
@@ -603,208 +646,417 @@ export default function Page() {
           <title>
             Pedido ${folio}
           </title>
+          <style>
+            @page {
+              size: letter;
+              margin: 0;
+            }
+
+            * {
+              box-sizing: border-box;
+            }
+
+            html,
+            body {
+              width: 8.5in;
+              min-height: 11in;
+              margin: 0;
+              padding: 0;
+              background: #FFF8F5;
+              font-family: Arial, sans-serif;
+            }
+
+            body {
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+
+            .sheet {
+              width: 8.5in;
+              height: 11in;
+              overflow: hidden;
+              background: #FFF8F5;
+              padding: .22in;
+            }
+
+            .scaler {
+              width: 100%;
+              transform-origin: top left;
+            }
+
+            .header {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: .18in;
+              padding: .16in .18in;
+              border-radius: .22in;
+              background: linear-gradient(135deg, #27B6C7, #F8B4C0);
+              color: white;
+            }
+
+            .logo-box {
+              width: 2.05in;
+              background: white;
+              border-radius: .16in;
+              padding: .07in;
+            }
+
+            .logo-box img {
+              display: block;
+              width: 100%;
+              height: auto;
+            }
+
+            .header h1 {
+              margin: 0;
+              font-size: .34in;
+              line-height: 1;
+              font-weight: 900;
+            }
+
+            .header p {
+              margin: .05in 0 0;
+              font-size: .13in;
+              font-weight: 700;
+            }
+
+            .folio {
+              text-align: right;
+              font-weight: 900;
+              font-size: .16in;
+            }
+
+            .info-grid {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: .08in;
+              margin-top: .12in;
+            }
+
+            .info-card {
+              min-height: .52in;
+              background: white;
+              border: 1px solid #F5D3CD;
+              border-radius: .14in;
+              padding: .08in .1in;
+            }
+
+            .label {
+              margin: 0 0 .03in;
+              color: #888;
+              font-size: .075in;
+              font-weight: 900;
+              letter-spacing: .03em;
+              text-transform: uppercase;
+            }
+
+            .value {
+              margin: 0;
+              color: #222;
+              font-size: .13in;
+              font-weight: 900;
+              line-height: 1.15;
+              overflow-wrap: anywhere;
+            }
+
+            .value.accent {
+              color: #27B6C7;
+            }
+
+            .notes {
+              grid-column: span 3;
+              min-height: .42in;
+            }
+
+            .notes .value {
+              font-size: .105in;
+              font-weight: 700;
+              max-height: .32in;
+              overflow: hidden;
+            }
+
+            .products {
+              margin-top: .12in;
+              display: grid;
+              gap: .055in;
+            }
+
+            .product-row {
+              display: grid;
+              grid-template-columns: .5in 1fr .9in;
+              align-items: center;
+              gap: .08in;
+              background: white;
+              border: 1px solid #F5D3CD;
+              border-radius: .12in;
+              padding: .055in .075in;
+              min-height: .56in;
+            }
+
+            .product-image,
+            .product-empty {
+              width: .42in;
+              height: .42in;
+              border-radius: .08in;
+            }
+
+            .product-image {
+              object-fit: cover;
+            }
+
+            .product-empty {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              background: #D9F5F8;
+              color: #27B6C7;
+              font-weight: 900;
+              font-size: .13in;
+            }
+
+            .product-row h3 {
+              margin: 0;
+              color: #27B6C7;
+              font-size: .12in;
+              line-height: 1.12;
+              font-weight: 900;
+              overflow-wrap: anywhere;
+            }
+
+            .product-meta {
+              margin: .025in 0 0;
+              color: #666;
+              font-size: .09in;
+              font-weight: 700;
+            }
+
+            .product-price {
+              text-align: right;
+            }
+
+            .product-price strong {
+              display: block;
+              color: #F08C8C;
+              font-size: .13in;
+              line-height: 1;
+              font-weight: 900;
+            }
+
+            .product-price span {
+              display: block;
+              margin-top: .025in;
+              color: #777;
+              font-size: .075in;
+              font-weight: 700;
+            }
+
+            .total-row {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              gap: .14in;
+              margin-top: .12in;
+              padding: .12in .16in;
+              border-radius: .16in;
+              background: #27B6C7;
+              color: white;
+            }
+
+            .total-row p {
+              margin: 0;
+              font-size: .1in;
+              font-weight: 900;
+              text-transform: uppercase;
+            }
+
+            .total-row h2 {
+              margin: 0;
+              font-size: .28in;
+              line-height: 1;
+              font-weight: 900;
+            }
+
+            .footer {
+              margin-top: .08in;
+              color: #888;
+              text-align: center;
+              font-size: .075in;
+              font-weight: 700;
+            }
+          </style>
         </head>
 
-        <body style="
-          margin:0;
-          padding:0;
-          background:#FFF7F5;
-          font-family:Arial, sans-serif;
-        ">
-          <div style="
-            max-width:900px;
-            margin:auto;
-            padding:50px;
-          ">
-            <div style="
-              background:linear-gradient(
-                135deg,
-                #27B6C7,
-                #F8B4C0
-              );
-              border-radius:40px;
-              padding:50px;
-              color:white;
-              margin-bottom:40px;
-            ">
-              <h1 style="
-                margin:0;
-                font-size:64px;
-                font-weight:900;
-              ">
-                TUCHIS
-              </h1>
+        <body>
+          <section class="sheet">
+            <div class="scaler" id="pdf-content">
+              <header class="header">
+                <div class="logo-box">
+                  <img
+                    src="${logoUrl}"
+                    alt="TUCHIS alcancías"
+                  />
+                </div>
 
-              <p style="
-                margin-top:10px;
-                font-size:24px;
-              ">
-                Pedido premium
-              </p>
-            </div>
-
-            <div style="
-              background:white;
-              border-radius:32px;
-              padding:35px;
-              margin-bottom:30px;
-              border:1px solid #F5D3CD;
-            ">
-              <div style="
-                display:grid;
-                grid-template-columns:
-                  repeat(2,1fr);
-                gap:20px;
-              ">
                 <div>
-                  <p style="
-                    color:#999;
-                    margin:0 0 8px 0;
-                  ">
+                  <h1>
+                    Pedido
+                  </h1>
+
+                  <p>
+                    TUCHIS alcancías
+                  </p>
+                </div>
+
+                <div class="folio">
+                  ${folio}
+                </div>
+              </header>
+
+              <div class="info-grid">
+                <div class="info-card">
+                  <p class="label">
                     Cliente
                   </p>
 
-                  <h2 style="
-                    margin:0;
-                    color:#27B6C7;
-                  ">
-                    ${pedido.cliente}
+                  <h2 class="value accent">
+                    ${escaparHTML(pedido.cliente)}
                   </h2>
                 </div>
 
-                <div>
-                  <p style="
-                    color:#999;
-                    margin:0 0 8px 0;
-                  ">
+                <div class="info-card">
+                  <p class="label">
                     Teléfono
                   </p>
 
-                  <h2 style="margin:0;">
-                    ${pedido.telefono}
+                  <h2 class="value">
+                    ${escaparHTML(pedido.telefono)}
                   </h2>
                 </div>
 
-                <div>
-                  <p style="
-                    color:#999;
-                    margin:0 0 8px 0;
-                  ">
+                <div class="info-card">
+                  <p class="label">
+                    Estado
+                  </p>
+
+                  <h2 class="value">
+                    ${escaparHTML(pedido.estado || "pendiente")}
+                  </h2>
+                </div>
+
+                <div class="info-card">
+                  <p class="label">
                     Fecha de pedido
                   </p>
 
-                  <h2 style="margin:0;">
-                    ${fechaPedido}
+                  <h2 class="value">
+                    ${escaparHTML(fechaPedido)}
                   </h2>
                 </div>
 
-                <div>
-                  <p style="
-                    color:#999;
-                    margin:0 0 8px 0;
-                  ">
+                <div class="info-card">
+                  <p class="label">
                     Fecha de entrega
                   </p>
 
-                  <h2 style="margin:0;">
-                    ${fechaEntrega}
+                  <h2 class="value">
+                    ${escaparHTML(fechaEntrega)}
                   </h2>
                 </div>
 
-                <div>
-                  <p style="
-                    color:#999;
-                    margin:0 0 8px 0;
-                  ">
-                    Folio
+                <div class="info-card">
+                  <p class="label">
+                    Productos
                   </p>
 
-                  <h2 style="
-                    margin:0;
-                    color:#F59AA3;
-                  ">
-                    ${folio}
+                  <h2 class="value">
+                    ${productos.length}
                   </h2>
                 </div>
 
-                <div>
-                  <p style="
-                    color:#999;
-                    margin:0 0 8px 0;
-                  ">
+                <div class="info-card notes">
+                  <p class="label">
                     Notas
                   </p>
 
-                  <h2 style="margin:0;">
-                    ${pedido.notas || "Sin notas"}
+                  <h2 class="value">
+                    ${escaparHTML(pedido.notas || "Sin notas")}
                   </h2>
                 </div>
               </div>
-            </div>
 
-            <div>
+              <div class="products">
               ${productosHTML}
-            </div>
+              </div>
 
-            <div style="
-              background:#27B6C7;
-              color:white;
-              border-radius:32px;
-              padding:40px;
-              margin-top:40px;
-              text-align:center;
-            ">
-              <p style="
-                margin:0;
-                font-size:24px;
-              ">
-                Total
-              </p>
+              <div class="total-row">
+                <div>
+                  <p>
+                    Total
+                  </p>
 
-              <h2 style="
-                margin:10px 0 0 0;
-                font-size:64px;
-                font-weight:900;
-              ">
-                $${pedido.total}
-              </h2>
-            </div>
+                  <h2>
+                    $${numero(pedido.total)}
+                  </h2>
+                </div>
 
-            <div style="
-              text-align:center;
-              margin-top:40px;
-            ">
-              <a
-                href="https://wa.me/52${pedido.telefono}"
-                style="
-                  display:inline-block;
-                  background:#25D366;
-                  color:white;
-                  text-decoration:none;
-                  padding:18px 32px;
-                  border-radius:20px;
-                  font-size:20px;
-                  font-weight:bold;
-                "
-              >
-                WhatsApp
-              </a>
-            </div>
+                <p>
+                  Generado el ${escaparHTML(fechaActual)}
+                </p>
+              </div>
 
-            <div style="
-              text-align:center;
-              margin-top:50px;
-              color:#999;
-            ">
-              Generado el ${fechaActual}
+              <div class="footer">
+                TUCHIS alcancías · Imagina, pinta y disfruta
+              </div>
             </div>
-          </div>
+          </section>
+
+          <script>
+            let pdfListo = false
+
+            const ajustarAUnaHoja = () => {
+              if (pdfListo) return
+
+              const hoja =
+                document.querySelector(".sheet")
+              const contenido =
+                document.querySelector("#pdf-content")
+
+              if (!hoja || !contenido) return
+
+              contenido.style.transform = "scale(1)"
+
+              const escalaAncho =
+                hoja.clientWidth / contenido.scrollWidth
+              const escalaAlto =
+                hoja.clientHeight / contenido.scrollHeight
+              const escala =
+                Math.min(
+                  1,
+                  escalaAncho,
+                  escalaAlto
+                )
+
+              contenido.style.transform =
+                "scale(" + escala + ")"
+
+              pdfListo = true
+              window.focus()
+              setTimeout(() => window.print(), 120)
+            }
+
+            window.addEventListener(
+              "load",
+              () => setTimeout(ajustarAUnaHoja, 180)
+            )
+
+            setTimeout(ajustarAUnaHoja, 900)
+          </script>
         </body>
       </html>
     `)
 
     ventana.document.close()
-    ventana.print()
   }
 
   return (
@@ -813,9 +1065,17 @@ export default function Page() {
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 
-  <h1 className="page-title">
-    Pedidos
-  </h1>
+  <div>
+    <img
+      src="/logo.png"
+      alt="TUCHIS alcancías"
+      className="brand-logo mb-6"
+    />
+
+    <h1 className="page-title">
+      Pedidos
+    </h1>
+  </div>
 
   <button
     onClick={() => window.location.href = "/catalogo"}
@@ -1433,39 +1693,182 @@ export default function Page() {
           )
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4">
+        <div className="rounded-3xl border border-[#FFD9D4] bg-white p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 
-          <select
-            value={productoParaAgregar}
-            onChange={(e) =>
-              setProductoParaAgregar(e.target.value)
-            }
-            className="input-premium"
-          >
+          <div>
+            <h4 className="text-xl font-black text-cyan-600">
+              Agregar producto
+            </h4>
 
-            <option value="">
-              Selecciona producto para agregar
-            </option>
-
-            {productosDisponibles.map((producto) => (
-              <option
-                key={producto.id}
-                value={producto.id}
-              >
-                {producto.nombre}
-              </option>
-            ))}
-
-          </select>
+            <p className="text-zinc-500 mt-1">
+              Abre el catálogo para buscar por nombre, categoría e imagen.
+            </p>
+          </div>
 
           <button
-            onClick={agregarProductoPedido}
+            onClick={() =>
+              setCatalogoPedidoAbierto(true)
+            }
             className="btn-primary"
           >
-            Agregar producto
+            Abrir catálogo
           </button>
 
         </div>
+
+        {catalogoPedidoAbierto && (
+
+          <div className="
+            fixed inset-0 z-[70]
+            bg-black/60
+            backdrop-blur-sm
+            flex items-center justify-center
+            p-4
+          ">
+
+            <div className="
+              bg-[#FFF8F5]
+              w-full
+              max-w-6xl
+              rounded-[32px]
+              shadow-2xl
+              p-6
+              md:p-8
+              max-h-[92vh]
+              overflow-y-auto
+            ">
+
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+                <div>
+                  <img
+                    src="/logo.png"
+                    alt="TUCHIS alcancías"
+                    className="brand-logo-sm mb-4"
+                  />
+
+                  <h3 className="text-4xl font-black text-cyan-600">
+                    Catálogo
+                  </h3>
+
+                  <p className="text-zinc-500 mt-2">
+                    Elige los productos que se agregarán al pedido.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() =>
+                    setCatalogoPedidoAbierto(false)
+                  }
+                  className="text-4xl text-zinc-400 self-end md:self-start"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <input
+                  type="text"
+                  placeholder="Buscar producto..."
+                  value={busquedaCatalogoPedido}
+                  onChange={(e) =>
+                    setBusquedaCatalogoPedido(
+                      e.target.value
+                    )
+                  }
+                  className="input-premium"
+                />
+
+                <select
+                  value={categoriaCatalogoPedido}
+                  onChange={(e) =>
+                    setCategoriaCatalogoPedido(
+                      e.target.value
+                    )
+                  }
+                  className="input-premium"
+                >
+                  <option value="Todas">
+                    Todas las categorías
+                  </option>
+
+                  {categoriasCatalogoPedido.map(
+                    (categoria) => (
+                      <option
+                        key={categoria}
+                        value={categoria}
+                      >
+                        {categoria}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                {productosCatalogoPedido.map(
+                  (producto) => (
+                    <div
+                      key={producto.id}
+                      className="bg-white border border-[#F8D6D0] rounded-[28px] overflow-hidden shadow-sm"
+                    >
+                      <img
+                        src={
+                          producto.imagenes?.[0] ||
+                          "/logo.png"
+                        }
+                        alt={producto.nombre}
+                        className="w-full h-56 object-cover bg-white"
+                      />
+
+                      <div className="p-5">
+                        <p className="text-pink-400 font-black text-xs uppercase">
+                          {producto.categoria}
+                        </p>
+
+                        <h4 className="text-2xl font-black text-cyan-600 mt-2">
+                          {producto.nombre}
+                        </h4>
+
+                        <div className="mt-4 space-y-1">
+                          <p className="text-2xl font-black text-rose-300">
+                            Menudeo ${obtenerPrecioMenudeo(producto)}
+                          </p>
+
+                          <p className="text-lg font-black text-cyan-500">
+                            Mayoreo ${obtenerPrecioMayoreo(producto)}
+                          </p>
+
+                          {obtenerMinimoMayoreo(producto) > 0 && (
+                            <p className="text-xs font-black uppercase text-zinc-400">
+                              Desde {obtenerMinimoMayoreo(producto)} piezas
+                            </p>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() =>
+                            agregarProductoPedido(producto)
+                          }
+                          className="btn-primary w-full mt-5"
+                        >
+                          Agregar al pedido
+                        </button>
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+
+              {productosCatalogoPedido.length === 0 && (
+                <div className="bg-white border border-[#F8D6D0] rounded-3xl p-8 text-center text-zinc-500 font-bold">
+                  No hay productos con esa búsqueda.
+                </div>
+              )}
+
+            </div>
+
+          </div>
+        )}
 
         <div className="text-4xl font-black text-rose-300">
           Total: ${calcularTotalProductos(
@@ -1517,6 +1920,7 @@ export default function Page() {
             precio_menudeo: producto.precio_menudeo,
             precio_mayoreo: producto.precio_mayoreo,
             minimo_mayoreo: producto.minimo_mayoreo,
+            imagenes: producto.imagenes || [],
           })),
         total: totalActualizado,
       })
