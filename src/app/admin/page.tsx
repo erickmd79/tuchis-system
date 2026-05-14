@@ -23,6 +23,8 @@ type Pedido = {
   fecha_creacion?: string
   created_at?: string
   estado?: string
+  estado_pago?: string
+  anticipo?: number | string
   total?: number | string
   productos?: ProductoPedido[]
 }
@@ -100,6 +102,15 @@ const formatearDia = (valor: string) => {
 
 const normalizarEstado = (estado?: string) =>
   String(estado || "pendiente").toLowerCase()
+
+const obtenerEstadoEntrega = (pedido: Pedido) =>
+  pedido.estado === "entregado"
+    ? "entregado"
+    : "pendiente"
+
+const obtenerEstadoPago = (pedido: Pedido) =>
+  pedido.estado_pago ||
+  (pedido.estado === "pagado" ? "pagado" : "anticipo")
 
 const obtenerUltimosDias = (total = 7) =>
   Array.from({ length: total }, (_, index) => {
@@ -225,6 +236,13 @@ export default function AdminPage() {
         0
       )
 
+    const totalAnticipos =
+      pedidos.reduce(
+        (acc, pedido) =>
+          acc + numero(pedido.anticipo),
+        0
+      )
+
     const pedidosHoy =
       pedidos.filter(
         (pedido) =>
@@ -237,10 +255,24 @@ export default function AdminPage() {
       pedidos.reduce<Record<string, number>>(
         (acc, pedido) => {
           const estado =
-            normalizarEstado(pedido.estado)
+            obtenerEstadoEntrega(pedido)
 
           acc[estado] =
             (acc[estado] || 0) + 1
+
+          return acc
+        },
+        {}
+      )
+
+    const pagos =
+      pedidos.reduce<Record<string, number>>(
+        (acc, pedido) => {
+          const estadoPago =
+            obtenerEstadoPago(pedido)
+
+          acc[estadoPago] =
+            (acc[estadoPago] || 0) + 1
 
           return acc
         },
@@ -364,9 +396,11 @@ export default function AdminPage() {
 
     return {
       totalVentas,
+      totalAnticipos,
       pedidosHoy,
       totalPedidos: pedidos.length,
       estados,
+      pagos,
       productosTop,
       modalidadesTop,
       categoriasTop,
@@ -495,7 +529,7 @@ export default function AdminPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
 
               <div className="rounded-[32px] p-6 md:p-8 bg-[#D9F5F8] min-h-[180px] flex flex-col justify-between">
                 <h3 className="text-gray-700 text-lg md:text-xl font-semibold">
@@ -504,6 +538,16 @@ export default function AdminPage() {
 
                 <p className="text-4xl md:text-5xl font-black mt-6">
                   {moneda(resumen.totalVentas)}
+                </p>
+              </div>
+
+              <div className="rounded-[32px] p-6 md:p-8 bg-[#FFF0B8] min-h-[180px] flex flex-col justify-between">
+                <h3 className="text-gray-700 text-lg md:text-xl font-semibold">
+                  Anticipos
+                </h3>
+
+                <p className="text-4xl md:text-5xl font-black mt-6">
+                  {moneda(resumen.totalAnticipos)}
                 </p>
               </div>
 
@@ -533,7 +577,7 @@ export default function AdminPage() {
                 </h3>
 
                 <p className="text-4xl md:text-5xl font-black mt-6">
-                  {resumen.estados.pagado || 0}
+                  {resumen.pagos.pagado || 0}
                 </p>
               </div>
 
@@ -586,7 +630,6 @@ export default function AdminPage() {
                 <div className="space-y-6">
                   {[
                     ["pendiente", "Pendientes", "bg-yellow-300"],
-                    ["pagado", "Pagados", "bg-green-300"],
                     ["entregado", "Entregados", "bg-[#CDB4DB]"],
                   ].map(([estado, etiqueta, color]) => {
                     const cantidad =
@@ -759,7 +802,9 @@ export default function AdminPage() {
                       </div>
 
                       <p className="text-gray-500 mt-2">
-                        {normalizarEstado(pedido.estado)}
+                        {obtenerEstadoEntrega(pedido)}
+                        {" · "}
+                        {obtenerEstadoPago(pedido)}
                         {" · "}
                         {formatearDia(
                           obtenerClaveFecha(
