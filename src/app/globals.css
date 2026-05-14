@@ -166,6 +166,39 @@ button{
   background:white;
 }
 
+.input-premium{
+  width:100%;
+  min-height:58px;
+  border-radius:20px;
+  border:1px solid #F3D4CF;
+  padding:14px 20px;
+  font-size:16px;
+  background:white;
+  color:#2B2B2B;
+  outline:none;
+}
+
+.input-premium:focus{
+  border-color:#20B8C9;
+  box-shadow:0 0 0 4px rgba(32,184,201,.12);
+}
+
+.input-cliente-grande{
+  min-height:78px;
+  font-size:28px;
+  font-weight:900;
+  color:#20B8C9;
+}
+
+@media(max-width:768px){
+
+  .input-cliente-grande{
+    min-height:68px;
+    font-size:22px;
+  }
+
+}
+
 .textarea{
   width:100%;
   min-height:120px;
