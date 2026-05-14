@@ -230,6 +230,83 @@ button{
   font-weight:700;
 }
 
+.badge-pedido,
+.badge-action{
+  border:1px solid transparent;
+  border-radius:999px;
+  padding:10px 16px;
+  font-size:14px;
+  font-weight:900;
+  text-align:center;
+  text-transform:uppercase;
+  letter-spacing:.02em;
+  box-shadow:0 10px 24px rgba(0,0,0,.06);
+}
+
+.badge-pedido{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  animation:badge-soft-pulse 2.4s ease-in-out infinite;
+}
+
+.badge-action{
+  width:100%;
+  min-height:48px;
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    opacity .18s ease;
+}
+
+.badge-action:hover{
+  transform:translateY(-1px);
+}
+
+.badge-neutral{
+  background:#F7F4F2;
+  color:#777;
+  border-color:#ECE2DE;
+  box-shadow:none;
+}
+
+.badge-pendiente{
+  background:#FFF0B8;
+  color:#8A6A00;
+  border-color:#FFE28A;
+}
+
+.badge-entregado{
+  background:#E7D9FF;
+  color:#6D4AA8;
+  border-color:#D7C3FF;
+}
+
+.badge-anticipo{
+  background:#FFE0DD;
+  color:#C65E67;
+  border-color:#FFC8C2;
+}
+
+.badge-pagado{
+  background:#DDF5EA;
+  color:#238657;
+  border-color:#BFEAD8;
+}
+
+@keyframes badge-soft-pulse{
+  0%,
+  100%{
+    transform:translateY(0);
+    box-shadow:0 10px 24px rgba(0,0,0,.06);
+  }
+
+  50%{
+    transform:translateY(-1px);
+    box-shadow:0 14px 28px rgba(0,0,0,.10);
+  }
+}
+
 .catalog-grid{
   display:grid;
 
