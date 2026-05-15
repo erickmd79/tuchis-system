@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/apply-pedido-page-client.js",
+    "predev": "node scripts/apply-current-pages.js",
     "dev": "next dev",
-    "prebuild": "node scripts/apply-pedido-page-client.js",
+    "prebuild": "node scripts/apply-current-pages.js",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
