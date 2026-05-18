@@ -13,4 +13,66 @@ alter table public.productos
 create index if not exists tamanos_nombre_modalidad_idx
   on public.tamanos (nombre, modalidad);
 
+alter table public.tamanos enable row level security;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'tamanos'
+      and policyname = 'tamanos_public_select'
+  ) then
+    create policy tamanos_public_select
+      on public.tamanos
+      for select
+      to anon, authenticated
+      using (true);
+  end if;
+
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'tamanos'
+      and policyname = 'tamanos_public_insert'
+  ) then
+    create policy tamanos_public_insert
+      on public.tamanos
+      for insert
+      to anon, authenticated
+      with check (true);
+  end if;
+
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'tamanos'
+      and policyname = 'tamanos_public_update'
+  ) then
+    create policy tamanos_public_update
+      on public.tamanos
+      for update
+      to anon, authenticated
+      using (true)
+      with check (true);
+  end if;
+
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'tamanos'
+      and policyname = 'tamanos_public_delete'
+  ) then
+    create policy tamanos_public_delete
+      on public.tamanos
+      for delete
+      to anon, authenticated
+      using (true);
+  end if;
+end $$;
+
 select pg_notify('pgrst', 'reload schema');
