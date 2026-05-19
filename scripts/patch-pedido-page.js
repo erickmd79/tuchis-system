@@ -97,6 +97,69 @@ replaceOptional(
 )
 
 replaceOptional(
+  `const [fecha, setFecha] = useState("")
+const [notas, setNotas] = useState("")
+useEffect(() => {
+const data =
+JSON.parse(
+localStorage.getItem("carrito") || "[]"
+)
+setCarrito(data)
+`,
+  `const [fecha, setFecha] = useState("")
+const [notas, setNotas] = useState("")
+const [mostrarFormularioPedido, setMostrarFormularioPedido] =
+useState(false)
+useEffect(() => {
+const data =
+JSON.parse(
+localStorage.getItem("carrito") || "[]"
+)
+setCarrito(data)
+const parametros =
+new URLSearchParams(window.location.search)
+setMostrarFormularioPedido(
+parametros.get("carrito") === "1" &&
+data.length > 0
+)
+`
+)
+
+if (!content.includes("{mostrarFormularioPedido && (")) {
+  replaceOptional(
+    `<div className="section-card">
+<h2 className="text-3xl font-black text-cyan-600 mb-8">
+Nuevo pedido
+`,
+    `{mostrarFormularioPedido && (
+<div className="section-card">
+<h2 className="text-3xl font-black text-cyan-600 mb-8">
+Nuevo pedido
+`
+  )
+
+  replaceOptional(
+    `</button>
+</div>
+)}
+</div>
+<div className="section-card">
+<h2 className="text-3xl font-black text-cyan-600 mb-8">
+Pedidos guardados
+`,
+    `</button>
+</div>
+)}
+</div>
+)}
+<div className="section-card">
+<h2 className="text-3xl font-black text-cyan-600 mb-8">
+Pedidos guardados
+`
+  )
+}
+
+replaceOptional(
   `const { error } = await supabase
 .from("pedidos")
 .update(pedidoActualizado)
