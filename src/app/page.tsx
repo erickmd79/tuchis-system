@@ -1,20 +1,10 @@
-import Image from "next/image"
 import Link from "next/link"
 
 export default function Home() {
   return (
     <div className="min-h-[calc(100vh-146px)] flex items-center justify-center px-4 py-10">
       <main className="w-full max-w-5xl bg-white border border-[#F5D3CD] rounded-[32px] shadow-sm p-8 md:p-12">
-        <Image
-          src="/logo.png"
-          alt="TUCHIS alcancías"
-          width={360}
-          height={170}
-          priority
-          className="brand-logo"
-        />
-
-        <h1 className="page-title mt-8">
+        <h1 className="page-title">
           Sistema TUCHIS
         </h1>
 
