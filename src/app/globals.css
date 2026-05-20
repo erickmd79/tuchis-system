@@ -47,7 +47,8 @@ button{
 .navbar{
   width:100%;
   min-height:82px;
-  background:white;
+  background:rgba(255,255,255,.96);
+  backdrop-filter:blur(14px);
   color:#222;
 
   display:flex;
@@ -61,6 +62,8 @@ button{
 
   position:sticky;
   top:0;
+  left:0;
+  right:0;
   z-index:999;
 }
 
