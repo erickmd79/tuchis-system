@@ -649,6 +649,9 @@ export default function CatalogoPage() {
       0
     )
 
+  const productosAgregados =
+    carrito.length
+
   const subtotal =
     carrito.reduce(
       (acc, item) =>
@@ -715,7 +718,11 @@ export default function CatalogoPage() {
 
   return (
 
-    <div className="min-h-screen bg-[#FFF8F5] px-4 md:px-8 py-6 pb-72">
+    <div className={`min-h-screen bg-[#FFF8F5] px-4 md:px-8 py-6 ${
+      carrito.length > 0
+        ? "pb-24 lg:pb-6 lg:pl-[360px]"
+        : ""
+    }`}>
 
       <div className="mb-8 md:mb-10">
 
@@ -1184,42 +1191,42 @@ export default function CatalogoPage() {
       {carrito.length > 0 && (
 
         <div
-          className="fixed bottom-3 left-1/2
-          -translate-x-1/2
+          className="hidden lg:flex fixed left-4 top-32 bottom-4
           bg-white/95 backdrop-blur-xl
           border border-[#F8D6D0]
           shadow-2xl rounded-[32px]
-          w-[95%] max-w-[980px]
-          p-5 md:p-6 z-50"
+          w-[320px]
+          p-5 z-40
+          flex-col"
         >
 
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-5 mb-5">
+          <div className="mb-5">
 
-            <div>
+            <p className="font-black text-[#20B8C9] text-xl">
+              🛒 {productosAgregados} productos
+            </p>
 
-              <p className="font-black text-[#20B8C9] text-xl md:text-2xl">
-                🛒 {totalProductos} productos
-              </p>
+            <p className="text-xs font-black uppercase text-gray-400 mt-1">
+              {totalProductos} piezas
+            </p>
 
-              <p className="text-[#F49B93] text-3xl md:text-4xl font-black mt-1">
-                ${subtotal}
-              </p>
-
-            </div>
-
-            <a
-              href="/pedido?carrito=1"
-              className="bg-[#20B8C9]
-              text-white px-8 py-5
-              rounded-2xl font-black
-              text-center text-lg"
-            >
-              Ver carrito
-            </a>
+            <p className="text-[#F49B93] text-4xl font-black mt-1">
+              ${subtotal}
+            </p>
 
           </div>
 
-          <div className="max-h-[280px] overflow-auto space-y-3">
+          <a
+            href="/pedido?carrito=1"
+            className="bg-[#20B8C9]
+            text-white px-6 py-4
+            rounded-2xl font-black
+            text-center text-base mb-5"
+          >
+            Ver carrito
+          </a>
+
+          <div className="flex-1 min-h-0 overflow-auto space-y-3 pr-1">
 
             {carrito.map((item) => (
 
@@ -1227,12 +1234,10 @@ export default function CatalogoPage() {
                 key={item.carrito_id}
                 className="bg-[#FFF8F5]
                 rounded-3xl p-4
-                flex flex-col md:flex-row
-                md:justify-between
-                md:items-center gap-4"
+                flex flex-col gap-4"
               >
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-3">
                   {item.imagen && (
                     <img
                       src={item.imagen}
@@ -1323,6 +1328,29 @@ export default function CatalogoPage() {
 
         </div>
 
+      )}
+
+      {carrito.length > 0 && (
+        <a
+          href="/pedido?carrito=1"
+          aria-label="Ver carrito"
+          className="lg:hidden fixed right-5 bottom-5 z-50
+          w-16 h-16 rounded-full bg-[#20B8C9]
+          shadow-2xl flex items-center justify-center
+          text-3xl"
+        >
+          🛒
+          <span
+            className="absolute -top-2 -right-2
+            min-w-8 h-8 px-2 rounded-full
+            bg-[#F49B93] text-white
+            text-sm font-black
+            flex items-center justify-center
+            border-4 border-white"
+          >
+            {productosAgregados}
+          </span>
+        </a>
       )}
 
     </div>
