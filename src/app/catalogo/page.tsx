@@ -718,15 +718,15 @@ export default function CatalogoPage() {
 
   return (
 
-    <div className={`min-h-screen bg-[#FFF8F5] px-4 md:px-8 py-6 ${
+    <div className={`min-h-screen bg-[#FFF8F5] px-3 sm:px-4 md:px-8 py-5 md:py-6 ${
       carrito.length > 0
-        ? "pb-24 lg:pb-6 lg:pl-[360px]"
+        ? "pb-24 lg:pb-6 lg:pl-[340px]"
         : ""
     }`}>
 
-      <div className="mb-8 md:mb-10">
+      <div className="mb-6 md:mb-8 max-w-[720px] mx-auto">
 
-        <h1 className="text-4xl md:text-6xl font-black text-[#20B8C9] leading-none">
+        <h1 className="text-3xl md:text-5xl font-black text-[#20B8C9] leading-none">
           Catálogo TUCHIS
         </h1>
 
@@ -736,7 +736,7 @@ export default function CatalogoPage() {
 
       </div>
 
-      <div className="flex flex-col md:grid md:grid-cols-2 gap-4 mb-8 md:mb-10">
+      <div className="flex flex-col md:grid md:grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8 max-w-[720px] mx-auto">
 
         <input
           type="text"
@@ -747,7 +747,7 @@ export default function CatalogoPage() {
               e.target.value
             )
           }
-          className="w-full p-4 rounded-2xl border bg-white"
+          className="w-full p-3 md:p-4 rounded-2xl border bg-white"
         />
 
         <select
@@ -757,7 +757,7 @@ export default function CatalogoPage() {
               e.target.value
             )
           }
-          className="w-full p-4 rounded-2xl border bg-white"
+          className="w-full p-3 md:p-4 rounded-2xl border bg-white"
         >
 
           <option value="Todas">
@@ -779,7 +779,7 @@ export default function CatalogoPage() {
 
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-5 max-w-[720px] mx-auto">
 
         {productosFiltrados.map(
           (producto) => {
@@ -813,7 +813,7 @@ export default function CatalogoPage() {
 
               <div
                 key={producto.id}
-                className="bg-white rounded-[32px] overflow-hidden shadow-lg border border-[#F8D6D0]"
+                className="bg-white rounded-[22px] md:rounded-[26px] overflow-hidden shadow-md border border-[#F8D6D0]"
               >
 
                 <div className="relative">
@@ -827,15 +827,15 @@ export default function CatalogoPage() {
                       "/logo.png"
                     }
                     alt={producto.nombre}
-                    className="w-full h-[320px] object-cover"
+                    className="w-full aspect-square object-cover"
                   />
 
                   {badges.length > 0 && (
-                    <div className="absolute left-4 top-4 flex flex-wrap gap-2 max-w-[85%]">
+                    <div className="absolute left-2 top-2 md:left-3 md:top-3 flex flex-wrap gap-1.5 max-w-[88%]">
                       {badges.slice(0, 3).map((badge) => (
                         <span
                           key={badge}
-                          className="bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-black uppercase text-[#20B8C9] shadow"
+                          className="bg-white/90 backdrop-blur px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-black uppercase text-[#20B8C9] shadow"
                         >
                           {badge}
                         </span>
@@ -846,7 +846,7 @@ export default function CatalogoPage() {
                 </div>
 
                 {producto.imagenes?.length > 1 && (
-                  <div className="flex gap-2 px-3 pt-3 overflow-x-auto">
+                  <div className="flex gap-1.5 md:gap-2 px-2 md:px-3 pt-2 md:pt-3 overflow-x-auto">
 
                     {producto.imagenes?.map(
                       (
@@ -865,9 +865,10 @@ export default function CatalogoPage() {
                                 imagen,
                             })
                           }
-                          className={`min-w-[70px] w-[70px] h-[70px]
-                          object-cover rounded-2xl
-                          cursor-pointer border-4
+                          className={`min-w-[44px] w-[44px] h-[44px]
+                          sm:min-w-[58px] sm:w-[58px] sm:h-[58px]
+                          object-cover rounded-xl md:rounded-2xl
+                          cursor-pointer border-2 md:border-4
                           ${
                             imagenesActivas[
                               producto.id
@@ -883,40 +884,40 @@ export default function CatalogoPage() {
                   </div>
                 )}
 
-                <div className="p-5 md:p-6">
+                <div className="p-3 sm:p-4 md:p-5">
 
-                  <p className="text-pink-400 font-bold text-xs md:text-sm uppercase tracking-wider">
+                  <p className="text-pink-400 font-bold text-[10px] sm:text-xs uppercase">
                     {
                       producto.categoria
                     }
                   </p>
 
-                  <h2 className="text-2xl md:text-3xl font-black text-[#20B8C9] mt-2 leading-tight">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-black text-[#20B8C9] mt-1.5 leading-tight break-words">
                     {producto.nombre}
                   </h2>
 
-                  <p className="text-gray-500 mt-3 text-sm md:text-base">
+                  <p className="text-gray-500 mt-1.5 text-xs sm:text-sm">
                     {mostrarMedidas(producto.medidas)}
                   </p>
 
-                  <div className="mt-5 space-y-1">
+                  <div className="mt-3 md:mt-4 space-y-1">
 
-                    <p className="text-sm font-black uppercase text-gray-400">
+                    <p className="text-[10px] sm:text-xs font-black uppercase text-gray-400">
                       Precio desde
                     </p>
 
-                    <p className="text-3xl md:text-4xl font-black text-[#F49B93]">
+                    <p className="text-2xl md:text-3xl font-black text-[#F49B93]">
                       ${precioDesde}
                     </p>
 
                     {tamanosProducto.length > 0 && (
-                      <p className="text-sm font-bold text-[#20B8C9]">
+                      <p className="text-xs sm:text-sm font-bold text-[#20B8C9] truncate">
                         {obtenerNombresTamanos(producto).join(", ")}
                       </p>
                     )}
 
                     {minimoMayoreo > 0 && (
-                      <p className="text-xs md:text-sm font-black uppercase text-gray-400">
+                      <p className="text-[10px] sm:text-xs font-black uppercase text-gray-400">
                         Mayoreo desde {minimoMayoreo} piezas
                       </p>
                     )}
@@ -924,7 +925,7 @@ export default function CatalogoPage() {
                   </div>
 
                   {cantidadEnCarrito > 0 && (
-                    <p className="mt-5 rounded-2xl bg-[#D9F5F8] px-4 py-3 text-sm font-black text-[#0D8EA0]">
+                    <p className="mt-3 rounded-2xl bg-[#D9F5F8] px-3 py-2 text-xs sm:text-sm font-black text-[#0D8EA0]">
                       {cantidadEnCarrito} en carrito
                     </p>
                   )}
@@ -935,14 +936,14 @@ export default function CatalogoPage() {
                         producto
                       )
                     }
-                    className="w-full mt-6
+                    className="w-full mt-4
                     bg-[#20B8C9]
                     hover:bg-[#17A7B8]
-                    text-white py-5
+                    text-white py-3 sm:py-4
                     rounded-2xl font-black
-                    text-lg transition-all"
+                    text-sm sm:text-base transition-all"
                   >
-                    Seleccionar producto
+                    Seleccionar
                   </button>
 
                 </div>
