@@ -33,24 +33,42 @@ export default function RootLayout({
             />
           </Link>
 
-          <div className="navbar-links">
+          <div className="navbar-menu">
+            <input
+              id="navbar-toggle"
+              type="checkbox"
+              className="navbar-checkbox"
+            />
 
-            <Link href="/">
-              Inicio
-            </Link>
+            <label
+              htmlFor="navbar-toggle"
+              className="navbar-toggle"
+              aria-label="Abrir menú"
+            >
+              <span />
+              <span />
+              <span />
+            </label>
 
-            <Link href="/catalogo">
-              Catálogo
-            </Link>
+            <div className="navbar-links">
 
-            <Link href="/pedido">
-              Pedidos
-            </Link>
+              <Link href="/">
+                Inicio
+              </Link>
 
-            <Link href="/admin">
-              Admin
-            </Link>
+              <Link href="/catalogo">
+                Catálogo
+              </Link>
 
+              <Link href="/pedido">
+                Pedidos
+              </Link>
+
+              <Link href="/admin">
+                Admin
+              </Link>
+
+            </div>
           </div>
 
         </nav>
