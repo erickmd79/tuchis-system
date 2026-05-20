@@ -103,6 +103,36 @@ replaceOptional(
 )
 
 replaceOptional(
+  `<img
+src="/logo.png"
+alt="TUCHIS alcancías"
+className="brand-logo mb-6"
+/>
+`,
+  ""
+)
+
+replaceOptional(
+  `<button
+onClick={() =>
+cambiarEstadoPago(
+pedido,
+"pendiente"
+)
+}
+className={\`badge-action \${
+obtenerEstadoPago(pedido) === "pendiente"
+? "badge-pendiente"
+: "badge-neutral"
+}\`}
+>
+Pendiente
+</button>
+`,
+  ""
+)
+
+replaceOptional(
   `const calcularTotalProductos = (
 productos: any[] = []
 ) =>
