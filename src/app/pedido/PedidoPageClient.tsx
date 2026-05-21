@@ -80,6 +80,12 @@ obtenerClaveModalidad(modalidad)
 )
 const numero = (valor: any) =>
 Number(valor || 0)
+
+const moneda = (valor: any) =>
+  `$${new Intl.NumberFormat("es-MX", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(numero(valor))}`
 const obtenerClaveModalidad = (modalidad?: string) => {
 const valor =
 String(modalidad || "")
@@ -296,6 +302,10 @@ useState("pendiente")
 const [fecha, setFecha] = useState("")
 const [notas, setNotas] = useState("")
 const [errorPedido, setErrorPedido] = useState("")
+const [exitoPedido, setExitoPedido] = useState(false)
+const [enviando, setEnviando] = useState(false)
+const [pedidoAEliminar, setPedidoAEliminar] = useState<number | null>(null)
+const [errorEdicion, setErrorEdicion] = useState("")
 useEffect(() => {
 const data =
 JSON.parse(
@@ -574,19 +584,18 @@ await supabase
 if (!errorCompatible) {
 return true
 }
-alert(JSON.stringify(errorCompatible))
-alert("Error al guardar pedido")
+setErrorPedido("Error al guardar pedido. Intenta de nuevo.")
 return false
 }
 if (error) {
-alert(JSON.stringify(error))
-alert("Error al guardar pedido")
+setErrorPedido("Error al guardar pedido. Intenta de nuevo.")
 return false
 }
 return true
 }
 const generarPedido = async () => {
 setErrorPedido("")
+setExitoPedido(false)
 if (!nombre || !telefono || !fecha) {
 setErrorPedido("Completa nombre, teléfono y fecha de entrega")
 return
@@ -637,8 +646,10 @@ calcularTotalProductos(
 productosParaPedido
 ),
 }
+setEnviando(true)
 const ok =
 await guardarPedido(pedido)
+setEnviando(false)
 if (!ok) return
 localStorage.removeItem("carrito")
 setCarrito([])
@@ -649,17 +660,15 @@ setAnticipo("")
 setEstadoPagoPedido("pendiente")
 setFecha("")
 setNotas("")
+setExitoPedido(true)
 obtenerPedidos()
-alert("Pedido guardado correctamente")
 }
 const eliminarPedido = async (id: number) => {
-const confirmar =
-confirm("¿Eliminar pedido?")
-if (!confirmar) return
 await supabase
 .from("pedidos")
 .delete()
 .eq("id", id)
+setPedidoAEliminar(null)
 obtenerPedidos()
 }
 const cambiarEstado = async (
@@ -674,7 +683,7 @@ estado,
 .eq("id", id)
 if (error) {
 console.log(error)
-alert("Error actualizando estado")
+console.error("Error actualizando estado")
 return
 }
 await obtenerPedidos()
@@ -691,7 +700,7 @@ estado,
 .eq("id", pedido.id)
 if (error) {
 console.log(error)
-alert("Error actualizando estado")
+console.error("Error actualizando estado")
 return
 }
 await obtenerPedidos()
@@ -721,7 +730,7 @@ estado_pago === "pagado"
 .eq("id", pedido.id)
 if (errorCompatible) {
 console.log(errorCompatible)
-alert("Error actualizando pago")
+console.error("Error actualizando pago")
 return
 }
 setPedidos(
@@ -740,7 +749,7 @@ estado_pago === "pagado"
 )
 return
 }
-alert("Error actualizando pago")
+console.error("Error actualizando pago")
 return
 }
 await obtenerPedidos()
@@ -1366,34 +1375,16 @@ ventana.document.close()
 }
 return (
 <div className="space-y-8 px-4 md:px-8 py-6 max-w-7xl mx-auto">
-<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-<div>
-<img
-src="/logo.png"
-alt="TUCHIS alcancías"
-className="brand-logo mb-6"
-/>
+<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 <h1 className="page-title">
 Pedidos
 </h1>
-</div>
-<button
-onClick={() => window.location.href = "/catalogo"}
-className="
-bg-cyan-500
-hover:bg-cyan-600
-text-white
-px-6
-py-4
-rounded-2xl
-font-black
-text-lg
-shadow-lg
-transition
-"
+<a
+href="/catalogo"
+className="inline-flex items-center gap-2 bg-[#20B8C9] hover:bg-[#17A7B8] text-white px-6 py-4 rounded-2xl font-black text-base shadow-lg transition"
 >
 + Nuevo pedido
-</button>
+</a>
 </div>
 <div className="section-card">
 <h2 className="text-3xl font-black text-cyan-600 mb-8">
@@ -1559,7 +1550,7 @@ className="bg-white rounded-3xl border border-[#FFD9D4] p-5"
 <p className="mt-2 text-zinc-600">
 {item.cantidad}
 {" x "}
-${item.precio}
+{moneda(item.precio)}
 </p>
 {Number(item.minimo_mayoreo || 0) > 0 && (
 <p className="text-xs font-black uppercase text-zinc-400 mt-2">
@@ -1617,16 +1608,13 @@ value={opcion}
 </select>
 </div>
 ))}
-<div className="text-4xl font-black text-rose-300 mt-8">
-Total: ${total}
-</div>
-<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
 <div className="rounded-3xl bg-[#D9F5F8] p-5">
 <p className="text-sm font-black uppercase text-zinc-500">
 Total pedido
 </p>
 <p className="text-2xl font-black text-cyan-600">
-${total}
+{moneda(total)}
 </p>
 </div>
 <div className="rounded-3xl bg-[#FFF0B8] p-5">
@@ -1634,7 +1622,7 @@ ${total}
 Anticipo
 </p>
 <p className="text-2xl font-black text-zinc-700">
-${anticipoPedido}
+{moneda(anticipoPedido)}
 </p>
 </div>
 <div className="rounded-3xl bg-[#FFE0DD] p-5">
@@ -1642,7 +1630,7 @@ ${anticipoPedido}
 Saldo
 </p>
 <p className="text-2xl font-black text-rose-400">
-${saldoPedido}
+{moneda(saldoPedido)}
 </p>
 </div>
 </div>
@@ -1651,11 +1639,18 @@ ${saldoPedido}
 {errorPedido}
 </div>
 )}
+{exitoPedido && (
+<div className="rounded-2xl bg-[#DDF5EA] border border-[#BFEAD8] px-5 py-4 text-[#238657] font-bold text-sm flex items-center gap-3">
+<span className="text-xl">✓</span>
+Pedido guardado correctamente
+</div>
+)}
 <button
 onClick={generarPedido}
-className="btn-primary mt-4"
+disabled={enviando}
+className={`btn-primary mt-4 transition-opacity ${enviando ? "opacity-60" : ""}`}
 >
-Generar pedido
+{enviando ? "Guardando..." : "Generar pedido"}
 </button>
 </div>
 )}
@@ -1748,18 +1743,15 @@ className="text-zinc-700"
 )
 )}
 </div>
-<div className="text-4xl font-black text-rose-300 mt-6">
-${pedido.total}
-</div>
 <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm font-black uppercase">
 <div className="rounded-2xl bg-[#D9F5F8] p-3 text-cyan-700">
-Total ${numero(pedido.total)}
+Total {moneda(pedido.total)}
 </div>
 <div className="rounded-2xl bg-[#FFF0B8] p-3 text-zinc-700">
-Anticipo ${obtenerAnticipo(pedido)}
+Anticipo {moneda(obtenerAnticipo(pedido))}
 </div>
 <div className="rounded-2xl bg-[#FFE0DD] p-3 text-rose-500">
-Saldo ${obtenerSaldo(pedido)}
+Saldo {moneda(obtenerSaldo(pedido))}
 </div>
 </div>
 </div>
@@ -1871,22 +1863,29 @@ transition
 >
 Editar
 </button>
+{pedidoAEliminar === pedido.id ? (
+<div className="flex gap-2">
 <button
-onClick={() =>
-eliminarPedido(pedido.id)
-}
-className="
-bg-red-500
-hover:bg-red-600
-text-white
-py-3
-rounded-2xl
-font-bold
-transition
-"
+onClick={() => eliminarPedido(pedido.id)}
+className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-2xl font-bold transition text-sm"
+>
+Confirmar
+</button>
+<button
+onClick={() => setPedidoAEliminar(null)}
+className="flex-1 bg-white border border-[#F8D6D0] text-zinc-500 py-3 rounded-2xl font-bold transition text-sm"
+>
+Cancelar
+</button>
+</div>
+) : (
+<button
+onClick={() => setPedidoAEliminar(pedido.id)}
+className="bg-white border border-red-200 text-red-400 hover:bg-red-50 py-3 rounded-2xl font-bold transition"
 >
 Eliminar
 </button>
+)}
 </div>
 </div>
 </div>
@@ -2259,7 +2258,7 @@ Quitar
 </button>
 </div>
 <p className="text-sm font-black uppercase text-zinc-500">
-Subtotal: ${numero(producto.precio) * numero(producto.cantidad)}
+Subtotal: {moneda(numero(producto.precio) * numero(producto.cantidad))}
 {Number(producto.minimo_mayoreo || 0) > 0 && (
 <>
 {" · "}
@@ -2377,9 +2376,9 @@ Productos agregados
 </h4>
 </div>
 <div className="text-2xl font-black text-rose-300">
-Total ${calcularTotalProductos(
+Total {moneda(calcularTotalProductos(
 pedidoEditando.productos || []
-)}
+))}
 </div>
 </div>
 {(pedidoEditando.productos || []).length > 0 && (
@@ -2400,7 +2399,7 @@ producto.modalidad,
 ].filter(Boolean).join(" / ") || "Sin tamaño"}
 </p>
 <p className="text-sm font-black text-rose-300 mt-1">
-{numero(producto.cantidad)} pza. · ${numero(producto.precio)} c/u
+{numero(producto.cantidad)} pza. · {moneda(producto.precio)} c/u
 </p>
 </div>
 )
@@ -2441,10 +2440,10 @@ className="rounded-2xl bg-[#FFF8F5] border border-[#F8D6D0] p-3"
 {tamano.nombre} / {tamano.modalidad}
 </p>
 <p className="text-lg font-black text-rose-300">
-Menudeo ${numero(tamano.precio_menudeo)}
+Menudeo {moneda(tamano.precio_menudeo)}
 </p>
 <p className="text-base font-black text-cyan-500">
-Mayoreo ${numero(tamano.precio_mayoreo)}
+Mayoreo {moneda(tamano.precio_mayoreo)}
 </p>
 </div>
 ))
@@ -2458,16 +2457,16 @@ className="rounded-2xl bg-[#FFF8F5] border border-[#F8D6D0] p-3"
 {modalidad.label}
 </p>
 <p className="text-lg font-black text-rose-300">
-Menudeo ${obtenerPrecioMenudeo(
+Menudeo {moneda(obtenerPrecioMenudeo(
 producto,
 modalidad.clave
-)}
+))}
 </p>
 <p className="text-base font-black text-cyan-500">
-Mayoreo ${obtenerPrecioMayoreo(
+Mayoreo {moneda(obtenerPrecioMayoreo(
 producto,
 modalidad.clave
-)}
+))}
 </p>
 </div>
 ))
@@ -2499,18 +2498,13 @@ No hay productos con esa búsqueda.
 </div>
 </div>
 )}
-<div className="text-4xl font-black text-rose-300">
-Total: ${calcularTotalProductos(
-pedidoEditando.productos || []
-)}
-</div>
 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 <div className="rounded-3xl bg-[#D9F5F8] p-5">
 <p className="text-sm font-black uppercase text-zinc-500">
 Total pedido
 </p>
 <p className="text-2xl font-black text-cyan-600">
-${calcularTotalProductos(pedidoEditando.productos || [])}
+{moneda(calcularTotalProductos(pedidoEditando.productos || []))}
 </p>
 </div>
 <div className="rounded-3xl bg-[#FFF0B8] p-5">
@@ -2518,10 +2512,10 @@ ${calcularTotalProductos(pedidoEditando.productos || [])}
 Anticipo
 </p>
 <p className="text-2xl font-black text-zinc-700">
-${Math.min(
+{moneda(Math.min(
 numero(pedidoEditando.anticipo),
 calcularTotalProductos(pedidoEditando.productos || [])
-)}
+))}
 </p>
 </div>
 <div className="rounded-3xl bg-[#FFE0DD] p-5">
@@ -2529,7 +2523,7 @@ calcularTotalProductos(pedidoEditando.productos || [])
 Saldo
 </p>
 <p className="text-2xl font-black text-rose-400">
-${resolverEstadoPago(
+{moneda(resolverEstadoPago(
 pedidoEditando.estado_pago,
 pedidoEditando.anticipo
 ) === "pagado"
@@ -2538,17 +2532,23 @@ pedidoEditando.anticipo
 calcularTotalProductos(pedidoEditando.productos || []) -
 numero(pedidoEditando.anticipo),
 0
-)}
+))}
 </p>
 </div>
 </div>
 </div>
+{errorEdicion && (
+<div className="rounded-2xl bg-[#FFE0DD] border border-[#F8C4BE] px-5 py-4 text-[#C95F67] font-bold text-sm">
+{errorEdicion}
+</div>
+)}
 <button
 onClick={async () => {
+setErrorEdicion("")
 const productos =
 pedidoEditando.productos || []
 if (productos.length === 0) {
-alert("El pedido necesita al menos un producto")
+setErrorEdicion("El pedido necesita al menos un producto")
 return
 }
 const faltaModalidad =
@@ -2556,7 +2556,7 @@ productos.some(
 (producto: any) => !producto.modalidad
 )
 if (faltaModalidad) {
-alert("Selecciona la modalidad de todos los productos")
+setErrorEdicion("Selecciona la modalidad de todos los productos")
 return
 }
 const faltaTamano =
@@ -2566,7 +2566,7 @@ obtenerTamanosProducto(producto).length > 0 &&
 !producto.tamano
 )
 if (faltaTamano) {
-alert("Selecciona el tamaño de todos los productos")
+setErrorEdicion("Selecciona el tamaño de todos los productos")
 return
 }
 const totalActualizado =
@@ -2577,7 +2577,7 @@ numero(pedidoEditando.anticipo),
 totalActualizado
 )
 if (numero(pedidoEditando.anticipo) > totalActualizado) {
-alert("El anticipo no puede ser mayor al total del pedido")
+setErrorEdicion("El anticipo no puede ser mayor al total del pedido")
 return
 }
 const pedidoActualizado = {
@@ -2630,22 +2630,18 @@ await obtenerPedidos()
 return
 }
 console.log(errorCompatible)
-alert("Error actualizando")
+setErrorEdicion("Error al actualizar. Intenta de nuevo.")
 return
 }
 if (error) {
 console.log(error)
-alert("Error actualizando")
+setErrorEdicion("Error al actualizar. Intenta de nuevo.")
 return
 }
-alert("Pedido actualizado")
 setPedidoEditando(null)
 await obtenerPedidos()
 }}
-className="
-btn-primary
-mt-8
-"
+className="btn-primary mt-8"
 >
 Guardar cambios
 </button>
