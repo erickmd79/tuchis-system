@@ -400,6 +400,9 @@ export default function CatalogoPage() {
   const [productoSeleccionado, setProductoSeleccionado] =
     useState<any>(null)
 
+  const [carritoAbierto, setCarritoAbierto] =
+    useState(false)
+
   const [seleccion, setSeleccion] =
     useState({
       tamano: "",
@@ -424,6 +427,32 @@ export default function CatalogoPage() {
       )
     )
 
+    const parametros =
+      new URLSearchParams(window.location.search)
+
+    if (
+      parametros.get("abrirCarrito") === "1" &&
+      carritoGuardado.length > 0
+    ) {
+      setCarritoAbierto(true)
+    }
+
+  }, [])
+
+  useEffect(() => {
+    const abrirCarritoDesdeMenu = () =>
+      setCarritoAbierto(true)
+
+    window.addEventListener(
+      "tuchis:open-cart",
+      abrirCarritoDesdeMenu
+    )
+
+    return () =>
+      window.removeEventListener(
+        "tuchis:open-cart",
+        abrirCarritoDesdeMenu
+      )
   }, [])
 
   const obtenerProductos = async () => {
@@ -492,6 +521,10 @@ export default function CatalogoPage() {
     localStorage.setItem(
       "carrito",
       JSON.stringify(carritoNormalizado)
+    )
+
+    window.dispatchEvent(
+      new Event("tuchis:cart-updated")
     )
   }
 
@@ -579,6 +612,7 @@ export default function CatalogoPage() {
     }
 
     setProductoSeleccionado(null)
+    setCarritoAbierto(true)
   }
 
   const aumentarCantidad = (
@@ -718,13 +752,9 @@ export default function CatalogoPage() {
 
   return (
 
-    <div className={`min-h-screen bg-[#FFF8F5] px-3 sm:px-4 md:px-8 py-5 md:py-6 ${
-      carrito.length > 0
-        ? "pb-24 lg:pb-6 lg:pl-[340px]"
-        : ""
-    }`}>
+    <div className="min-h-screen bg-[#FFF8F5] px-3 sm:px-4 md:px-8 py-5 md:py-7">
 
-      <div className="mb-6 md:mb-8 max-w-[720px] mx-auto">
+      <div className="mb-6 md:mb-8 max-w-[1280px] mx-auto">
 
         <h1 className="text-3xl md:text-5xl font-black text-[#20B8C9] leading-none">
           Catálogo TUCHIS
@@ -736,7 +766,7 @@ export default function CatalogoPage() {
 
       </div>
 
-      <div className="flex flex-col md:grid md:grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8 max-w-[720px] mx-auto">
+      <div className="flex flex-col md:grid md:grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8 max-w-[960px] mx-auto">
 
         <input
           type="text"
@@ -779,7 +809,7 @@ export default function CatalogoPage() {
 
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-5 max-w-[720px] mx-auto">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 max-w-[1280px] mx-auto">
 
         {productosFiltrados.map(
           (producto) => {
@@ -1189,169 +1219,186 @@ export default function CatalogoPage() {
         </div>
       )}
 
-      {carrito.length > 0 && (
-
+      {carritoAbierto && (
         <div
-          className="hidden lg:flex fixed left-4 top-32 bottom-4
-          bg-white/95 backdrop-blur-xl
-          border border-[#F8D6D0]
-          shadow-2xl rounded-[32px]
-          w-[320px]
-          p-5 z-40
-          flex-col"
+          className="cart-overlay"
+          onClick={() =>
+            setCarritoAbierto(false)
+          }
         >
-
-          <div className="mb-5">
-
-            <p className="font-black text-[#20B8C9] text-xl">
-              🛒 {productosAgregados} productos
-            </p>
-
-            <p className="text-xs font-black uppercase text-gray-400 mt-1">
-              {totalProductos} piezas
-            </p>
-
-            <p className="text-[#F49B93] text-4xl font-black mt-1">
-              ${subtotal}
-            </p>
-
-          </div>
-
-          <a
-            href="/pedido?carrito=1"
-            className="bg-[#20B8C9]
-            text-white px-6 py-4
-            rounded-2xl font-black
-            text-center text-base mb-5"
+          <aside
+            className="cart-drawer"
+            onClick={(e) => e.stopPropagation()}
           >
-            Ver carrito
-          </a>
-
-          <div className="flex-1 min-h-0 overflow-auto space-y-3 pr-1">
-
-            {carrito.map((item) => (
-
-              <div
-                key={item.carrito_id}
-                className="bg-[#FFF8F5]
-                rounded-3xl p-4
-                flex flex-col gap-4"
-              >
-
-                <div className="flex items-start gap-3">
-                  {item.imagen && (
-                    <img
-                      src={item.imagen}
-                      alt=""
-                      className="w-16 h-16 rounded-2xl object-cover border border-[#F8D6D0]"
-                    />
-                  )}
-
-                  <div>
-
-                    <p className="font-black text-lg">
-                      {item.nombre}
-                    </p>
-
-                    <p className="text-sm font-bold text-gray-500">
-                      {[
-                        item.tamano,
-                        item.modalidad,
-                        item.tipo_precio,
-                      ].filter(Boolean).join(" · ")}
-                    </p>
-
-                    <p className="text-[#F49B93] font-black text-xl mt-1">
-                      ${item.precio_unitario} c/u · Subtotal ${item.subtotal}
-                    </p>
-
-                    {obtenerMinimoMayoreo(item) > 0 && (
-                      <p className="text-xs font-black uppercase text-gray-400 mt-1">
-                        Mayoreo desde {item.minimo_mayoreo} piezas
-                      </p>
-                    )}
-
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 flex-wrap">
-
-                  <button
-                    onClick={() =>
-                      disminuirCantidad(
-                        item.carrito_id
-                      )
-                    }
-                    className="bg-[#FFD6D6]
-                    w-11 h-11 rounded-full
-                    text-xl font-bold"
-                  >
-                    -
-                  </button>
-
-                  <span className="font-black text-xl">
-                    {item.cantidad}
-                  </span>
-
-                  <button
-                    onClick={() =>
-                      aumentarCantidad(
-                        item.carrito_id
-                      )
-                    }
-                    className="bg-[#BEE9E8]
-                    w-11 h-11 rounded-full
-                    text-xl font-bold"
-                  >
-                    +
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      eliminarProducto(
-                        item.carrito_id
-                      )
-                    }
-                    className="bg-red-500
-                    text-white px-5 py-3
-                    rounded-2xl font-bold"
-                  >
-                    Eliminar
-                  </button>
-
-                </div>
-
+            <div className="cart-drawer-header">
+              <div>
+                <h2 className="text-2xl font-black">
+                  Tu carrito
+                </h2>
+                <p className="text-sm font-bold text-white/80">
+                  {productosAgregados} productos · {totalProductos} piezas
+                </p>
               </div>
 
-            ))}
+              <button
+                type="button"
+                className="cart-drawer-close"
+                aria-label="Cerrar carrito"
+                onClick={() =>
+                  setCarritoAbierto(false)
+                }
+              >
+                ×
+              </button>
+            </div>
 
-          </div>
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-5 space-y-4">
+              {carrito.length === 0 && (
+                <div className="h-full min-h-[260px] flex flex-col items-center justify-center text-center">
+                  <p className="text-5xl mb-4">
+                    🛒
+                  </p>
+                  <p className="text-2xl font-black text-[#20B8C9]">
+                    Tu carrito está vacío
+                  </p>
+                  <p className="text-gray-500 mt-2">
+                    Selecciona productos del catálogo para generar un pedido.
+                  </p>
+                </div>
+              )}
 
+              {carrito.map((item) => (
+                <div
+                  key={item.carrito_id}
+                  className="rounded-[28px] border border-[#F8D6D0] bg-[#FFF8F5] p-4"
+                >
+                  <div className="flex gap-4">
+                    <img
+                      src={item.imagen || "/logo.png"}
+                      alt={item.nombre || "Producto"}
+                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border border-[#F8D6D0] bg-white"
+                    />
+
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-black text-base sm:text-lg text-[#2B2B2B] leading-tight">
+                        {item.nombre}
+                      </h3>
+
+                      <p className="text-sm font-bold text-gray-500 mt-1">
+                        {[
+                          item.tamano,
+                          item.modalidad,
+                          item.tipo_precio,
+                        ].filter(Boolean).join(" · ")}
+                      </p>
+
+                      <p className="text-[#F49B93] font-black mt-2">
+                        ${item.precio_unitario} c/u
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        eliminarProducto(
+                          item.carrito_id
+                        )
+                      }
+                      className="w-10 h-10 rounded-2xl bg-white border border-[#F8D6D0] text-red-500 font-black"
+                      aria-label="Eliminar producto"
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 rounded-full bg-white border border-[#F8D6D0] px-3 py-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          disminuirCantidad(
+                            item.carrito_id
+                          )
+                        }
+                        className="w-9 h-9 rounded-full bg-[#FFD6D6] font-black text-lg"
+                      >
+                        -
+                      </button>
+
+                      <span className="min-w-8 text-center font-black">
+                        {item.cantidad}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          aumentarCantidad(
+                            item.carrito_id
+                          )
+                        }
+                        className="w-9 h-9 rounded-full bg-[#BEE9E8] font-black text-lg"
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-xs font-black uppercase text-gray-400">
+                        Subtotal
+                      </p>
+                      <p className="text-xl font-black text-[#2B2B2B]">
+                        ${item.subtotal}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t border-[#F8D6D0] bg-white px-4 sm:px-6 py-5 space-y-4 shadow-[0_-18px_32px_rgba(0,0,0,.06)]">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-lg">
+                  <span className="text-gray-500">
+                    Subtotal
+                  </span>
+                  <span className="font-black">
+                    ${subtotal}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between text-2xl">
+                  <span className="font-black text-[#20B8C9]">
+                    Total
+                  </span>
+                  <span className="font-black text-[#F49B93]">
+                    ${subtotal}
+                  </span>
+                </div>
+              </div>
+
+              <a
+                href="/pedido?carrito=1"
+                className={`block w-full text-center rounded-2xl py-4 font-black text-white transition ${
+                  carrito.length > 0
+                    ? "bg-[#20B8C9] hover:bg-[#17A7B8]"
+                    : "bg-gray-300 pointer-events-none"
+                }`}
+              >
+                Generar pedido
+              </a>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setCarritoAbierto(false)
+                }
+                className="w-full rounded-2xl py-4 font-black border border-[#20B8C9] text-[#20B8C9] bg-white"
+              >
+                Continuar comprando
+              </button>
+            </div>
+          </aside>
         </div>
-
-      )}
-
-      {carrito.length > 0 && (
-        <a
-          href="/pedido?carrito=1"
-          aria-label="Ver carrito"
-          className="lg:hidden fixed right-5 bottom-5 z-50
-          w-16 h-16 rounded-full bg-[#20B8C9]
-          shadow-2xl flex items-center justify-center
-          text-3xl"
-        >
-          🛒
-          <span
-            className="absolute -top-2 -right-2
-            min-w-8 h-8 px-2 rounded-full
-            bg-[#F49B93] text-white
-            text-sm font-black
-            flex items-center justify-center
-            border-4 border-white"
-          >
-            {productosAgregados}
-          </span>
-        </a>
       )}
 
     </div>
