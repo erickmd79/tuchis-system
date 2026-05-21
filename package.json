@@ -3,9 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/apply-current-pages.js && node scripts/patch-pedido-page.js && node scripts/patch-catalogo-page.js",
     "dev": "next dev",
-    "prebuild": "node scripts/apply-current-pages.js && node scripts/patch-pedido-page.js && node scripts/patch-catalogo-page.js",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
