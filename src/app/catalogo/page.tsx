@@ -2,33 +2,25 @@
 
 import { useEffect, useState } from "react"
 import { supabase } from "../../lib/supabase"
+import {
+  MODALIDADES,
+  MODALIDADES_PRECIO,
+  numero,
+  moneda,
+  obtenerClaveModalidad,
+  obtenerConfigModalidad,
+  prepararTamanoProducto,
+  obtenerTamanosProducto,
+  obtenerNombresTamanos,
+  obtenerModalidadesTamano,
+  obtenerConfigTamano,
+  obtenerMinimoMayoreo,
+  obtenerPrecioMenudeo,
+  obtenerPrecioMayoreo,
+  resolverTipoPrecio,
+  obtenerPrecioSeleccionado,
+} from "../../lib/pricing"
 
-const MODALIDADES = [
-  "Blancas",
-  "Pintadas",
-  "Kit",
-]
-
-const MODALIDADES_PRECIO = [
-  {
-    clave: "blanca",
-    label: "Blanca",
-    menudeo: "precio_blanca_menudeo",
-    mayoreo: "precio_blanca_mayoreo",
-  },
-  {
-    clave: "pintada",
-    label: "Pintada",
-    menudeo: "precio_pintada_menudeo",
-    mayoreo: "precio_pintada_mayoreo",
-  },
-  {
-    clave: "kit",
-    label: "Kit",
-    menudeo: "precio_kit_menudeo",
-    mayoreo: "precio_kit_mayoreo",
-  },
-]
 
 const limpiarMedidas = (valor: string) =>
   valor.replace(/\s*cm\s*$/i, "").trim()
@@ -39,8 +31,6 @@ const mostrarMedidas = (valor?: string) => {
   return medidas ? `${medidas} cm` : ""
 }
 
-const numero = (valor: any) =>
-  Number(valor || 0)
 
 const normalizar = (valor: any) =>
   String(valor || "")
@@ -49,168 +39,6 @@ const normalizar = (valor: any) =>
     .replace(/[\u0300-\u036f]/g, "")
     .trim()
 
-const obtenerClaveModalidad = (modalidad?: string) => {
-  const valor = normalizar(modalidad)
-
-  if (valor.includes("pintad")) return "pintada"
-  if (valor.includes("kit")) return "kit"
-  return "blanca"
-}
-
-const obtenerConfigModalidad = (modalidad?: string) =>
-  MODALIDADES_PRECIO.find(
-    (item) =>
-      item.clave === obtenerClaveModalidad(modalidad)
-  ) || MODALIDADES_PRECIO[0]
-
-const obtenerNombreTamano = (tamano: any) =>
-  String(
-    tamano?.nombre ??
-    tamano?.tamano ??
-    ""
-  ).trim()
-
-const prepararTamanoProducto = (tamano: any) => ({
-  id: tamano.id,
-  tamano_id:
-    tamano.tamano_id ??
-    tamano.id,
-  nombre: obtenerNombreTamano(tamano),
-  modalidad: tamano.modalidad || "",
-  precio_menudeo: numero(tamano.precio_menudeo),
-  precio_mayoreo: numero(tamano.precio_mayoreo),
-})
-
-const obtenerTamanosProducto = (producto: any) =>
-  Array.isArray(producto?.tamanos)
-    ? producto.tamanos
-        .map(prepararTamanoProducto)
-        .filter((tamano: any) => tamano.nombre)
-    : []
-
-const obtenerNombresTamanos = (producto: any): string[] =>
-  Array.from(
-    new Set(
-      obtenerTamanosProducto(producto)
-        .map((tamano: any) => tamano.nombre)
-    )
-  ) as string[]
-
-const obtenerModalidadesTamano = (
-  producto: any,
-  tamanoNombre?: string
-) =>
-  obtenerTamanosProducto(producto)
-    .filter(
-      (tamano: any) =>
-        !tamanoNombre ||
-        tamano.nombre === tamanoNombre
-    )
-    .map((tamano: any) => tamano.modalidad)
-
-const obtenerConfigTamano = (
-  producto: any,
-  tamanoNombre?: string,
-  modalidad?: string
-) =>
-  obtenerTamanosProducto(producto).find(
-    (tamano: any) =>
-      tamano.nombre === tamanoNombre &&
-      obtenerClaveModalidad(tamano.modalidad) ===
-        obtenerClaveModalidad(modalidad)
-  )
-
-const obtenerPrecioMenudeo = (
-  producto: any,
-  modalidad?: string,
-  tamano?: string
-) => {
-  const configTamano =
-    obtenerConfigTamano(
-      producto,
-      tamano,
-      modalidad
-    )
-
-  if (configTamano) {
-    return numero(configTamano.precio_menudeo)
-  }
-
-  const config = obtenerConfigModalidad(modalidad)
-
-  return numero(
-    producto[config.menudeo] ??
-    producto.precio_menudeo ??
-    producto.precio
-  )
-}
-
-const obtenerPrecioMayoreo = (
-  producto: any,
-  modalidad?: string,
-  tamano?: string
-) => {
-  const configTamano =
-    obtenerConfigTamano(
-      producto,
-      tamano,
-      modalidad
-    )
-
-  if (configTamano) {
-    return numero(configTamano.precio_mayoreo)
-  }
-
-  const config = obtenerConfigModalidad(modalidad)
-
-  return numero(
-    producto[config.mayoreo] ??
-    producto.precio_mayoreo ??
-    producto.precio
-  )
-}
-
-const obtenerMinimoMayoreo = (producto: any) =>
-  numero(producto.minimo_mayoreo)
-
-const resolverTipoPrecio = (
-  producto: any,
-  cantidad: number,
-  tipoPrecio?: string,
-  modalidad?: string,
-  tamano?: string
-) => {
-  const minimoMayoreo = obtenerMinimoMayoreo(producto)
-  const precioMayoreo =
-    obtenerPrecioMayoreo(producto, modalidad, tamano)
-
-  if (
-    tipoPrecio === "mayoreo" &&
-    precioMayoreo > 0 &&
-    (minimoMayoreo === 0 || cantidad >= minimoMayoreo)
-  ) {
-    return "mayoreo"
-  }
-
-  return "menudeo"
-}
-
-const obtenerPrecioSeleccionado = (
-  producto: any,
-  cantidad: number,
-  tipoPrecio?: string,
-  modalidad?: string,
-  tamano?: string
-) =>
-  resolverTipoPrecio(
-    producto,
-    cantidad,
-    tipoPrecio,
-    modalidad,
-    tamano
-  ) === "mayoreo"
-    ? obtenerPrecioMayoreo(producto, modalidad, tamano)
-    : obtenerPrecioMenudeo(producto, modalidad, tamano)
 
 const obtenerPrecioDesde = (producto: any) => {
   const preciosTamanos =
@@ -394,6 +222,8 @@ export default function CatalogoPage() {
   const [categorias, setCategorias] =
     useState<any[]>([])
 
+  const [cargando, setCargando] = useState(true)
+
   const [imagenesActivas, setImagenesActivas] =
     useState<any>({})
 
@@ -464,6 +294,8 @@ export default function CatalogoPage() {
         .order("id", {
           ascending: false
         })
+
+    setCargando(false)
 
     if (!error && data) {
 
@@ -811,7 +643,22 @@ export default function CatalogoPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 max-w-[1280px] mx-auto">
 
-        {productosFiltrados.map(
+        {cargando
+          ? Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-[22px] overflow-hidden border border-[#F8D6D0] animate-pulse"
+              >
+                <div className="aspect-square bg-[#F5EEEC]" />
+                <div className="p-4 space-y-3">
+                  <div className="h-3 bg-[#F5EEEC] rounded-full w-1/3" />
+                  <div className="h-5 bg-[#F5EEEC] rounded-full w-3/4" />
+                  <div className="h-8 bg-[#F5EEEC] rounded-full w-1/2 mt-2" />
+                  <div className="h-12 bg-[#EEE8E6] rounded-2xl mt-3" />
+                </div>
+              </div>
+            ))
+          : productosFiltrados.map(
           (producto) => {
 
             const precioDesde =
@@ -937,7 +784,7 @@ export default function CatalogoPage() {
                     </p>
 
                     <p className="text-2xl md:text-3xl font-black text-[#F49B93]">
-                      ${precioDesde}
+                      {moneda(precioDesde)}
                     </p>
 
                     {tamanosProducto.length > 0 && (
@@ -973,7 +820,7 @@ export default function CatalogoPage() {
                     rounded-2xl font-black
                     text-sm sm:text-base transition-all"
                   >
-                    Seleccionar
+                    {cantidadEnCarrito > 0 ? "Agregar más" : "Seleccionar"}
                   </button>
 
                 </div>
@@ -1185,7 +1032,7 @@ export default function CatalogoPage() {
                       Precio unitario
                     </p>
                     <p className="text-2xl font-black text-[#F49B93]">
-                      ${precioSeleccion}
+                      {moneda(precioSeleccion)}
                     </p>
                   </div>
                   <div className="rounded-3xl bg-[#D9F5F8] p-4">
@@ -1201,7 +1048,7 @@ export default function CatalogoPage() {
                       Subtotal
                     </p>
                     <p className="text-2xl font-black text-[#C95F67]">
-                      ${precioSeleccion * seleccion.cantidad}
+                      {moneda(precioSeleccion * seleccion.cantidad)}
                     </p>
                   </div>
                 </div>
@@ -1293,7 +1140,7 @@ export default function CatalogoPage() {
                       </p>
 
                       <p className="text-[#F49B93] font-black mt-2">
-                        ${item.precio_unitario} c/u
+                        {moneda(item.precio_unitario)} c/u
                       </p>
                     </div>
 
@@ -1347,7 +1194,7 @@ export default function CatalogoPage() {
                         Subtotal
                       </p>
                       <p className="text-xl font-black text-[#2B2B2B]">
-                        ${item.subtotal}
+                        {moneda(item.subtotal)}
                       </p>
                     </div>
                   </div>
@@ -1356,24 +1203,13 @@ export default function CatalogoPage() {
             </div>
 
             <div className="border-t border-[#F8D6D0] bg-white px-4 sm:px-6 py-5 space-y-4 shadow-[0_-18px_32px_rgba(0,0,0,.06)]">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-lg">
-                  <span className="text-gray-500">
-                    Subtotal
-                  </span>
-                  <span className="font-black">
-                    ${subtotal}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between text-2xl">
-                  <span className="font-black text-[#20B8C9]">
-                    Total
-                  </span>
-                  <span className="font-black text-[#F49B93]">
-                    ${subtotal}
-                  </span>
-                </div>
+              <div className="flex items-center justify-between text-2xl">
+                <span className="font-black text-[#20B8C9]">
+                  Total
+                </span>
+                <span className="font-black text-[#F49B93]">
+                  {moneda(subtotal)}
+                </span>
               </div>
 
               <a
