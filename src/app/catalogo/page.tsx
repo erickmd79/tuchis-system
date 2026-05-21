@@ -42,6 +42,12 @@ const mostrarMedidas = (valor?: string) => {
 const numero = (valor: any) =>
   Number(valor || 0)
 
+const moneda = (valor: any) =>
+  `$${new Intl.NumberFormat("es-MX", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(numero(valor))}`
+
 const normalizar = (valor: any) =>
   String(valor || "")
     .toLowerCase()
@@ -394,6 +400,8 @@ export default function CatalogoPage() {
   const [categorias, setCategorias] =
     useState<any[]>([])
 
+  const [cargando, setCargando] = useState(true)
+
   const [imagenesActivas, setImagenesActivas] =
     useState<any>({})
 
@@ -464,6 +472,8 @@ export default function CatalogoPage() {
         .order("id", {
           ascending: false
         })
+
+    setCargando(false)
 
     if (!error && data) {
 
@@ -811,7 +821,22 @@ export default function CatalogoPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 max-w-[1280px] mx-auto">
 
-        {productosFiltrados.map(
+        {cargando
+          ? Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-[22px] overflow-hidden border border-[#F8D6D0] animate-pulse"
+              >
+                <div className="aspect-square bg-[#F5EEEC]" />
+                <div className="p-4 space-y-3">
+                  <div className="h-3 bg-[#F5EEEC] rounded-full w-1/3" />
+                  <div className="h-5 bg-[#F5EEEC] rounded-full w-3/4" />
+                  <div className="h-8 bg-[#F5EEEC] rounded-full w-1/2 mt-2" />
+                  <div className="h-12 bg-[#EEE8E6] rounded-2xl mt-3" />
+                </div>
+              </div>
+            ))
+          : productosFiltrados.map(
           (producto) => {
 
             const precioDesde =
@@ -937,7 +962,7 @@ export default function CatalogoPage() {
                     </p>
 
                     <p className="text-2xl md:text-3xl font-black text-[#F49B93]">
-                      ${precioDesde}
+                      {moneda(precioDesde)}
                     </p>
 
                     {tamanosProducto.length > 0 && (
@@ -973,7 +998,7 @@ export default function CatalogoPage() {
                     rounded-2xl font-black
                     text-sm sm:text-base transition-all"
                   >
-                    Seleccionar
+                    {cantidadEnCarrito > 0 ? "Agregar más" : "Seleccionar"}
                   </button>
 
                 </div>
@@ -1185,7 +1210,7 @@ export default function CatalogoPage() {
                       Precio unitario
                     </p>
                     <p className="text-2xl font-black text-[#F49B93]">
-                      ${precioSeleccion}
+                      {moneda(precioSeleccion)}
                     </p>
                   </div>
                   <div className="rounded-3xl bg-[#D9F5F8] p-4">
@@ -1201,7 +1226,7 @@ export default function CatalogoPage() {
                       Subtotal
                     </p>
                     <p className="text-2xl font-black text-[#C95F67]">
-                      ${precioSeleccion * seleccion.cantidad}
+                      {moneda(precioSeleccion * seleccion.cantidad)}
                     </p>
                   </div>
                 </div>
@@ -1293,7 +1318,7 @@ export default function CatalogoPage() {
                       </p>
 
                       <p className="text-[#F49B93] font-black mt-2">
-                        ${item.precio_unitario} c/u
+                        {moneda(item.precio_unitario)} c/u
                       </p>
                     </div>
 
@@ -1347,7 +1372,7 @@ export default function CatalogoPage() {
                         Subtotal
                       </p>
                       <p className="text-xl font-black text-[#2B2B2B]">
-                        ${item.subtotal}
+                        {moneda(item.subtotal)}
                       </p>
                     </div>
                   </div>
@@ -1356,24 +1381,13 @@ export default function CatalogoPage() {
             </div>
 
             <div className="border-t border-[#F8D6D0] bg-white px-4 sm:px-6 py-5 space-y-4 shadow-[0_-18px_32px_rgba(0,0,0,.06)]">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-lg">
-                  <span className="text-gray-500">
-                    Subtotal
-                  </span>
-                  <span className="font-black">
-                    ${subtotal}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between text-2xl">
-                  <span className="font-black text-[#20B8C9]">
-                    Total
-                  </span>
-                  <span className="font-black text-[#F49B93]">
-                    ${subtotal}
-                  </span>
-                </div>
+              <div className="flex items-center justify-between text-2xl">
+                <span className="font-black text-[#20B8C9]">
+                  Total
+                </span>
+                <span className="font-black text-[#F49B93]">
+                  {moneda(subtotal)}
+                </span>
               </div>
 
               <a

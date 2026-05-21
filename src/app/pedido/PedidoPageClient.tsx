@@ -295,6 +295,7 @@ const [estadoPagoPedido, setEstadoPagoPedido] =
 useState("pendiente")
 const [fecha, setFecha] = useState("")
 const [notas, setNotas] = useState("")
+const [errorPedido, setErrorPedido] = useState("")
 useEffect(() => {
 const data =
 JSON.parse(
@@ -585,8 +586,9 @@ return false
 return true
 }
 const generarPedido = async () => {
+setErrorPedido("")
 if (!nombre || !telefono || !fecha) {
-alert("Faltan datos del cliente")
+setErrorPedido("Completa nombre, teléfono y fecha de entrega")
 return
 }
 const productosParaPedido =
@@ -597,7 +599,7 @@ item.modalidad ||
 modalidadPedido,
 }))
 if (productosParaPedido.length === 0) {
-alert("Agrega productos al pedido")
+setErrorPedido("Agrega al menos un producto al pedido")
 return
 }
 const faltaModalidad =
@@ -605,7 +607,7 @@ productosParaPedido.some(
 (item) => !item.modalidad
 )
 if (faltaModalidad) {
-alert("Selecciona la modalidad de todos los productos")
+setErrorPedido("Selecciona la modalidad de todos los productos")
 return
 }
 const faltaTamano =
@@ -615,11 +617,11 @@ obtenerTamanosProducto(item).length > 0 &&
 !item.tamano
 )
 if (faltaTamano) {
-alert("Selecciona el tamaño de todos los productos")
+setErrorPedido("Selecciona el tamaño de todos los productos")
 return
 }
 if (anticipoCapturado > total) {
-alert("El anticipo no puede ser mayor al total del pedido")
+setErrorPedido("El anticipo no puede ser mayor al total del pedido")
 return
 }
 const pedido = {
@@ -1644,6 +1646,11 @@ ${saldoPedido}
 </p>
 </div>
 </div>
+{errorPedido && (
+<div className="rounded-2xl bg-[#FFE0DD] border border-[#F8C4BE] px-5 py-4 text-[#C95F67] font-bold text-sm">
+{errorPedido}
+</div>
+)}
 <button
 onClick={generarPedido}
 className="btn-primary mt-4"
