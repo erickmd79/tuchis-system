@@ -2,33 +2,25 @@
 
 import { useEffect, useState } from "react"
 import { supabase } from "../../lib/supabase"
+import {
+  MODALIDADES,
+  MODALIDADES_PRECIO,
+  numero,
+  moneda,
+  obtenerClaveModalidad,
+  obtenerConfigModalidad,
+  prepararTamanoProducto,
+  obtenerTamanosProducto,
+  obtenerNombresTamanos,
+  obtenerModalidadesTamano,
+  obtenerConfigTamano,
+  obtenerMinimoMayoreo,
+  obtenerPrecioMenudeo,
+  obtenerPrecioMayoreo,
+  resolverTipoPrecio,
+  obtenerPrecioSeleccionado,
+} from "../../lib/pricing"
 
-const MODALIDADES = [
-  "Blancas",
-  "Pintadas",
-  "Kit",
-]
-
-const MODALIDADES_PRECIO = [
-  {
-    clave: "blanca",
-    label: "Blanca",
-    menudeo: "precio_blanca_menudeo",
-    mayoreo: "precio_blanca_mayoreo",
-  },
-  {
-    clave: "pintada",
-    label: "Pintada",
-    menudeo: "precio_pintada_menudeo",
-    mayoreo: "precio_pintada_mayoreo",
-  },
-  {
-    clave: "kit",
-    label: "Kit",
-    menudeo: "precio_kit_menudeo",
-    mayoreo: "precio_kit_mayoreo",
-  },
-]
 
 const limpiarMedidas = (valor: string) =>
   valor.replace(/\s*cm\s*$/i, "").trim()
@@ -39,14 +31,6 @@ const mostrarMedidas = (valor?: string) => {
   return medidas ? `${medidas} cm` : ""
 }
 
-const numero = (valor: any) =>
-  Number(valor || 0)
-
-const moneda = (valor: any) =>
-  `$${new Intl.NumberFormat("es-MX", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(numero(valor))}`
 
 const normalizar = (valor: any) =>
   String(valor || "")
@@ -55,168 +39,6 @@ const normalizar = (valor: any) =>
     .replace(/[\u0300-\u036f]/g, "")
     .trim()
 
-const obtenerClaveModalidad = (modalidad?: string) => {
-  const valor = normalizar(modalidad)
-
-  if (valor.includes("pintad")) return "pintada"
-  if (valor.includes("kit")) return "kit"
-  return "blanca"
-}
-
-const obtenerConfigModalidad = (modalidad?: string) =>
-  MODALIDADES_PRECIO.find(
-    (item) =>
-      item.clave === obtenerClaveModalidad(modalidad)
-  ) || MODALIDADES_PRECIO[0]
-
-const obtenerNombreTamano = (tamano: any) =>
-  String(
-    tamano?.nombre ??
-    tamano?.tamano ??
-    ""
-  ).trim()
-
-const prepararTamanoProducto = (tamano: any) => ({
-  id: tamano.id,
-  tamano_id:
-    tamano.tamano_id ??
-    tamano.id,
-  nombre: obtenerNombreTamano(tamano),
-  modalidad: tamano.modalidad || "",
-  precio_menudeo: numero(tamano.precio_menudeo),
-  precio_mayoreo: numero(tamano.precio_mayoreo),
-})
-
-const obtenerTamanosProducto = (producto: any) =>
-  Array.isArray(producto?.tamanos)
-    ? producto.tamanos
-        .map(prepararTamanoProducto)
-        .filter((tamano: any) => tamano.nombre)
-    : []
-
-const obtenerNombresTamanos = (producto: any): string[] =>
-  Array.from(
-    new Set(
-      obtenerTamanosProducto(producto)
-        .map((tamano: any) => tamano.nombre)
-    )
-  ) as string[]
-
-const obtenerModalidadesTamano = (
-  producto: any,
-  tamanoNombre?: string
-) =>
-  obtenerTamanosProducto(producto)
-    .filter(
-      (tamano: any) =>
-        !tamanoNombre ||
-        tamano.nombre === tamanoNombre
-    )
-    .map((tamano: any) => tamano.modalidad)
-
-const obtenerConfigTamano = (
-  producto: any,
-  tamanoNombre?: string,
-  modalidad?: string
-) =>
-  obtenerTamanosProducto(producto).find(
-    (tamano: any) =>
-      tamano.nombre === tamanoNombre &&
-      obtenerClaveModalidad(tamano.modalidad) ===
-        obtenerClaveModalidad(modalidad)
-  )
-
-const obtenerPrecioMenudeo = (
-  producto: any,
-  modalidad?: string,
-  tamano?: string
-) => {
-  const configTamano =
-    obtenerConfigTamano(
-      producto,
-      tamano,
-      modalidad
-    )
-
-  if (configTamano) {
-    return numero(configTamano.precio_menudeo)
-  }
-
-  const config = obtenerConfigModalidad(modalidad)
-
-  return numero(
-    producto[config.menudeo] ??
-    producto.precio_menudeo ??
-    producto.precio
-  )
-}
-
-const obtenerPrecioMayoreo = (
-  producto: any,
-  modalidad?: string,
-  tamano?: string
-) => {
-  const configTamano =
-    obtenerConfigTamano(
-      producto,
-      tamano,
-      modalidad
-    )
-
-  if (configTamano) {
-    return numero(configTamano.precio_mayoreo)
-  }
-
-  const config = obtenerConfigModalidad(modalidad)
-
-  return numero(
-    producto[config.mayoreo] ??
-    producto.precio_mayoreo ??
-    producto.precio
-  )
-}
-
-const obtenerMinimoMayoreo = (producto: any) =>
-  numero(producto.minimo_mayoreo)
-
-const resolverTipoPrecio = (
-  producto: any,
-  cantidad: number,
-  tipoPrecio?: string,
-  modalidad?: string,
-  tamano?: string
-) => {
-  const minimoMayoreo = obtenerMinimoMayoreo(producto)
-  const precioMayoreo =
-    obtenerPrecioMayoreo(producto, modalidad, tamano)
-
-  if (
-    tipoPrecio === "mayoreo" &&
-    precioMayoreo > 0 &&
-    (minimoMayoreo === 0 || cantidad >= minimoMayoreo)
-  ) {
-    return "mayoreo"
-  }
-
-  return "menudeo"
-}
-
-const obtenerPrecioSeleccionado = (
-  producto: any,
-  cantidad: number,
-  tipoPrecio?: string,
-  modalidad?: string,
-  tamano?: string
-) =>
-  resolverTipoPrecio(
-    producto,
-    cantidad,
-    tipoPrecio,
-    modalidad,
-    tamano
-  ) === "mayoreo"
-    ? obtenerPrecioMayoreo(producto, modalidad, tamano)
-    : obtenerPrecioMenudeo(producto, modalidad, tamano)
 
 const obtenerPrecioDesde = (producto: any) => {
   const preciosTamanos =
