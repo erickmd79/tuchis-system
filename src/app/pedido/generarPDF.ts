@@ -211,6 +211,10 @@ function buildHTML(pedido: any, origen: string): string {
       -webkit-print-color-adjust:exact;
       print-color-adjust:exact;
     }
+    @media print {
+      @page { size: letter portrait; margin: 10mm 12mm; }
+      body { width: 100% !important; background: #FFF8F5 !important; }
+    }
   </style>
 </head>
 <body>
@@ -441,68 +445,25 @@ export async function generarPDF(
   onEstado?: (estado: "generando" | "listo" | "error") => void
 ): Promise<void> {
   onEstado?.("generando")
-
   try {
-    const { jsPDF } = await import("jspdf")
     const origen = window.location.origin
-    const folio = `TCH-${pedido.id}`
-    const nombreArchivo = `TUCHIS-${folio}-${String(pedido.cliente ?? "pedido").replace(/\s+/g, "_")}.pdf`
-
     const html = buildHTML(pedido, origen)
-
-    // Off-screen container — fixed + far left so it's rendered but invisible
-    const container = document.createElement("div")
-    container.style.cssText =
-      "position:fixed;left:-10000px;top:0;width:800px;z-index:-9999;pointer-events:none;"
-    container.innerHTML = html
-    document.body.appendChild(container)
-
-    // Give the browser one frame to render before capture
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
-
-    const doc = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "letter", // 215.9 × 279.4 mm
-    })
-
-    await new Promise<void>((resolve, reject) => {
-      doc.html(container, {
-        callback: (d) => {
-          try {
-            d.save(nombreArchivo)
-            resolve()
-          } catch (e) {
-            reject(e)
-          }
-        },
-        x: 0,
-        y: 0,
-        width: 216,       // matches letter width in mm
-        windowWidth: 800, // div width in px
-        margin: [0, 0, 0, 0],
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          allowTaint: false,
-          backgroundColor: "#FFF8F5",
-          logging: false,
-          imageTimeout: 8000,
-        },
-      })
-    })
-
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const ventana = window.open(url, "_blank")
+    if (!ventana) {
+      // fallback: navegador bloqueó popup, descarga directa
+      const a = document.createElement("a")
+      const folio = `TCH-${pedido.id}`
+      a.href = url
+      a.download = `TUCHIS-${folio}.html`
+      a.click()
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 30000)
     onEstado?.("listo")
   } catch (err) {
     console.error("[generarPDF]", err)
     onEstado?.("error")
     throw err
-  } finally {
-    // Clean up any leftover container
-    document
-      .querySelectorAll<HTMLElement>(
-        "div[style*='-10000px']"
-      )
-      .forEach((el) => el.parentNode?.removeChild(el))
   }
 }

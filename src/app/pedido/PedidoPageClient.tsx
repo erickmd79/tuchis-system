@@ -734,30 +734,6 @@ obtenerFechaEntrega(pedido)
 ) || "Sin fecha"}
 </p>
 </div>
-<div className="mt-4 flex flex-wrap gap-3">
-<span className={`badge-pedido ${
-obtenerEstadoEntrega(pedido) === "entregado"
-? "badge-entregado"
-: "badge-pendiente"
-}`}>
-{obtenerEstadoEntrega(pedido) === "entregado"
-? "Entregado"
-: "Pendiente"}
-</span>
-<span className={`badge-pedido ${
-obtenerEstadoPago(pedido) === "pagado"
-? "badge-pagado"
- : obtenerEstadoPago(pedido) === "anticipo"
- ? "badge-anticipo"
-: "badge-pendiente"
-}`}>
-{obtenerEstadoPago(pedido) === "pagado"
-? "Pagado"
-: obtenerEstadoPago(pedido) === "anticipo"
-? "Anticipo"
-: "Pendiente"}
-</span>
-</div>
 {pedido.notas && (
 <p className="mt-4 text-zinc-600 whitespace-pre-wrap">
 <span className="font-black text-cyan-600">
@@ -792,26 +768,30 @@ className="text-zinc-700"
 )
 )}
 </div>
-<div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm font-black uppercase">
-<div className="rounded-2xl bg-[#D9F5F8] p-3 text-cyan-700">
+<div className="mt-3 flex flex-wrap gap-3 text-sm font-black uppercase">
+<div className="rounded-2xl bg-[#D9F5F8] p-3 text-cyan-700 flex-1 min-w-[80px]">
 Total {moneda(pedido.total)}
 </div>
-<div className="rounded-2xl bg-[#FFF0B8] p-3 text-zinc-700">
+<div className="rounded-2xl bg-[#FFF0B8] p-3 text-zinc-700 flex-1 min-w-[80px]">
 Anticipo {moneda(obtenerAnticipo(pedido))}
 </div>
-<div className="rounded-2xl bg-[#FFE0DD] p-3 text-rose-500">
+{obtenerAbono(pedido) > 0 && (
+<div className="rounded-2xl bg-[#E7D9FF] p-3 text-purple-700 flex-1 min-w-[80px]">
+Abono {moneda(obtenerAbono(pedido))}
+</div>
+)}
+<div className="rounded-2xl bg-[#FFE0DD] p-3 text-rose-500 flex-1 min-w-[80px]">
 Saldo {moneda(obtenerSaldo(pedido))}
 </div>
 </div>
 </div>
 <div className="flex flex-col gap-3 min-w-[220px]">
+{/* Entrega */}
+<p className="text-xs font-black uppercase text-zinc-400 tracking-wide">
+Entrega
+</p>
 <button
-onClick={() =>
-cambiarEstadoEntrega(
-pedido,
-"pendiente"
-)
-}
+onClick={() => cambiarEstadoEntrega(pedido, "pendiente")}
 className={`badge-action ${
 obtenerEstadoEntrega(pedido) === "pendiente"
 ? "badge-pendiente"
@@ -821,12 +801,7 @@ obtenerEstadoEntrega(pedido) === "pendiente"
 Pendiente
 </button>
 <button
-onClick={() =>
-cambiarEstadoEntrega(
-pedido,
-"entregado"
-)
-}
+onClick={() => cambiarEstadoEntrega(pedido, "entregado")}
 className={`badge-action ${
 obtenerEstadoEntrega(pedido) === "entregado"
 ? "badge-entregado"
@@ -835,15 +810,14 @@ obtenerEstadoEntrega(pedido) === "entregado"
 >
 Entregado
 </button>
+{/* Pago */}
+<p className="text-xs font-black uppercase text-zinc-400 tracking-wide mt-2">
+Pago
+</p>
 <button
-onClick={() =>
-cambiarEstadoPago(
-pedido,
-"pendiente"
-)
-}
+onClick={() => cambiarEstadoPago(pedido, "anticipo")}
 className={`badge-action ${
-obtenerEstadoPago(pedido) === "pendiente"
+obtenerSaldo(pedido) > 0
 ? "badge-pendiente"
 : "badge-neutral"
 }`}
@@ -851,29 +825,9 @@ obtenerEstadoPago(pedido) === "pendiente"
 Pendiente
 </button>
 <button
-onClick={() =>
-cambiarEstadoPago(
-pedido,
-"anticipo"
-)
-}
+onClick={() => cambiarEstadoPago(pedido, "pagado")}
 className={`badge-action ${
-obtenerEstadoPago(pedido) === "anticipo"
-? "badge-anticipo"
-: "badge-neutral"
-}`}
->
-Anticipo
-</button>
-<button
-onClick={() =>
-cambiarEstadoPago(
-pedido,
-"pagado"
-)
-}
-className={`badge-action ${
-obtenerEstadoPago(pedido) === "pagado"
+obtenerSaldo(pedido) <= 0
 ? "badge-pagado"
 : "badge-neutral"
 }`}
