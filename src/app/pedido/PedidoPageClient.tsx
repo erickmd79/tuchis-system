@@ -4,20 +4,10 @@ import { supabase } from "../../lib/supabase"
 import { generarPDF } from "./generarPDF"
 import {
   MODALIDADES,
-  MODALIDADES_PRECIO,
   numero,
   moneda,
-  obtenerClaveModalidad,
-  obtenerConfigModalidad,
-  prepararTamanoProducto,
-  obtenerTamanosProducto,
-  obtenerNombresTamanos,
-  obtenerModalidadesTamano,
-  obtenerConfigTamano,
-  obtenerMinimoMayoreo,
-  obtenerPrecioMenudeo,
-  obtenerPrecioMayoreo,
-  obtenerPrecioPorCantidad,
+  type Escala,
+  obtenerPrecioPorEscala,
   calcularTotalProductos,
 } from "../../lib/pricing"
 
@@ -100,6 +90,7 @@ const [carrito, setCarrito] = useState<any[]>([])
 const [pedidos, setPedidos] = useState<any[]>([])
 const [productosDisponibles, setProductosDisponibles] =
 useState<any[]>([])
+const [escalas, setEscalas] = useState<Escala[]>([])
 const [pedidoEditando, setPedidoEditando] =
 useState<any>(null)
 const [catalogoPedidoAbierto, setCatalogoPedidoAbierto] =
@@ -139,6 +130,9 @@ item.modalidad === data[0].modalidad
 )
 obtenerPedidos()
 obtenerProductos()
+supabase.from("escalas").select("*").then(({ data }) => {
+if (data) setEscalas(data as Escala[])
+})
 }, [])
 const obtenerPedidos = async () => {
 const { data } =
@@ -160,80 +154,40 @@ const prepararProductoPedido = (
 producto: any,
 cantidad = numero(producto.cantidad) || 1
 ) => {
-const productoActual =
+const productoBase =
 productosDisponibles.find(
 (item) =>
 String(item.id) ===
-String(
-producto.producto_id ??
-producto.id
-)
+String(producto.producto_id ?? producto.id)
 ) || {}
-const piezas =
-Math.max(1, numero(cantidad) || 1)
-const productoMezclado = {
-...productoActual,
-...producto,
-}
-const configTamano =
-obtenerConfigTamano(
-productoMezclado,
-producto.tamano,
-producto.modalidad
-)
-const productoConPrecios = {
-...productoActual,
-...producto,
-producto_id:
-producto.producto_id ??
-producto.id ??
-productoActual.id,
-nombre:
-producto.nombre ??
-productoActual.nombre,
-tamano:
-configTamano?.nombre ??
-producto.tamano ??
-"",
-tamano_id:
-configTamano?.tamano_id ??
-producto.tamano_id ??
-"",
-cantidad: piezas,
-modalidad:
-(configTamano?.modalidad ??
-producto.modalidad) ||
-"",
-precio_menudeo:
-configTamano
-? numero(configTamano.precio_menudeo)
-: obtenerPrecioMenudeo(
-productoMezclado,
-producto.modalidad,
-producto.tamano
-),
-precio_mayoreo:
-configTamano
-? numero(configTamano.precio_mayoreo)
-: obtenerPrecioMayoreo(
-productoMezclado,
-producto.modalidad,
-producto.tamano
-),
-minimo_mayoreo:
-productoActual.minimo_mayoreo ??
-producto.minimo_mayoreo ??
-0,
+const piezas = Math.max(1, numero(cantidad) || 1)
+const tamanoId = Number(producto.tamano_id || productoBase.tamano_id) || 0
+const modalidad = producto.modalidad || ""
+let precio = 0
+const tamanoNombre = producto.tamano_nombre || producto.tamano || ""
+if (tamanoId > 0 && escalas.length > 0 && modalidad) {
+precio = obtenerPrecioPorEscala(escalas, tamanoId, modalidad, piezas)
+} else {
+precio = numero(producto.precio || producto.precio_unitario || 0)
 }
 return {
-...productoConPrecios,
-precio:
-obtenerPrecioPorCantidad(
-productoConPrecios,
-piezas,
-productoConPrecios.modalidad,
-productoConPrecios.tamano
-),
+...productoBase,
+...producto,
+producto_id: producto.producto_id ?? producto.id ?? productoBase.id,
+nombre: producto.nombre ?? productoBase.nombre,
+tamano_id: tamanoId || undefined,
+tamano_nombre: tamanoNombre,
+tamano: tamanoNombre,
+modalidad,
+cantidad: piezas,
+precio,
+precio_unitario: precio,
+imagen:
+producto.imagen ??
+producto.imagenes?.[0] ??
+productoBase.imagenes?.[0] ??
+"",
+imagenes: producto.imagenes ?? productoBase.imagenes ?? [],
 }
 }
 const carritoConPrecios =
@@ -313,32 +267,16 @@ const actualizarTamanoCarrito = (
 index: number,
 tamano: string
 ) => {
-const itemActual =
-carrito[index]
-const modalidades =
-obtenerModalidadesTamano(
-itemActual,
-tamano
-)
-const modalidad =
-modalidades[0] ||
-itemActual?.modalidad ||
-""
+const itemActual = carrito[index]
+const modalidad = itemActual?.modalidad || ""
 const actualizado =
 carrito.map((item, itemIndex) =>
 itemIndex === index
-? prepararProductoPedido({
-...item,
-tamano,
-modalidad,
-})
+? prepararProductoPedido({ ...item, tamano, modalidad })
 : item
 )
 setCarrito(actualizado)
-localStorage.setItem(
-"carrito",
-JSON.stringify(actualizado)
-)
+localStorage.setItem("carrito", JSON.stringify(actualizado))
 }
 const actualizarModalidadPedido = (
 modalidad: string
@@ -438,8 +376,8 @@ return
 const faltaTamano =
 productosParaPedido.some(
 (item) =>
-obtenerTamanosProducto(item).length > 0 &&
-!item.tamano
+Number(item.tamano_id) > 0 &&
+!item.tamano && !item.tamano_nombre
 )
 if (faltaTamano) {
 setErrorPedido("Selecciona el tamaño de todos los productos")
@@ -609,13 +547,12 @@ const actualizado = {
 ...cambios,
 }
 if (recalcularPrecio) {
-actualizado.precio =
-obtenerPrecioPorCantidad(
-actualizado,
-numero(actualizado.cantidad),
-actualizado.modalidad,
-actualizado.tamano
-)
+const tid = Number(actualizado.tamano_id) || 0
+const mod = actualizado.modalidad || ""
+const qty = numero(actualizado.cantidad)
+if (tid > 0 && escalas.length > 0 && mod) {
+actualizado.precio = obtenerPrecioPorEscala(escalas, tid, mod, qty)
+}
 }
 return actualizado
 }
@@ -647,17 +584,20 @@ producto: any
 if (!pedidoEditando || !producto) {
 return
 }
-const tamanosProducto =
-obtenerTamanosProducto(producto)
-const tamanoDefault =
-tamanosProducto[0]?.nombre || ""
-const modalidadDefault =
-tamanosProducto[0]?.modalidad || ""
+const tamanoId = Number(producto.tamano_id) || 0
+const modalidadDefault = (() => {
+if (tamanoId > 0 && escalas.length > 0) {
+const mods = Array.from(new Set(
+escalas.filter((e) => e.tamano_id === tamanoId).map((e) => e.modalidad)
+))
+return mods[0] || MODALIDADES[0]
+}
+return MODALIDADES[0]
+})()
 const productos = [
 ...(pedidoEditando.productos || []),
 prepararProductoPedido({
 ...producto,
-tamano: tamanoDefault,
 modalidad: modalidadDefault,
 }),
 ]
@@ -1278,69 +1218,27 @@ Number(e.target.value) || 0,
 }
 className="input-premium"
 />
-{obtenerTamanosProducto(producto).length > 0 && (
-<select
-value={producto.tamano || ""}
-onChange={(e) => {
-const modalidades =
-obtenerModalidadesTamano(
-producto,
-e.target.value
-)
-actualizarProductoPedido(
-index,
-{
-tamano: e.target.value,
-modalidad:
-modalidades[0] ||
-producto.modalidad ||
-"",
-},
-true
-)
-}}
-className="input-premium"
->
-{obtenerNombresTamanos(producto).map((tamano) => (
-<option
-key={tamano}
-value={tamano}
->
-{tamano}
-</option>
-))}
-</select>
-)}
 <select
 value={producto.modalidad || ""}
 onChange={(e) =>
 actualizarProductoPedido(
 index,
-{
-modalidad: e.target.value,
-},
+{ modalidad: e.target.value },
 true
 )
 }
 className="input-premium"
 >
-<option value="">
-Modalidad
-</option>
-{(obtenerTamanosProducto(producto).length > 0
-? obtenerModalidadesTamano(
-producto,
-producto.tamano
-)
-: MODALIDADES
-).map((opcion: string) => (
-<option
-key={opcion}
-value={opcion}
->
-{opcion}
-</option>
-))}
+<option value="">Modalidad</option>
+{(() => {
+const tid = Number(producto.tamano_id) || 0
+const opciones = tid > 0 && escalas.length > 0
+? Array.from(new Set(escalas.filter((e) => e.tamano_id === tid).map((e) => e.modalidad)))
+: [...MODALIDADES]
+return opciones.map((opcion: string) => (
+<option key={opcion} value={opcion}>{opcion}</option>
+))
+})()}
 </select>
 <button
 onClick={() =>
@@ -1352,13 +1250,9 @@ Quitar
 </button>
 </div>
 <p className="text-sm font-black uppercase text-zinc-500">
-Subtotal: {moneda(numero(producto.precio) * numero(producto.cantidad))}
-{Number(producto.minimo_mayoreo || 0) > 0 && (
-<>
+{[producto.tamano || producto.tamano_nombre, producto.modalidad].filter(Boolean).join(" · ")}
 {" · "}
-Mayoreo desde {producto.minimo_mayoreo} piezas
-</>
-)}
+Subtotal: {moneda(numero(producto.precio) * numero(producto.cantidad))}
 </p>
 </div>
 )
@@ -1524,52 +1418,27 @@ className="w-full h-56 object-cover bg-white"
 {producto.nombre}
 </h4>
 <div className="mt-4 space-y-2">
-{obtenerTamanosProducto(producto).length > 0 ? (
-obtenerTamanosProducto(producto).map((tamano: any) => (
+{(() => {
+const tid = Number(producto.tamano_id) || 0
+const mods = tid > 0 && escalas.length > 0
+? Array.from(new Set(escalas.filter((e) => e.tamano_id === tid).map((e) => e.modalidad)))
+: [...MODALIDADES]
+return mods.map((mod: string) => (
 <div
-key={`${tamano.tamano_id}-${tamano.modalidad}`}
+key={mod}
 className="rounded-2xl bg-[#FFF8F5] border border-[#F8D6D0] p-3"
 >
 <p className="text-xs font-black uppercase text-zinc-400">
-{tamano.nombre} / {tamano.modalidad}
+{mod}
 </p>
-<p className="text-lg font-black text-rose-300">
-Menudeo {moneda(tamano.precio_menudeo)}
-</p>
-<p className="text-base font-black text-cyan-500">
-Mayoreo {moneda(tamano.precio_mayoreo)}
-</p>
-</div>
-))
-) : (
-MODALIDADES_PRECIO.map((modalidad) => (
-<div
-key={modalidad.clave}
-className="rounded-2xl bg-[#FFF8F5] border border-[#F8D6D0] p-3"
->
-<p className="text-xs font-black uppercase text-zinc-400">
-{modalidad.label}
-</p>
-<p className="text-lg font-black text-rose-300">
-Menudeo {moneda(obtenerPrecioMenudeo(
-producto,
-modalidad.clave
-))}
-</p>
-<p className="text-base font-black text-cyan-500">
-Mayoreo {moneda(obtenerPrecioMayoreo(
-producto,
-modalidad.clave
-))}
-</p>
-</div>
-))
-)}
-{obtenerMinimoMayoreo(producto) > 0 && (
-<p className="text-xs font-black uppercase text-zinc-400">
-Desde {obtenerMinimoMayoreo(producto)} piezas
+{tid > 0 && escalas.length > 0 && (
+<p className="text-sm font-bold text-zinc-500 mt-1">
+Precio dinámico por cantidad
 </p>
 )}
+</div>
+))
+})()}
 </div>
 <button
 onClick={() =>
@@ -1656,7 +1525,7 @@ return
 const faltaTamano =
 productos.some(
 (producto: any) =>
-obtenerTamanosProducto(producto).length > 0 &&
+Number(producto.tamano_id) > 0 &&
 !producto.tamano
 )
 if (faltaTamano) {

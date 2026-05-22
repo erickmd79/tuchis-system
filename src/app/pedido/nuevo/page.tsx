@@ -7,13 +7,8 @@ import {
   MODALIDADES,
   numero,
   moneda,
-  obtenerTamanosProducto,
-  obtenerNombresTamanos,
-  obtenerModalidadesTamano,
-  obtenerConfigTamano,
-  obtenerPrecioMenudeo,
-  obtenerPrecioMayoreo,
-  obtenerPrecioPorCantidad,
+  type Escala,
+  obtenerPrecioPorEscala,
   calcularTotalProductos,
 } from "../../../lib/pricing"
 
@@ -49,11 +44,11 @@ const router = useRouter()
 const [cargando, setCargando] = useState(true)
 const [carrito, setCarrito] = useState<any[]>([])
 const [productosDisponibles, setProductosDisponibles] = useState<any[]>([])
+const [escalas, setEscalas] = useState<Escala[]>([])
 const [nombre, setNombre] = useState("")
 const [telefono, setTelefono] = useState("")
 const [email, setEmail] = useState("")
 const [lugarEntrega, setLugarEntrega] = useState("")
-const [modalidadPedido, setModalidadPedido] = useState("")
 const [anticipo, setAnticipo] = useState("")
 const [estadoPagoPedido, setEstadoPagoPedido] = useState("pendiente")
 const [fecha, setFecha] = useState("")
@@ -65,14 +60,6 @@ const [enviando, setEnviando] = useState(false)
 useEffect(() => {
 const data = JSON.parse(localStorage.getItem("carrito") || "[]")
 setCarrito(data)
-setModalidadPedido(
-data.length > 0 &&
-data.every(
-(item: any) => item.modalidad === data[0].modalidad
-)
-? data[0].modalidad || ""
-: ""
-)
 setCargando(false)
 supabase
 .from("productos")
@@ -81,66 +68,51 @@ supabase
 .then(({ data: productos }) => {
 if (productos) setProductosDisponibles(productos)
 })
+supabase.from("escalas").select("*").then(({ data }) => {
+if (data) setEscalas(data as Escala[])
+})
 }, [])
 
 const prepararProductoPedido = (
-producto: any,
-cantidad = numero(producto.cantidad) || 1
+item: any,
+cantidad = numero(item.cantidad) || 1
 ) => {
-const productoActual =
-productosDisponibles.find(
-(item) =>
-String(item.id) ===
-String(producto.producto_id ?? producto.id)
+const productoBase = productosDisponibles.find(
+(p) => String(p.id) === String(item.producto_id ?? item.id)
 ) || {}
+
 const piezas = Math.max(1, numero(cantidad) || 1)
-const productoMezclado = { ...productoActual, ...producto }
-const configTamano = obtenerConfigTamano(
-productoMezclado,
-producto.tamano,
-producto.modalidad
-)
-const productoConPrecios = {
-...productoActual,
-...producto,
-producto_id:
-producto.producto_id ?? producto.id ?? productoActual.id,
-nombre: producto.nombre ?? productoActual.nombre,
-tamano: configTamano?.nombre ?? producto.tamano ?? "",
-tamano_id: configTamano?.tamano_id ?? producto.tamano_id ?? "",
-cantidad: piezas,
-modalidad: (configTamano?.modalidad ?? producto.modalidad) || "",
-precio_menudeo: configTamano
-? numero(configTamano.precio_menudeo)
-: obtenerPrecioMenudeo(
-productoMezclado,
-producto.modalidad,
-producto.tamano
-),
-precio_mayoreo: configTamano
-? numero(configTamano.precio_mayoreo)
-: obtenerPrecioMayoreo(
-productoMezclado,
-producto.modalidad,
-producto.tamano
-),
-minimo_mayoreo:
-productoActual.minimo_mayoreo ?? producto.minimo_mayoreo ?? 0,
+const tamanoId = Number(item.tamano_id || productoBase.tamano_id) || 0
+const modalidad = item.modalidad || ""
+
+let precio = 0
+const tamanoNombre = item.tamano_nombre || item.tamano || ""
+
+if (tamanoId > 0 && escalas.length > 0 && modalidad) {
+precio = obtenerPrecioPorEscala(escalas, tamanoId, modalidad, piezas)
+} else {
+// Old fallback
+precio = numero(item.precio || item.precio_unitario || 0)
 }
+
 return {
-...productoConPrecios,
-precio: obtenerPrecioPorCantidad(
-productoConPrecios,
-piezas,
-productoConPrecios.modalidad,
-productoConPrecios.tamano
-),
+...productoBase,
+...item,
+producto_id: item.producto_id ?? item.id ?? productoBase.id,
+nombre: item.nombre ?? productoBase.nombre,
+tamano_id: tamanoId || undefined,
+tamano_nombre: tamanoNombre,
+tamano: tamanoNombre,
+modalidad,
+cantidad: piezas,
+precio,
+precio_unitario: precio,
+imagen: item.imagen ?? item.imagenes?.[0] ?? productoBase.imagenes?.[0] ?? "",
+imagenes: item.imagenes ?? productoBase.imagenes ?? [],
 }
 }
 
-const carritoConPrecios = carrito.map((item) =>
-prepararProductoPedido(item)
-)
+const carritoConPrecios = carrito.map((item) => prepararProductoPedido(item))
 const total = calcularTotalProductos(carritoConPrecios)
 const anticipoCapturado = Math.max(0, numero(anticipo))
 const anticipoPedido = Math.min(anticipoCapturado, total)
@@ -153,48 +125,9 @@ estadoPagoPedido,
 anticipoPedido
 )
 
-const actualizarTamanoCarrito = (
-index: number,
-tamano: string
-) => {
-const itemActual = carrito[index]
-const modalidades = obtenerModalidadesTamano(itemActual, tamano)
-const modalidad =
-modalidades[0] || itemActual?.modalidad || ""
-const actualizado = carrito.map((item, itemIndex) =>
-itemIndex === index
-? prepararProductoPedido({ ...item, tamano, modalidad })
-: item
-)
-setCarrito(actualizado)
-localStorage.setItem("carrito", JSON.stringify(actualizado))
-}
-
-const actualizarModalidadCarrito = (
-index: number,
-modalidad: string
-) => {
-const actualizado = carrito.map((item, itemIndex) =>
-itemIndex === index
-? prepararProductoPedido({ ...item, modalidad })
-: item
-)
-setCarrito(actualizado)
-setModalidadPedido(
-actualizado.length > 0 &&
-actualizado.every(
-(item) => item.modalidad === actualizado[0].modalidad
-)
-? actualizado[0].modalidad || ""
-: ""
-)
-localStorage.setItem("carrito", JSON.stringify(actualizado))
-}
-
-const actualizarModalidadPedido = (modalidad: string) => {
-setModalidadPedido(modalidad)
-const actualizado = carrito.map((item) =>
-prepararProductoPedido({ ...item, modalidad })
+const actualizarModalidadCarrito = (index: number, modalidad: string) => {
+const actualizado = carrito.map((item, i) =>
+i === index ? prepararProductoPedido({ ...item, modalidad }) : item
 )
 setCarrito(actualizado)
 localStorage.setItem("carrito", JSON.stringify(actualizado))
@@ -257,10 +190,7 @@ if (!nombre || !telefono || !fecha) {
 setErrorPedido("Completa nombre, teléfono y fecha de entrega")
 return
 }
-const productosParaPedido = carritoConPrecios.map((item) => ({
-...item,
-modalidad: item.modalidad || modalidadPedido,
-}))
+const productosParaPedido = carritoConPrecios
 if (productosParaPedido.length === 0) {
 setErrorPedido("El carrito está vacío")
 return
@@ -269,13 +199,9 @@ if (productosParaPedido.some((item) => !item.modalidad)) {
 setErrorPedido("Selecciona la modalidad de todos los productos")
 return
 }
-if (
-productosParaPedido.some(
-(item) =>
-obtenerTamanosProducto(item).length > 0 && !item.tamano
-)
-) {
-setErrorPedido("Selecciona el tamaño de todos los productos")
+// Verificar precio resuelto
+if (productosParaPedido.some((item) => numero(item.precio) === 0)) {
+setErrorPedido("Algunos productos no tienen precio configurado. Verifica las escalas.")
 return
 }
 if (anticipoCapturado > total) {
@@ -372,63 +298,51 @@ key={index}
 className="bg-white rounded-2xl border border-[#FFD9D4] p-4"
 >
 <div className="flex justify-between items-start gap-2">
+<div>
 <h3 className="font-black text-cyan-600">
 {item.nombre}
 </h3>
+{(item.tamano || item.tamano_nombre || item.modalidad) && (
+<p className="text-xs font-bold text-zinc-400 mt-0.5">
+{[item.tamano || item.tamano_nombre, item.modalidad]
+.filter(Boolean)
+.join(" · ")}
+</p>
+)}
+</div>
 <span className="text-sm font-bold text-zinc-600 whitespace-nowrap">
 {item.cantidad} × {moneda(item.precio)}
 </span>
 </div>
-{Number(item.minimo_mayoreo || 0) > 0 && (
-<p className="text-xs font-bold text-zinc-400 mt-1">
-Mayoreo desde {item.minimo_mayoreo} piezas
-</p>
-)}
-{obtenerTamanosProducto(item).length > 0 && (
-<select
-value={item.tamano || ""}
-onChange={(e) =>
-actualizarTamanoCarrito(
-index,
-e.target.value
+{(() => {
+const tamanoId = Number(item.tamano_id) || 0
+const opciones =
+tamanoId > 0 && escalas.length > 0
+? Array.from(
+new Set(
+escalas
+.filter((e) => e.tamano_id === tamanoId)
+.map((e) => e.modalidad)
 )
-}
-className="input-premium mt-3"
->
-{obtenerNombresTamanos(item).map(
-(tamano) => (
-<option key={tamano} value={tamano}>
-{tamano}
-</option>
 )
-)}
-</select>
-)}
+: [...MODALIDADES]
+return (
 <select
 value={item.modalidad || ""}
 onChange={(e) =>
-actualizarModalidadCarrito(
-index,
-e.target.value
-)
+actualizarModalidadCarrito(index, e.target.value)
 }
 className="input-premium mt-3"
 >
-<option value="">
-Selecciona modalidad
-</option>
-{(obtenerTamanosProducto(item).length > 0
-? obtenerModalidadesTamano(
-item,
-item.tamano
-)
-: MODALIDADES
-).map((opcion: string) => (
+<option value="">Selecciona modalidad</option>
+{opciones.map((opcion) => (
 <option key={opcion} value={opcion}>
 {opcion}
 </option>
 ))}
 </select>
+)
+})()}
 </div>
 ))}
 </div>
@@ -495,27 +409,6 @@ value={lugarEntrega}
 onChange={(e) => setLugarEntrega(e.target.value)}
 className="input-premium"
 />
-<div>
-<label className="block text-sm font-semibold text-zinc-500 mb-2">
-Modalidad
-</label>
-<select
-value={modalidadPedido}
-onChange={(e) =>
-actualizarModalidadPedido(e.target.value)
-}
-className="input-premium"
->
-<option value="">
-Selecciona modalidad
-</option>
-{MODALIDADES.map((opcion) => (
-<option key={opcion} value={opcion}>
-{opcion}
-</option>
-))}
-</select>
-</div>
 </div>
 
 {/* Dates and notes */}

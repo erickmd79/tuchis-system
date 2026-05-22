@@ -84,10 +84,12 @@ function buildHTML(pedido: any, origen: string): string {
   const productosHTML = productos
     .map((p: any, i: number) => {
       const img = imagenProducto(p)
+      const tamanoLabel = p.tamano_nombre || p.tamano || ""
       const detalles =
-        [p.tamano, p.modalidad].filter(Boolean).join(" / ") ||
+        [tamanoLabel, p.modalidad].filter(Boolean).join(" · ") ||
         "Sin especificar"
-      const subtotal = numero(p.precio) * numero(p.cantidad)
+      const precioUnitario = numero(p.precio_unitario || p.precio)
+      const subtotal = precioUnitario * numero(p.cantidad)
 
       return `
         <div style="
@@ -146,7 +148,7 @@ function buildHTML(pedido: any, origen: string): string {
           </div>
           <div style="text-align:right;flex-shrink:0;">
             <div style="font-size:18px;font-weight:900;color:#F49B93;">${moneda(subtotal)}</div>
-            <div style="font-size:11px;color:#bbb;margin-top:2px;">${moneda(p.precio)} c/u</div>
+            <div style="font-size:11px;color:#bbb;margin-top:2px;">${moneda(precioUnitario)} c/u</div>
           </div>
         </div>
       `
