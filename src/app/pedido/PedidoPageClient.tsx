@@ -1088,6 +1088,42 @@ overflow-wrap: anywhere;
 .value.accent {
 color: #27B6C7;
 }
+.badge-row {
+display: flex;
+gap: .045in;
+flex-wrap: wrap;
+margin-top: .03in;
+}
+.badge {
+display: inline-block;
+border-radius: 999px;
+padding: .025in .075in;
+font-size: .075in;
+font-weight: 900;
+text-transform: uppercase;
+letter-spacing: .03em;
+border: 1.5px solid transparent;
+}
+.badge-active-pending {
+background: #FFF0B8;
+color: #8A6A00;
+border-color: #FFE28A;
+}
+.badge-active-entrega {
+background: #E7D9FF;
+color: #6D4AA8;
+border-color: #D7C3FF;
+}
+.badge-active-pago {
+background: #DDF5EA;
+color: #238657;
+border-color: #BFEAD8;
+}
+.badge-inactive {
+background: #F5F5F5;
+color: #BBBBBB;
+border-color: #E8E8E8;
+}
 .notes {
 grid-column: span 3;
 min-height: .42in;
@@ -1236,11 +1272,12 @@ ${escaparHTML(pedido.telefono)}
 </div>
 <div class="info-card">
 <p class="label">
-Estado
+Entrega
 </p>
-<h2 class="value">
-${escaparHTML(estadoEntrega)}
-</h2>
+<div class="badge-row">
+<span class="${estadoEntrega !== "entregado" ? "badge badge-active-pending" : "badge badge-inactive"}">PENDIENTE</span>
+<span class="${estadoEntrega === "entregado" ? "badge badge-active-entrega" : "badge badge-inactive"}">ENTREGADO</span>
+</div>
 </div>
 <div class="info-card">
 <p class="label">
@@ -1262,9 +1299,10 @@ ${escaparHTML(fechaEntrega)}
 <p class="label">
 Pago
 </p>
-<h2 class="value">
-${escaparHTML(estadoPago)}
-</h2>
+<div class="badge-row">
+<span class="${saldoPedidoGuardado > 0 ? "badge badge-active-pending" : "badge badge-inactive"}">PENDIENTE</span>
+<span class="${saldoPedidoGuardado <= 0 ? "badge badge-active-pago" : "badge badge-inactive"}">PAGADO</span>
+</div>
 </div>
 <div class="info-card">
 <p class="label">
