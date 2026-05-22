@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { supabase } from "../../lib/supabase"
+import { useToast, ToastContainer } from "../components/Toast"
 import {
   MODALIDADES,
   MODALIDADES_PRECIO,
@@ -211,6 +212,8 @@ const obtenerBadgesProducto = (producto: any) => {
 }
 
 export default function CatalogoPage() {
+
+  const { toasts, addToast, removeToast } = useToast()
 
   const [productos, setProductos] = useState<any[]>([])
   const [carrito, setCarrito] = useState<any[]>([])
@@ -445,6 +448,7 @@ export default function CatalogoPage() {
 
     setProductoSeleccionado(null)
     setCarritoAbierto(true)
+    addToast(`${productoSeleccionado.nombre} agregado al carrito`, "success")
   }
 
   const aumentarCantidad = (
@@ -647,14 +651,14 @@ export default function CatalogoPage() {
           ? Array.from({ length: 8 }).map((_, i) => (
               <div
                 key={i}
-                className="bg-white rounded-[22px] overflow-hidden border border-[#F8D6D0] animate-pulse"
+                className="bg-white rounded-[22px] overflow-hidden border border-[#F8D6D0]"
               >
-                <div className="aspect-square bg-[#F5EEEC]" />
+                <div className="aspect-square skeleton-shimmer" />
                 <div className="p-4 space-y-3">
-                  <div className="h-3 bg-[#F5EEEC] rounded-full w-1/3" />
-                  <div className="h-5 bg-[#F5EEEC] rounded-full w-3/4" />
-                  <div className="h-8 bg-[#F5EEEC] rounded-full w-1/2 mt-2" />
-                  <div className="h-12 bg-[#EEE8E6] rounded-2xl mt-3" />
+                  <div className="h-3 skeleton-shimmer rounded-full w-1/3" />
+                  <div className="h-5 skeleton-shimmer rounded-full w-3/4" />
+                  <div className="h-8 skeleton-shimmer rounded-full w-1/2 mt-2" />
+                  <div className="h-12 skeleton-shimmer rounded-2xl mt-3" />
                 </div>
               </div>
             ))
@@ -690,7 +694,7 @@ export default function CatalogoPage() {
 
               <div
                 key={producto.id}
-                className="bg-white rounded-[22px] md:rounded-[26px] overflow-hidden shadow-md border border-[#F8D6D0]"
+                className="bg-white rounded-[22px] md:rounded-[26px] overflow-hidden shadow-md border border-[#F8D6D0] product-card-hover"
               >
 
                 <div className="relative">
@@ -704,6 +708,7 @@ export default function CatalogoPage() {
                       "/logo.png"
                     }
                     alt={producto.nombre}
+                    loading="lazy"
                     className="w-full aspect-square object-cover"
                   />
 
@@ -816,6 +821,7 @@ export default function CatalogoPage() {
                     className="w-full mt-4
                     bg-[#20B8C9]
                     hover:bg-[#17A7B8]
+                    active:scale-[.97]
                     text-white py-3 sm:py-4
                     rounded-2xl font-black
                     text-sm sm:text-base transition-all"
@@ -834,7 +840,7 @@ export default function CatalogoPage() {
 
       {productoSeleccionado && (
         <div className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-[32px] shadow-2xl border border-[#F8D6D0] w-full max-w-4xl max-h-[92vh] overflow-y-auto p-6 md:p-8">
+          <div className="bg-white rounded-[32px] shadow-2xl border border-[#F8D6D0] w-full max-w-4xl max-h-[92vh] overflow-y-auto p-6 md:p-8 modal-enter">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-pink-400 font-black uppercase text-sm">
@@ -1056,7 +1062,7 @@ export default function CatalogoPage() {
                 <button
                   type="button"
                   onClick={confirmarSeleccionProducto}
-                  className="w-full bg-[#20B8C9] hover:bg-[#17A7B8] text-white py-5 rounded-2xl font-black text-lg transition-all"
+                  className="w-full bg-[#20B8C9] hover:bg-[#17A7B8] active:scale-[.97] text-white py-5 rounded-2xl font-black text-lg transition-all shadow-lg shadow-cyan-200/60"
                 >
                   Agregar al carrito
                 </button>
@@ -1065,6 +1071,8 @@ export default function CatalogoPage() {
           </div>
         </div>
       )}
+
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
 
       {carritoAbierto && (
         <div
