@@ -4,33 +4,14 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import { supabase } from "../../../lib/supabase"
 
-const MODALIDADES = [
-  "Blanco",
-  "Pintado",
-  "Kit",
-]
-
 type Tamano = {
   id: number
   nombre: string
-  modalidad: string
-  precio_menudeo: number
-  precio_mayoreo: number
 }
 
 const estadoInicial = {
   nombre: "",
-  modalidad: "",
-  precio_menudeo: "",
-  precio_mayoreo: "",
 }
-
-const moneda = (valor: number | string) =>
-  Number(valor || 0).toLocaleString("es-MX", {
-    style: "currency",
-    currency: "MXN",
-    maximumFractionDigits: 0,
-  })
 
 export default function TamanosPage() {
 
@@ -48,7 +29,6 @@ export default function TamanosPage() {
       .from("tamanos")
       .select("*")
       .order("nombre")
-      .order("modalidad")
 
     if (!error && data) {
       setTamanos(data as Tamano[])
@@ -67,23 +47,13 @@ export default function TamanosPage() {
   }
 
   const guardarTamano = async () => {
-    if (
-      !formulario.nombre ||
-      !formulario.modalidad
-    ) {
-      alert("Completa nombre y modalidad")
+    if (!formulario.nombre) {
+      alert("Completa el nombre del tamaño")
       return
     }
 
     const payload = {
       nombre: formulario.nombre.trim(),
-      modalidad: formulario.modalidad,
-      precio_menudeo: Number(
-        formulario.precio_menudeo || 0
-      ),
-      precio_mayoreo: Number(
-        formulario.precio_mayoreo || 0
-      ),
     }
 
     const respuesta = editando
@@ -111,11 +81,6 @@ export default function TamanosPage() {
     setEditando(tamano)
     setFormulario({
       nombre: tamano.nombre || "",
-      modalidad: tamano.modalidad || "",
-      precio_menudeo:
-        String(tamano.precio_menudeo ?? ""),
-      precio_mayoreo:
-        String(tamano.precio_mayoreo ?? ""),
     })
   }
 
@@ -183,6 +148,13 @@ export default function TamanosPage() {
                 </Link>
 
                 <Link
+                  href="/admin/escalas"
+                  className="bg-[#E0D5FF] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
+                >
+                  Escalas
+                </Link>
+
+                <Link
                   href="/catalogo"
                   className="bg-[#D9F5F8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
                 >
@@ -199,7 +171,7 @@ export default function TamanosPage() {
               </h2>
 
               <p className="text-gray-500 text-base md:text-lg mt-4">
-                Configura tamaños, modalidades y precios para productos.
+                Configura los tamaños disponibles. Los precios se establecen en Escalas.
               </p>
             </div>
 
@@ -219,56 +191,6 @@ export default function TamanosPage() {
                     setFormulario({
                       ...formulario,
                       nombre: e.target.value,
-                    })
-                  }
-                  className="input-premium"
-                />
-
-                <select
-                  value={formulario.modalidad}
-                  onChange={(e) =>
-                    setFormulario({
-                      ...formulario,
-                      modalidad: e.target.value,
-                    })
-                  }
-                  className="input-premium"
-                >
-                  <option value="">
-                    Modalidad
-                  </option>
-
-                  {MODALIDADES.map((modalidad) => (
-                    <option
-                      key={modalidad}
-                      value={modalidad}
-                    >
-                      {modalidad}
-                    </option>
-                  ))}
-                </select>
-
-                <input
-                  type="number"
-                  placeholder="Precio menudeo"
-                  value={formulario.precio_menudeo}
-                  onChange={(e) =>
-                    setFormulario({
-                      ...formulario,
-                      precio_menudeo: e.target.value,
-                    })
-                  }
-                  className="input-premium"
-                />
-
-                <input
-                  type="number"
-                  placeholder="Precio mayoreo"
-                  value={formulario.precio_mayoreo}
-                  onChange={(e) =>
-                    setFormulario({
-                      ...formulario,
-                      precio_mayoreo: e.target.value,
                     })
                   }
                   className="input-premium"
@@ -313,38 +235,12 @@ export default function TamanosPage() {
                     key={tamano.id}
                     className="rounded-[28px] border border-[#F4D4CF] bg-[#FFF8F5] p-5"
                   >
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-black uppercase text-zinc-400">
-                          {tamano.modalidad}
-                        </p>
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      <h4 className="text-3xl font-black text-cyan-600">
+                        {tamano.nombre}
+                      </h4>
 
-                        <h4 className="text-3xl font-black text-cyan-600 mt-1">
-                          {tamano.nombre}
-                        </h4>
-
-                        <div className="mt-4 grid grid-cols-2 gap-3">
-                          <div className="rounded-2xl bg-white border border-[#F8D6D0] p-3">
-                            <p className="text-xs font-black uppercase text-zinc-400">
-                              Menudeo
-                            </p>
-                            <p className="text-xl font-black text-[#F49B93]">
-                              {moneda(tamano.precio_menudeo)}
-                            </p>
-                          </div>
-
-                          <div className="rounded-2xl bg-white border border-[#F8D6D0] p-3">
-                            <p className="text-xs font-black uppercase text-zinc-400">
-                              Mayoreo
-                            </p>
-                            <p className="text-xl font-black text-cyan-600">
-                              {moneda(tamano.precio_mayoreo)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex md:flex-col gap-3">
+                      <div className="flex gap-3">
                         <button
                           onClick={() =>
                             editarTamano(tamano)

@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "../../../lib/supabase"
 
@@ -247,6 +248,43 @@ export default function ProductosPage() {
   return (
 
     <div className="space-y-8 px-4 md:px-8 py-6 max-w-7xl mx-auto">
+
+      <div className="flex gap-3 mb-6 flex-wrap">
+        <Link
+          href="/admin"
+          className="bg-[#D9F5F8] text-gray-800 px-5 py-3 rounded-2xl font-bold hover:opacity-90 transition"
+        >
+          Dashboard
+        </Link>
+
+        <Link
+          href="/admin/productos"
+          className="bg-cyan-500 text-white px-5 py-3 rounded-2xl font-bold hover:opacity-90 transition"
+        >
+          Productos
+        </Link>
+
+        <Link
+          href="/admin/categorias"
+          className="bg-[#FFE9A8] text-gray-800 px-5 py-3 rounded-2xl font-bold hover:opacity-90 transition"
+        >
+          Categorías
+        </Link>
+
+        <Link
+          href="/admin/tamanos"
+          className="bg-[#E7D9FF] text-gray-800 px-5 py-3 rounded-2xl font-bold hover:opacity-90 transition"
+        >
+          Tamaños
+        </Link>
+
+        <Link
+          href="/admin/escalas"
+          className="bg-[#E0D5FF] text-gray-800 px-5 py-3 rounded-2xl font-bold hover:opacity-90 transition"
+        >
+          Escalas
+        </Link>
+      </div>
 
       <h1 className="page-title">
         Productos

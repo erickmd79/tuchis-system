@@ -257,3 +257,61 @@ export const calcularTotalProductos = (
       acc + numero(item.precio) * numero(item.cantidad),
     0
   )
+
+// ─── Escala-based pricing (new system) ──────────────────────────────────────
+
+export type Escala = {
+  id: number
+  tamano_id: number
+  modalidad: string
+  cantidad_min: number
+  cantidad_max: number | null
+  precio: number
+}
+
+// Finds the price from escalas table based on tamano_id, modalidad, and quantity.
+// Returns the precio from the first matching range (cantidad_min <= cantidad <= cantidad_max or null).
+export const obtenerPrecioPorEscala = (
+  escalas: Escala[],
+  tamanoId: number,
+  modalidad: string,
+  cantidad: number
+): number => {
+  const escala = escalas.find(
+    (e) =>
+      e.tamano_id === tamanoId &&
+      obtenerClaveModalidad(e.modalidad) === obtenerClaveModalidad(modalidad) &&
+      e.cantidad_min <= cantidad &&
+      (e.cantidad_max === null || cantidad <= e.cantidad_max)
+  )
+  return escala ? numero(escala.precio) : 0
+}
+
+// Returns the minimum price for a given tamano_id across all modalidades.
+// Useful for displaying "desde $X" pricing.
+export const obtenerPrecioDesde = (
+  escalas: Escala[],
+  tamanoId: number
+): number => {
+  const preciosParaTamano = escalas
+    .filter((e) => e.tamano_id === tamanoId)
+    .map((e) => numero(e.precio))
+
+  if (preciosParaTamano.length === 0) return 0
+
+  return Math.min(...preciosParaTamano)
+}
+
+// Returns the unique modalidades available for a given tamano_id.
+// Determines which modality options should be shown for a product.
+export const obtenerModalidadesDisponibles = (
+  escalas: Escala[],
+  tamanoId: number
+): string[] => {
+  const modalidadesSet = new Set(
+    escalas
+      .filter((e) => e.tamano_id === tamanoId)
+      .map((e) => e.modalidad)
+  )
+  return Array.from(modalidadesSet)
+}
