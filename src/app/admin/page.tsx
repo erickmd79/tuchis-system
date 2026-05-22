@@ -488,6 +488,13 @@ export default function AdminPage() {
                 </Link>
 
                 <Link
+                  href="/admin/tamanos"
+                  className="bg-[#E7D9FF] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
+                >
+                  Tamaños
+                </Link>
+
+                <Link
                   href="/catalogo"
                   className="bg-[#D9F5F8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
                 >
