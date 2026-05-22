@@ -1221,7 +1221,7 @@ export default function CatalogoPage() {
               </div>
 
               <a
-                href="/pedido?carrito=1"
+                href="/pedido/nuevo"
                 className={`block w-full text-center rounded-2xl py-4 font-black text-white transition ${
                   carrito.length > 0
                     ? "bg-[#20B8C9] hover:bg-[#17A7B8]"

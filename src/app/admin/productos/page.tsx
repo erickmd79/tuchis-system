@@ -351,15 +351,20 @@ export default function ProductosPage() {
             className="input-premium"
           />
 
-          <input
-            type="number"
-            placeholder="Stock"
-            value={stock}
-            onChange={(e) =>
-              setStock(Number(e.target.value))
-            }
-            className="input-premium"
-          />
+          <div>
+            <label className="block text-sm font-semibold text-zinc-500 mb-2">
+              Stock
+            </label>
+            <input
+              type="number"
+              placeholder="0"
+              value={stock}
+              onChange={(e) =>
+                setStock(Number(e.target.value))
+              }
+              className="input-premium"
+            />
+          </div>
 
         </div>
 
