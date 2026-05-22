@@ -297,7 +297,7 @@ function buildHTML(pedido: any, origen: string): string {
 
     ${pedido.email ? card("Email", esc(pedido.email)) : ""}
 
-    <!-- Estados -->
+    <!-- Entrega -->
     <div style="
       background:white;
       border:1px solid #F5D3CD;
@@ -307,10 +307,35 @@ function buildHTML(pedido: any, origen: string): string {
       <div style="
         font-size:10px;font-weight:900;
         text-transform:uppercase;letter-spacing:.06em;color:#bbb;margin-bottom:6px;
-      ">Estado</div>
+      ">Entrega</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;">
-        ${badge(estadoEntrega, centrega)}
-        ${badge(estadoPago, cpago)}
+        ${badge("PENDIENTE", estadoEntrega !== "entregado"
+          ? { bg: "#FFF0B8", color: "#8A6A00", border: "#FFE28A" }
+          : { bg: "#F5F5F5", color: "#BBBBBB", border: "#E8E8E8" })}
+        ${badge("ENTREGADO", estadoEntrega === "entregado"
+          ? centrega
+          : { bg: "#F5F5F5", color: "#BBBBBB", border: "#E8E8E8" })}
+      </div>
+    </div>
+
+    <!-- Pago -->
+    <div style="
+      background:white;
+      border:1px solid #F5D3CD;
+      border-radius:14px;
+      padding:10px 14px;
+    ">
+      <div style="
+        font-size:10px;font-weight:900;
+        text-transform:uppercase;letter-spacing:.06em;color:#bbb;margin-bottom:6px;
+      ">Pago</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        ${badge("PENDIENTE", saldoVal > 0
+          ? { bg: "#FFF0B8", color: "#8A6A00", border: "#FFE28A" }
+          : { bg: "#F5F5F5", color: "#BBBBBB", border: "#E8E8E8" })}
+        ${badge("PAGADO", saldoVal <= 0
+          ? { bg: "#DDF5EA", color: "#238657", border: "#BFEAD8" }
+          : { bg: "#F5F5F5", color: "#BBBBBB", border: "#E8E8E8" })}
       </div>
     </div>
 
