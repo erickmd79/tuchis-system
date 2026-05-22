@@ -346,27 +346,28 @@ function buildHTML(pedido: any, origen: string): string {
 
     ${pedido.municipio ? card("Municipio", esc(pedido.municipio)) : ""}
 
-    ${
-      pedido.notas
-        ? `<div style="
+  </div>
+
+  ${
+    pedido.notas
+      ? `<div style="
             background:white;
             border:1px solid #F5D3CD;
             border-radius:14px;
-            padding:10px 14px;
+            padding:12px 16px;
+            margin-bottom:18px;
           ">
             <div style="
               font-size:10px;font-weight:900;
-              text-transform:uppercase;letter-spacing:.06em;color:#bbb;margin-bottom:4px;
+              text-transform:uppercase;letter-spacing:.06em;color:#bbb;margin-bottom:6px;
             ">Notas</div>
             <div style="
               font-size:13px;font-weight:700;color:#666;
-              overflow:hidden;max-height:42px;line-height:1.4;
+              line-height:1.5;word-break:break-word;
             ">${esc(pedido.notas)}</div>
           </div>`
-        : `<div></div>`
-    }
-
-  </div>
+      : ""
+  }
 
   <!-- Products -->
   <div style="margin-bottom:18px;">
