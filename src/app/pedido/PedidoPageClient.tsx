@@ -713,6 +713,7 @@ window.open(
 "_blank"
 )
 }
+const pasoActivo = exitoPedido ? 3 : carritoConPrecios.length > 0 ? 2 : 1
 return (
 <div className="space-y-8 px-4 md:px-8 py-6 max-w-7xl mx-auto">
 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -727,26 +728,176 @@ className="inline-flex items-center gap-2 bg-[#20B8C9] hover:bg-[#17A7B8] text-w
 </a>
 </div>
 <div className="section-card">
-<h2 className="text-3xl font-black text-cyan-600 mb-8">
+<h2 className="text-3xl font-black text-cyan-600 mb-6">
 Nuevo pedido
 </h2>
-<div className="space-y-5">
+
+{/* Step indicator */}
+<div className="flex items-center gap-0 mb-8">
+{[
+{ n: 1, label: "Carrito" },
+{ n: 2, label: "Datos" },
+{ n: 3, label: "Listo" },
+].map(({ n, label }, i) => (
+<div key={n} className="flex items-center flex-1">
+<div className="flex flex-col items-center flex-1">
+<div
+className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-sm transition-colors ${
+pasoActivo >= n
+? "bg-[#20B8C9] text-white"
+: "bg-[#F0F0F0] text-zinc-400"
+}`}
+>
+{pasoActivo > n ? "✓" : n}
+</div>
+<span
+className={`text-xs font-bold mt-1 ${
+pasoActivo >= n ? "text-cyan-600" : "text-zinc-400"
+}`}
+>
+{label}
+</span>
+</div>
+{i < 2 && (
+<div
+className={`h-0.5 flex-1 mx-1 rounded transition-colors ${
+pasoActivo > n ? "bg-[#20B8C9]" : "bg-[#E8E8E8]"
+}`}
+/>
+)}
+</div>
+))}
+</div>
+
+{/* Confirmation screen */}
+{exitoPedido ? (
+<div className="flex flex-col items-center gap-6 py-10">
+<div className="w-20 h-20 rounded-full bg-[#DDF5EA] flex items-center justify-center">
+<span className="text-4xl text-[#238657]">✓</span>
+</div>
+<div className="text-center">
+<p className="text-2xl font-black text-[#238657]">
+¡Pedido guardado!
+</p>
+<p className="text-zinc-500 mt-2 text-sm">
+El pedido fue registrado correctamente.
+</p>
+</div>
+<div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+<a
+href="#pedidos-guardados"
+className="btn-primary text-center flex-1"
+>
+Ver pedidos
+</a>
+<a
+href="/catalogo"
+className="btn-primary text-center flex-1"
+style={{ background: "#F49B93" }}
+>
+Nuevo pedido
+</a>
+</div>
+</div>
+) : (
+<div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-8 lg:items-start">
+
+{/* Left column: form sections */}
+<div className="space-y-6">
+
+{/* Section 1: Cart items */}
+<div className="rounded-3xl border border-[#F3D4CF] bg-[#FFFAFA] p-5">
+<p className="text-xs font-black uppercase text-zinc-400 mb-4 tracking-wide">
+① Carrito
+</p>
+{carritoConPrecios.length === 0 ? (
+<div className="flex flex-col items-center gap-3 py-6 text-zinc-400">
+<span className="text-4xl">🛒</span>
+<p className="font-bold text-sm">
+El carrito está vacío
+</p>
+<a
+href="/catalogo"
+className="text-[#20B8C9] font-bold text-sm underline"
+>
+Ir al catálogo
+</a>
+</div>
+) : (
+<div className="space-y-3">
+{carritoConPrecios.map((item, index) => (
+<div
+key={index}
+className="bg-white rounded-2xl border border-[#FFD9D4] p-4"
+>
+<div className="flex justify-between items-start gap-2">
+<h3 className="font-black text-cyan-600 leading-tight">
+{item.nombre}
+</h3>
+<span className="text-sm font-bold text-zinc-600 whitespace-nowrap">
+{item.cantidad} × {moneda(item.precio)}
+</span>
+</div>
+{Number(item.minimo_mayoreo || 0) > 0 && (
+<p className="text-xs font-bold text-zinc-400 mt-1">
+Mayoreo desde {item.minimo_mayoreo} piezas
+</p>
+)}
+{obtenerTamanosProducto(item).length > 0 && (
+<select
+value={item.tamano || ""}
+onChange={(e) =>
+actualizarTamanoCarrito(index, e.target.value)
+}
+className="input-premium mt-3"
+>
+{obtenerNombresTamanos(item).map((tamano) => (
+<option key={tamano} value={tamano}>
+{tamano}
+</option>
+))}
+</select>
+)}
+<select
+value={item.modalidad || ""}
+onChange={(e) =>
+actualizarModalidadCarrito(index, e.target.value)
+}
+className="input-premium mt-3"
+>
+<option value="">Selecciona modalidad</option>
+{(obtenerTamanosProducto(item).length > 0
+? obtenerModalidadesTamano(item, item.tamano)
+: MODALIDADES
+).map((opcion: string) => (
+<option key={opcion} value={opcion}>
+{opcion}
+</option>
+))}
+</select>
+</div>
+))}
+</div>
+)}
+</div>
+
+{/* Section 2: Customer data */}
+<div className="rounded-3xl border border-[#F3D4CF] bg-[#FFFAFA] p-5 space-y-4">
+<p className="text-xs font-black uppercase text-zinc-400 tracking-wide">
+② Datos del cliente
+</p>
 <input
 type="text"
 placeholder="Nombre del cliente"
 value={nombre}
-onChange={(e) =>
-setNombre(e.target.value)
-}
+onChange={(e) => setNombre(e.target.value)}
 className="input-premium input-cliente-grande"
 />
 <input
 type="text"
 placeholder="Teléfono"
 value={telefono}
-onChange={(e) =>
-setTelefono(e.target.value)
-}
+onChange={(e) => setTelefono(e.target.value)}
 className="input-premium"
 />
 <div>
@@ -755,31 +906,29 @@ Modalidad
 </label>
 <select
 value={modalidadPedido}
-onChange={(e) =>
-actualizarModalidadPedido(
-e.target.value
-)
-}
+onChange={(e) => actualizarModalidadPedido(e.target.value)}
 className="input-premium"
 >
-<option value="">
-Selecciona modalidad
-</option>
+<option value="">Selecciona modalidad</option>
 {MODALIDADES.map((opcion) => (
-<option
-key={opcion}
-value={opcion}
->
+<option key={opcion} value={opcion}>
 {opcion}
 </option>
 ))}
 </select>
 </div>
-<div className="rounded-3xl border border-[#FFD9D4] bg-white p-5">
-<p className="text-sm font-black uppercase text-zinc-400">
+</div>
+
+{/* Section 3: Dates and notes */}
+<div className="rounded-3xl border border-[#F3D4CF] bg-[#FFFAFA] p-5 space-y-4">
+<p className="text-xs font-black uppercase text-zinc-400 tracking-wide">
+③ Fecha y notas
+</p>
+<div className="rounded-2xl border border-[#FFD9D4] bg-white p-4">
+<p className="text-xs font-black uppercase text-zinc-400">
 Fecha de pedido
 </p>
-<p className="text-xl font-black text-cyan-600 mt-1">
+<p className="text-lg font-black text-cyan-600 mt-1">
 {formatearFecha(obtenerFechaLocal())}
 </p>
 </div>
@@ -790,13 +939,23 @@ Fecha de entrega
 <input
 type="date"
 value={fecha}
-onChange={(e) =>
-setFecha(e.target.value)
-}
+onChange={(e) => setFecha(e.target.value)}
 className="input-premium"
 />
 </div>
-<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+<textarea
+placeholder="Notas del pedido"
+value={notas}
+onChange={(e) => setNotas(e.target.value)}
+className="input-premium min-h-[100px]"
+/>
+</div>
+
+{/* Section 4: Payment */}
+<div className="rounded-3xl border border-[#F3D4CF] bg-[#FFFAFA] p-5 space-y-4">
+<p className="text-xs font-black uppercase text-zinc-400 tracking-wide">
+④ Pago
+</p>
 <div>
 <label className="block text-sm font-semibold text-zinc-500 mb-2">
 Anticipo
@@ -806,14 +965,11 @@ type="number"
 min="0"
 value={anticipo}
 onChange={(e) => {
-const valor =
-e.target.value
+const valor = e.target.value
 setAnticipo(valor)
 if (estadoPagoPedido !== "pagado") {
 setEstadoPagoPedido(
-numero(valor) > 0
-? "anticipo"
-: "pendiente"
+numero(valor) > 0 ? "anticipo" : "pendiente"
 )
 }
 }}
@@ -828,9 +984,7 @@ Estado de pago
 <div className="grid grid-cols-3 gap-3">
 <button
 type="button"
-onClick={() =>
-setEstadoPagoPedido("pendiente")
-}
+onClick={() => setEstadoPagoPedido("pendiente")}
 className={`badge-action ${
 estadoPagoCalculado === "pendiente"
 ? "badge-pendiente"
@@ -841,9 +995,7 @@ Pendiente
 </button>
 <button
 type="button"
-onClick={() =>
-setEstadoPagoPedido("anticipo")
-}
+onClick={() => setEstadoPagoPedido("anticipo")}
 className={`badge-action ${
 estadoPagoCalculado === "anticipo"
 ? "badge-anticipo"
@@ -854,9 +1006,7 @@ Anticipo
 </button>
 <button
 type="button"
-onClick={() =>
-setEstadoPagoPedido("pagado")
-}
+onClick={() => setEstadoPagoPedido("pagado")}
 className={`badge-action ${
 estadoPagoCalculado === "pagado"
 ? "badge-pagado"
@@ -868,134 +1018,90 @@ Pagado
 </div>
 </div>
 </div>
-<textarea
-placeholder="Notas del pedido"
-value={notas}
-onChange={(e) =>
-setNotas(e.target.value)
-}
-className="input-premium min-h-[120px]"
-/>
-</div>
+
+{/* Mobile submit */}
 {carritoConPrecios.length > 0 && (
-<div className="mt-8 space-y-4">
-{carritoConPrecios.map((item, index) => (
-<div
-key={index}
-className="bg-white rounded-3xl border border-[#FFD9D4] p-5"
->
-<h3 className="text-2xl font-black text-cyan-600">
-{item.nombre}
-</h3>
-<p className="mt-2 text-zinc-600">
-{item.cantidad}
-{" x "}
-{moneda(item.precio)}
-</p>
-{Number(item.minimo_mayoreo || 0) > 0 && (
-<p className="text-xs font-black uppercase text-zinc-400 mt-2">
-Mayoreo desde {item.minimo_mayoreo} piezas
-</p>
-)}
-{obtenerTamanosProducto(item).length > 0 && (
-<select
-value={item.tamano || ""}
-onChange={(e) =>
-actualizarTamanoCarrito(
-index,
-e.target.value
-)
-}
-className="input-premium mt-4"
->
-{obtenerNombresTamanos(item).map((tamano) => (
-<option
-key={tamano}
-value={tamano}
->
-{tamano}
-</option>
-))}
-</select>
-)}
-<select
-value={item.modalidad || ""}
-onChange={(e) =>
-actualizarModalidadCarrito(
-index,
-e.target.value
-)
-}
-className="input-premium mt-4"
->
-<option value="">
-Selecciona modalidad
-</option>
-{(obtenerTamanosProducto(item).length > 0
-? obtenerModalidadesTamano(
-item,
-item.tamano
-)
-: MODALIDADES
-).map((opcion: string) => (
-<option
-key={opcion}
-value={opcion}
->
-{opcion}
-</option>
-))}
-</select>
-</div>
-))}
-<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-<div className="rounded-3xl bg-[#D9F5F8] p-5">
-<p className="text-sm font-black uppercase text-zinc-500">
-Total pedido
-</p>
-<p className="text-2xl font-black text-cyan-600">
-{moneda(total)}
-</p>
-</div>
-<div className="rounded-3xl bg-[#FFF0B8] p-5">
-<p className="text-sm font-black uppercase text-zinc-500">
-Anticipo
-</p>
-<p className="text-2xl font-black text-zinc-700">
-{moneda(anticipoPedido)}
-</p>
-</div>
-<div className="rounded-3xl bg-[#FFE0DD] p-5">
-<p className="text-sm font-black uppercase text-zinc-500">
-Saldo
-</p>
-<p className="text-2xl font-black text-rose-400">
-{moneda(saldoPedido)}
-</p>
-</div>
-</div>
+<div className="lg:hidden space-y-3">
 {errorPedido && (
 <div className="rounded-2xl bg-[#FFE0DD] border border-[#F8C4BE] px-5 py-4 text-[#C95F67] font-bold text-sm">
 {errorPedido}
 </div>
 )}
-{exitoPedido && (
-<div className="rounded-2xl bg-[#DDF5EA] border border-[#BFEAD8] px-5 py-4 text-[#238657] font-bold text-sm flex items-center gap-3">
-<span className="text-xl">✓</span>
-Pedido guardado correctamente
-</div>
-)}
 <button
 onClick={generarPedido}
 disabled={enviando}
-className={`btn-primary mt-4 transition-opacity ${enviando ? "opacity-60" : ""}`}
+className={`btn-primary w-full transition-opacity ${enviando ? "opacity-60" : ""}`}
 >
 {enviando ? "Guardando..." : "Generar pedido"}
 </button>
 </div>
 )}
 </div>
-<div className="section-card">
+
+{/* Right column: sticky summary */}
+<div className="hidden lg:block">
+<div className="sticky top-28 space-y-4">
+<div className="rounded-3xl border border-[#D9F5F8] bg-[#F4FCFD] p-6 space-y-4">
+<p className="text-xs font-black uppercase text-zinc-400 tracking-wide">
+Resumen
+</p>
+{carritoConPrecios.length === 0 ? (
+<p className="text-zinc-400 text-sm font-bold">
+Agrega productos al carrito
+</p>
+) : (
+<>
+{carritoConPrecios.map((item, index) => (
+<div key={index} className="flex justify-between gap-2 text-sm">
+<span className="font-bold text-zinc-700 leading-tight">
+{item.nombre}
+<span className="text-zinc-400 font-normal">
+{" "}×{item.cantidad}
+</span>
+</span>
+<span className="font-black text-cyan-600 whitespace-nowrap">
+{moneda(item.precio * item.cantidad)}
+</span>
+</div>
+))}
+<div className="border-t border-[#BEE9E8] pt-4 space-y-2">
+<div className="flex justify-between text-base font-black">
+<span className="text-zinc-600">Total</span>
+<span className="text-cyan-600">{moneda(total)}</span>
+</div>
+<div className="flex justify-between text-sm font-bold">
+<span className="text-zinc-500">Anticipo</span>
+<span className="text-zinc-700">{moneda(anticipoPedido)}</span>
+</div>
+<div className="flex justify-between text-sm font-bold">
+<span className="text-zinc-500">Saldo</span>
+<span className="text-rose-400">{moneda(saldoPedido)}</span>
+</div>
+</div>
+</>
+)}
+</div>
+{errorPedido && (
+<div className="rounded-2xl bg-[#FFE0DD] border border-[#F8C4BE] px-5 py-4 text-[#C95F67] font-bold text-sm">
+{errorPedido}
+</div>
+)}
+{carritoConPrecios.length > 0 && (
+<button
+onClick={generarPedido}
+disabled={enviando}
+className={`btn-primary w-full transition-opacity ${enviando ? "opacity-60" : ""}`}
+>
+{enviando ? "Guardando..." : "Generar pedido"}
+</button>
+)}
+</div>
+</div>
+
+</div>
+)}
+</div>
+<div id="pedidos-guardados" className="section-card">
 <h2 className="text-3xl font-black text-cyan-600 mb-8">
 Pedidos guardados
 </h2>
