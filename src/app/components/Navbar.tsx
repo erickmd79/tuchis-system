@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 
 const leerProductosCarrito = () => {
@@ -26,6 +26,8 @@ export default function Navbar() {
   const [menuAbierto, setMenuAbierto] = useState(false)
   const [productosCarrito, setProductosCarrito] =
     useState(0)
+  const [badgeKey, setBadgeKey] = useState(0)
+  const prevCount = useRef(0)
 
   useEffect(() => {
     const actualizarContador = () =>
@@ -53,6 +55,13 @@ export default function Navbar() {
       )
     }
   }, [])
+
+  useEffect(() => {
+    if (productosCarrito > prevCount.current) {
+      setBadgeKey((k) => k + 1)
+    }
+    prevCount.current = productosCarrito
+  }, [productosCarrito])
 
   const abrirCarrito = () => {
     setMenuAbierto(false)
@@ -146,7 +155,7 @@ export default function Navbar() {
           🛒
         </span>
         {productosCarrito > 0 && (
-          <span className="navbar-cart-badge">
+          <span key={badgeKey} className="navbar-cart-badge badge-pop">
             {productosCarrito}
           </span>
         )}
