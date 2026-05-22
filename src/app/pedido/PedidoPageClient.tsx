@@ -1,200 +1,16 @@
 "use client"
 import { useEffect, useState } from "react"
 import { supabase } from "../../lib/supabase"
-const MODALIDADES = [
-"Blancas",
-"Pintadas",
-"Kit",
-]
-const MODALIDADES_PRECIO = [
-{
-clave: "blanca",
-label: "Blanca",
-menudeo: "precio_blanca_menudeo",
-mayoreo: "precio_blanca_mayoreo",
-},
-{
-clave: "pintada",
-label: "Pintada",
-menudeo: "precio_pintada_menudeo",
-mayoreo: "precio_pintada_mayoreo",
-},
-{
-clave: "kit",
-label: "Kit",
-menudeo: "precio_kit_menudeo",
-mayoreo: "precio_kit_mayoreo",
-},
-]
-const obtenerNombreTamano = (tamano: any) =>
-String(
-tamano?.nombre ??
-tamano?.tamano ??
-""
-).trim()
-const prepararTamanoProducto = (tamano: any) => ({
-id: tamano.id,
-tamano_id:
-tamano.tamano_id ??
-tamano.id,
-nombre: obtenerNombreTamano(tamano),
-modalidad:
-tamano.modalidad || "",
-precio_menudeo: numero(tamano.precio_menudeo),
-precio_mayoreo: numero(tamano.precio_mayoreo),
-})
-const obtenerTamanosProducto = (producto: any) =>
-Array.isArray(producto?.tamanos)
-? producto.tamanos
-.map(prepararTamanoProducto)
-.filter((tamano: any) => tamano.nombre)
-: []
-const obtenerNombresTamanos = (producto: any): string[] =>
-Array.from(
-new Set(
-obtenerTamanosProducto(producto)
-.map((tamano: any) => tamano.nombre)
-)
-) as string[]
-const obtenerModalidadesTamano = (
-producto: any,
-tamanoNombre?: string
-) =>
-obtenerTamanosProducto(producto)
-.filter(
-(tamano: any) =>
-!tamanoNombre ||
-tamano.nombre === tamanoNombre
-)
-.map((tamano: any) => tamano.modalidad)
-const obtenerConfigTamano = (
-producto: any,
-tamanoNombre?: string,
-modalidad?: string
-) =>
-obtenerTamanosProducto(producto).find(
-(tamano: any) =>
-tamano.nombre === tamanoNombre &&
-obtenerClaveModalidad(tamano.modalidad) ===
-obtenerClaveModalidad(modalidad)
-)
-const numero = (valor: any) =>
-Number(valor || 0)
+import { generarPDF } from "./generarPDF"
+import {
+  MODALIDADES,
+  numero,
+  moneda,
+  type Escala,
+  obtenerPrecioPorEscala,
+  calcularTotalProductos,
+} from "../../lib/pricing"
 
-const moneda = (valor: any) =>
-  `$${new Intl.NumberFormat("es-MX", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(numero(valor))}`
-const obtenerClaveModalidad = (modalidad?: string) => {
-const valor =
-String(modalidad || "")
-.toLowerCase()
-.trim()
-if (valor.includes("pintad")) return "pintada"
-if (valor.includes("kit")) return "kit"
-return "blanca"
-}
-const obtenerConfigModalidad = (modalidad?: string) =>
-MODALIDADES_PRECIO.find(
-(item) =>
-item.clave === obtenerClaveModalidad(modalidad)
-) || MODALIDADES_PRECIO[0]
-const obtenerPrecioMenudeo = (
-producto: any,
-modalidad?: string,
-tamano?: string
-) => {
-if (
-producto.tamano &&
-producto.precio_menudeo !== undefined
-) {
-return numero(producto.precio_menudeo)
-}
-const configTamano =
-obtenerConfigTamano(
-producto,
-tamano,
-modalidad
-)
-if (configTamano) {
-return numero(configTamano.precio_menudeo)
-}
-const config =
-obtenerConfigModalidad(modalidad)
-return numero(
-producto[config.menudeo] ??
-producto.precio_menudeo ??
-producto.precio
-)
-}
-const obtenerPrecioMayoreo = (
-producto: any,
-modalidad?: string,
-tamano?: string
-) => {
-if (
-producto.tamano &&
-producto.precio_mayoreo !== undefined
-) {
-return numero(producto.precio_mayoreo)
-}
-const configTamano =
-obtenerConfigTamano(
-producto,
-tamano,
-modalidad
-)
-if (configTamano) {
-return numero(configTamano.precio_mayoreo)
-}
-const config =
-obtenerConfigModalidad(modalidad)
-return numero(
-producto[config.mayoreo] ??
-producto.precio_mayoreo ??
-producto.precio
-)
-}
-const obtenerMinimoMayoreo = (producto: any) =>
-numero(producto.minimo_mayoreo)
-const obtenerPrecioPorCantidad = (
-producto: any,
-cantidad: number,
-modalidad?: string,
-tamano?: string
-) => {
-const minimoMayoreo =
-obtenerMinimoMayoreo(producto)
-const precioMayoreo =
-obtenerPrecioMayoreo(
-producto,
-modalidad,
-tamano
-)
-if (
-minimoMayoreo > 0 &&
-cantidad >= minimoMayoreo &&
-precioMayoreo > 0
-) {
-return precioMayoreo
-}
-return obtenerPrecioMenudeo(
-producto,
-modalidad,
-tamano
-)
-}
-const calcularTotalProductos = (
-productos: any[] = []
-) =>
-productos.reduce(
-(acc, item) =>
-acc +
-numero(item.precio) *
-numero(item.cantidad),
-0
-)
 const obtenerFechaLocal = () => {
 const fecha = new Date()
 const offset = fecha.getTimezoneOffset()
@@ -230,17 +46,6 @@ const obtenerFechaEntrega = (pedido: any) =>
 pedido.fecha_entrega ||
 pedido.fecha ||
 ""
-const escaparHTML = (valor: any) =>
-String(valor ?? "")
-.replace(/&/g, "&amp;")
-.replace(/</g, "&lt;")
-.replace(/>/g, "&gt;")
-.replace(/"/g, "&quot;")
-.replace(/'/g, "&#039;")
-const obtenerImagenProducto = (producto: any) =>
-producto.imagen ||
-producto.imagenes?.[0] ||
-""
 const obtenerEstadoEntrega = (pedido: any) =>
 pedido.estado === "entregado"
 ? "entregado"
@@ -262,20 +67,24 @@ pedido.anticipo
 )
 const obtenerAnticipo = (pedido: any) =>
 Math.max(0, numero(pedido.anticipo))
+const obtenerAbono = (pedido: any) =>
+Math.max(0, numero(pedido.abono))
 const obtenerSaldo = (pedido: any) =>
 obtenerEstadoPago(pedido) === "pagado"
 ? 0
 : Math.max(
-numero(pedido.total) - obtenerAnticipo(pedido),
+numero(pedido.total) - obtenerAnticipo(pedido) - obtenerAbono(pedido),
 0
 )
 const esErrorColumnasPedido = (error: any) =>
 error?.code === "PGRST204" &&
-/(anticipo|estado_pago)/i.test(error?.message || "")
+/(anticipo|estado_pago|municipio|abono)/i.test(error?.message || "")
 const sinColumnasPago = (payload: any) => {
 const {
 anticipo: _anticipo,
 estado_pago: _estadoPago,
+municipio: _municipio,
+abono: _abono,
 ...pedidoCompatible
 } = payload
 return pedidoCompatible
@@ -285,6 +94,7 @@ const [carrito, setCarrito] = useState<any[]>([])
 const [pedidos, setPedidos] = useState<any[]>([])
 const [productosDisponibles, setProductosDisponibles] =
 useState<any[]>([])
+const [escalas, setEscalas] = useState<Escala[]>([])
 const [pedidoEditando, setPedidoEditando] =
 useState<any>(null)
 const [catalogoPedidoAbierto, setCatalogoPedidoAbierto] =
@@ -306,6 +116,7 @@ const [exitoPedido, setExitoPedido] = useState(false)
 const [enviando, setEnviando] = useState(false)
 const [pedidoAEliminar, setPedidoAEliminar] = useState<number | null>(null)
 const [errorEdicion, setErrorEdicion] = useState("")
+const [generandoPDF, setGenerandoPDF] = useState<number | null>(null)
 useEffect(() => {
 const data =
 JSON.parse(
@@ -323,6 +134,9 @@ item.modalidad === data[0].modalidad
 )
 obtenerPedidos()
 obtenerProductos()
+supabase.from("escalas").select("*").then(({ data }) => {
+if (data) setEscalas(data as Escala[])
+})
 }, [])
 const obtenerPedidos = async () => {
 const { data } =
@@ -344,80 +158,40 @@ const prepararProductoPedido = (
 producto: any,
 cantidad = numero(producto.cantidad) || 1
 ) => {
-const productoActual =
+const productoBase =
 productosDisponibles.find(
 (item) =>
 String(item.id) ===
-String(
-producto.producto_id ??
-producto.id
-)
+String(producto.producto_id ?? producto.id)
 ) || {}
-const piezas =
-Math.max(1, numero(cantidad) || 1)
-const productoMezclado = {
-...productoActual,
-...producto,
-}
-const configTamano =
-obtenerConfigTamano(
-productoMezclado,
-producto.tamano,
-producto.modalidad
-)
-const productoConPrecios = {
-...productoActual,
-...producto,
-producto_id:
-producto.producto_id ??
-producto.id ??
-productoActual.id,
-nombre:
-producto.nombre ??
-productoActual.nombre,
-tamano:
-configTamano?.nombre ??
-producto.tamano ??
-"",
-tamano_id:
-configTamano?.tamano_id ??
-producto.tamano_id ??
-"",
-cantidad: piezas,
-modalidad:
-(configTamano?.modalidad ??
-producto.modalidad) ||
-"",
-precio_menudeo:
-configTamano
-? numero(configTamano.precio_menudeo)
-: obtenerPrecioMenudeo(
-productoMezclado,
-producto.modalidad,
-producto.tamano
-),
-precio_mayoreo:
-configTamano
-? numero(configTamano.precio_mayoreo)
-: obtenerPrecioMayoreo(
-productoMezclado,
-producto.modalidad,
-producto.tamano
-),
-minimo_mayoreo:
-productoActual.minimo_mayoreo ??
-producto.minimo_mayoreo ??
-0,
+const piezas = Math.max(1, numero(cantidad) || 1)
+const tamanoId = Number(producto.tamano_id || productoBase.tamano_id) || 0
+const modalidad = producto.modalidad || ""
+let precio = 0
+const tamanoNombre = producto.tamano_nombre || producto.tamano || ""
+if (tamanoId > 0 && escalas.length > 0 && modalidad) {
+precio = obtenerPrecioPorEscala(escalas, tamanoId, modalidad, piezas)
+} else {
+precio = numero(producto.precio || producto.precio_unitario || 0)
 }
 return {
-...productoConPrecios,
-precio:
-obtenerPrecioPorCantidad(
-productoConPrecios,
-piezas,
-productoConPrecios.modalidad,
-productoConPrecios.tamano
-),
+...productoBase,
+...producto,
+producto_id: producto.producto_id ?? producto.id ?? productoBase.id,
+nombre: producto.nombre ?? productoBase.nombre,
+tamano_id: tamanoId || undefined,
+tamano_nombre: tamanoNombre,
+tamano: tamanoNombre,
+modalidad,
+cantidad: piezas,
+precio,
+precio_unitario: precio,
+imagen:
+producto.imagen ??
+producto.imagenes?.[0] ??
+productoBase.imagenes?.[0] ??
+"",
+imagenes: producto.imagenes ?? productoBase.imagenes ?? [],
 }
 }
 const carritoConPrecios =
@@ -497,32 +271,16 @@ const actualizarTamanoCarrito = (
 index: number,
 tamano: string
 ) => {
-const itemActual =
-carrito[index]
-const modalidades =
-obtenerModalidadesTamano(
-itemActual,
-tamano
-)
-const modalidad =
-modalidades[0] ||
-itemActual?.modalidad ||
-""
+const itemActual = carrito[index]
+const modalidad = itemActual?.modalidad || ""
 const actualizado =
 carrito.map((item, itemIndex) =>
 itemIndex === index
-? prepararProductoPedido({
-...item,
-tamano,
-modalidad,
-})
+? prepararProductoPedido({ ...item, tamano, modalidad })
 : item
 )
 setCarrito(actualizado)
-localStorage.setItem(
-"carrito",
-JSON.stringify(actualizado)
-)
+localStorage.setItem("carrito", JSON.stringify(actualizado))
 }
 const actualizarModalidadPedido = (
 modalidad: string
@@ -545,6 +303,9 @@ const guardarPedido = async (pedido: any) => {
 const pedidoBase = {
 cliente: pedido.cliente,
 telefono: pedido.telefono,
+email: pedido.email || null,
+lugar_entrega: pedido.lugar_entrega || null,
+municipio: pedido.municipio || null,
 fecha: pedido.fecha,
 notas: pedido.notas,
 productos:
@@ -622,8 +383,8 @@ return
 const faltaTamano =
 productosParaPedido.some(
 (item) =>
-obtenerTamanosProducto(item).length > 0 &&
-!item.tamano
+Number(item.tamano_id) > 0 &&
+!item.tamano && !item.tamano_nombre
 )
 if (faltaTamano) {
 setErrorPedido("Selecciona el tamaño de todos los productos")
@@ -763,6 +524,7 @@ setPedidoEditando({
 estado: obtenerEstadoEntrega(pedido),
 estado_pago: obtenerEstadoPago(pedido),
 anticipo: obtenerAnticipo(pedido),
+abono: obtenerAbono(pedido),
 productos: Array.isArray(pedido.productos)
 ? pedido.productos.map((producto: any) =>
 prepararProductoPedido({
@@ -793,13 +555,12 @@ const actualizado = {
 ...cambios,
 }
 if (recalcularPrecio) {
-actualizado.precio =
-obtenerPrecioPorCantidad(
-actualizado,
-numero(actualizado.cantidad),
-actualizado.modalidad,
-actualizado.tamano
-)
+const tid = Number(actualizado.tamano_id) || 0
+const mod = actualizado.modalidad || ""
+const qty = numero(actualizado.cantidad)
+if (tid > 0 && escalas.length > 0 && mod) {
+actualizado.precio = obtenerPrecioPorEscala(escalas, tid, mod, qty)
+}
 }
 return actualizado
 }
@@ -831,17 +592,20 @@ producto: any
 if (!pedidoEditando || !producto) {
 return
 }
-const tamanosProducto =
-obtenerTamanosProducto(producto)
-const tamanoDefault =
-tamanosProducto[0]?.nombre || ""
-const modalidadDefault =
-tamanosProducto[0]?.modalidad || ""
+const tamanoId = Number(producto.tamano_id) || 0
+const modalidadDefault = (() => {
+if (tamanoId > 0 && escalas.length > 0) {
+const mods = Array.from(new Set(
+escalas.filter((e) => e.tamano_id === tamanoId).map((e) => e.modalidad)
+))
+return mods[0] || MODALIDADES[0]
+}
+return MODALIDADES[0]
+})()
 const productos = [
 ...(pedidoEditando.productos || []),
 prepararProductoPedido({
 ...producto,
-tamano: tamanoDefault,
 modalidad: modalidadDefault,
 }),
 ]
@@ -874,12 +638,25 @@ const notas =
 pedido.notas
 ? `\nNotas: ${pedido.notas}`
 : ""
+const emailLinea =
+pedido.email
+? `\nEmail: ${pedido.email}`
+: ""
+const lugarLinea =
+pedido.lugar_entrega
+? `\nLugar de entrega: ${pedido.lugar_entrega}`
+: ""
+const municipioLinea =
+pedido.municipio
+? `\nMunicipio: ${pedido.municipio}`
+: ""
 const estadoEntrega =
 obtenerEstadoEntrega(pedido)
 const estadoPago =
 obtenerEstadoPago(pedido)
 const anticipoPedidoGuardado =
 obtenerAnticipo(pedido)
+const abonoGuardado = obtenerAbono(pedido)
 const saldoPedidoGuardado =
 obtenerSaldo(pedido)
 const mensaje =
@@ -891,526 +668,14 @@ const mensaje =
 `Tu pedido:\n${productos}\n\n` +
 `Total: $${pedido.total}\n` +
 `Anticipo: $${anticipoPedidoGuardado}\n` +
-`Saldo: $${saldoPedidoGuardado}${notas}`
+(abonoGuardado > 0 ? `Abono: $${abonoGuardado}\n` : "") +
+`Saldo: $${saldoPedidoGuardado}${emailLinea}${lugarLinea}${municipioLinea}${notas}`
 window.open(
 `https://wa.me/52${pedido.telefono}?text=${encodeURIComponent(mensaje)}`,
 "_blank"
 )
 }
-const generarPDF = (pedido: any) => {
-const folio =
-`TCH-${pedido.id}`
-const fechaActual =
-new Date().toLocaleDateString()
-const logoUrl =
-`${window.location.origin}/logo.png`
-const fechaPedido =
-formatearFecha(
-obtenerFechaPedido(pedido)
-) || "Sin fecha"
-const fechaEntrega =
-formatearFecha(
-obtenerFechaEntrega(pedido)
-) || "Sin fecha"
-const productos =
-Array.isArray(pedido.productos)
-? pedido.productos
-: []
-const estadoEntrega =
-obtenerEstadoEntrega(pedido)
-const estadoPago =
-obtenerEstadoPago(pedido)
-const anticipoPedidoGuardado =
-obtenerAnticipo(pedido)
-const saldoPedidoGuardado =
-obtenerSaldo(pedido)
-const productosHTML =
-productos
-.map(
-(p: any, index: number) => {
-const imagen =
-obtenerImagenProducto(p)
-const subtotal =
-numero(p.precio) *
-numero(p.cantidad)
-return `
-<article class="product-row">
-${
-imagen
-? `
-<img
-src="${escaparHTML(imagen)}"
-alt=""
-class="product-image"
-/>
-`
-: `
-<div class="product-empty">
-${index + 1}
-</div>
-`
-}
-<div>
-<h3>
-${escaparHTML(p.nombre)}
-</h3>
-<p class="product-meta">
-${escaparHTML(
-[
-p.tamano,
-p.modalidad,
-].filter(Boolean).join(" / ") ||
-"Sin tamaño"
-)}
-· ${numero(p.cantidad)} pza.
-</p>
-</div>
-<div class="product-price">
-<strong>
-$${subtotal}
-</strong>
-<span>
-$${numero(p.precio)} c/u
-</span>
-</div>
-</article>
-`
-}
-)
-.join("")
-const ventana =
-window.open("", "_blank")
-if (!ventana) return
-ventana.document.write(`
-<html>
-<head>
-<title>
-Pedido ${folio}
-</title>
-<style>
-@page {
-size: letter;
-margin: 0;
-}
-* {
-box-sizing: border-box;
-}
-html,
-body {
-width: 8.5in;
-min-height: 11in;
-margin: 0;
-padding: 0;
-background: #FFF8F5;
-font-family: Arial, sans-serif;
-}
-body {
--webkit-print-color-adjust: exact;
-print-color-adjust: exact;
-}
-.sheet {
-width: 8.5in;
-height: 11in;
-overflow: hidden;
-background: #FFF8F5;
-padding: .22in;
-}
-.scaler {
-width: 100%;
-transform-origin: top left;
-}
-.header {
-display: flex;
-align-items: center;
-justify-content: space-between;
-gap: .18in;
-padding: .16in .18in;
-border-radius: .22in;
-background: linear-gradient(135deg, #27B6C7, #F8B4C0);
-color: white;
-}
-.logo-box {
-width: 2.05in;
-background: white;
-border-radius: .16in;
-padding: .07in;
-}
-.logo-box img {
-display: block;
-width: 100%;
-height: auto;
-}
-.header h1 {
-margin: 0;
-font-size: .34in;
-line-height: 1;
-font-weight: 900;
-}
-.header p {
-margin: .05in 0 0;
-font-size: .13in;
-font-weight: 700;
-}
-.folio {
-text-align: right;
-font-weight: 900;
-font-size: .16in;
-}
-.info-grid {
-display: grid;
-grid-template-columns: repeat(3, 1fr);
-gap: .08in;
-margin-top: .12in;
-}
-.info-card {
-min-height: .52in;
-background: white;
-border: 1px solid #F5D3CD;
-border-radius: .14in;
-padding: .08in .1in;
-}
-.label {
-margin: 0 0 .03in;
-color: #888;
-font-size: .075in;
-font-weight: 900;
-letter-spacing: .03em;
-text-transform: uppercase;
-}
-.value {
-margin: 0;
-color: #222;
-font-size: .13in;
-font-weight: 900;
-line-height: 1.15;
-overflow-wrap: anywhere;
-}
-.value.accent {
-color: #27B6C7;
-}
-.badge-row {
-display: flex;
-gap: .045in;
-flex-wrap: wrap;
-margin-top: .03in;
-}
-.badge {
-display: inline-block;
-border-radius: 999px;
-padding: .025in .075in;
-font-size: .075in;
-font-weight: 900;
-text-transform: uppercase;
-letter-spacing: .03em;
-border: 1.5px solid transparent;
-}
-.badge-active-pending {
-background: #FFF0B8;
-color: #8A6A00;
-border-color: #FFE28A;
-}
-.badge-active-entrega {
-background: #E7D9FF;
-color: #6D4AA8;
-border-color: #D7C3FF;
-}
-.badge-active-pago {
-background: #DDF5EA;
-color: #238657;
-border-color: #BFEAD8;
-}
-.badge-inactive {
-background: #F5F5F5;
-color: #BBBBBB;
-border-color: #E8E8E8;
-}
-.notes {
-grid-column: span 3;
-min-height: .42in;
-}
-.notes .value {
-font-size: .105in;
-font-weight: 700;
-max-height: .32in;
-overflow: hidden;
-}
-.products {
-margin-top: .12in;
-display: grid;
-gap: .055in;
-}
-.product-row {
-display: grid;
-grid-template-columns: .5in 1fr .9in;
-align-items: center;
-gap: .08in;
-background: white;
-border: 1px solid #F5D3CD;
-border-radius: .12in;
-padding: .055in .075in;
-min-height: .56in;
-}
-.product-image,
-.product-empty {
-width: .42in;
-height: .42in;
-border-radius: .08in;
-}
-.product-image {
-object-fit: cover;
-}
-.product-empty {
-display: flex;
-align-items: center;
-justify-content: center;
-background: #D9F5F8;
-color: #27B6C7;
-font-weight: 900;
-font-size: .13in;
-}
-.product-row h3 {
-margin: 0;
-color: #27B6C7;
-font-size: .12in;
-line-height: 1.12;
-font-weight: 900;
-overflow-wrap: anywhere;
-}
-.product-meta {
-margin: .025in 0 0;
-color: #666;
-font-size: .09in;
-font-weight: 700;
-}
-.product-price {
-text-align: right;
-}
-.product-price strong {
-display: block;
-color: #F08C8C;
-font-size: .13in;
-line-height: 1;
-font-weight: 900;
-}
-.product-price span {
-display: block;
-margin-top: .025in;
-color: #777;
-font-size: .075in;
-font-weight: 700;
-}
-.total-row {
-display: flex;
-justify-content: space-between;
-align-items: center;
-gap: .14in;
-margin-top: .12in;
-padding: .12in .16in;
-border-radius: .16in;
-background: #27B6C7;
-color: white;
-}
-.total-row p {
-margin: 0;
-font-size: .1in;
-font-weight: 900;
-text-transform: uppercase;
-}
-.total-row h2 {
-margin: 0;
-font-size: .28in;
-line-height: 1;
-font-weight: 900;
-}
-.footer {
-margin-top: .08in;
-color: #888;
-text-align: center;
-font-size: .075in;
-font-weight: 700;
-}
-</style>
-</head>
-<body>
-<section class="sheet">
-<div class="scaler" id="pdf-content">
-<header class="header">
-<div class="logo-box">
-<img
-src="${logoUrl}"
-alt="TUCHIS alcancías"
-/>
-</div>
-<div>
-<h1>
-Pedido
-</h1>
-<p>
-TUCHIS alcancías
-</p>
-</div>
-<div class="folio">
-${folio}
-</div>
-</header>
-<div class="info-grid">
-<div class="info-card">
-<p class="label">
-Cliente
-</p>
-<h2 class="value accent">
-${escaparHTML(pedido.cliente)}
-</h2>
-</div>
-<div class="info-card">
-<p class="label">
-Teléfono
-</p>
-<h2 class="value">
-${escaparHTML(pedido.telefono)}
-</h2>
-</div>
-<div class="info-card">
-<p class="label">
-Entrega
-</p>
-<div class="badge-row">
-<span class="${estadoEntrega !== "entregado" ? "badge badge-active-pending" : "badge badge-inactive"}">PENDIENTE</span>
-<span class="${estadoEntrega === "entregado" ? "badge badge-active-entrega" : "badge badge-inactive"}">ENTREGADO</span>
-</div>
-</div>
-<div class="info-card">
-<p class="label">
-Fecha de pedido
-</p>
-<h2 class="value">
-${escaparHTML(fechaPedido)}
-</h2>
-</div>
-<div class="info-card">
-<p class="label">
-Fecha de entrega
-</p>
-<h2 class="value">
-${escaparHTML(fechaEntrega)}
-</h2>
-</div>
-<div class="info-card">
-<p class="label">
-Pago
-</p>
-<div class="badge-row">
-<span class="${saldoPedidoGuardado > 0 ? "badge badge-active-pending" : "badge badge-inactive"}">PENDIENTE</span>
-<span class="${saldoPedidoGuardado <= 0 ? "badge badge-active-pago" : "badge badge-inactive"}">PAGADO</span>
-</div>
-</div>
-<div class="info-card">
-<p class="label">
-Anticipo
-</p>
-<h2 class="value">
-$${anticipoPedidoGuardado}
-</h2>
-</div>
-<div class="info-card">
-<p class="label">
-Saldo
-</p>
-<h2 class="value">
-$${saldoPedidoGuardado}
-</h2>
-</div>
-<div class="info-card">
-<p class="label">
-Productos
-</p>
-<h2 class="value">
-${productos.length}
-</h2>
-</div>
-<div class="info-card notes">
-<p class="label">
-Notas
-</p>
-<h2 class="value">
-${escaparHTML(pedido.notas || "Sin notas")}
-</h2>
-</div>
-</div>
-<div class="products">
-${productosHTML}
-</div>
-<div class="total-row">
-<div>
-<p>
-Total
-</p>
-<h2>
-$${numero(pedido.total)}
-</h2>
-</div>
-<div>
-<p>
-Anticipo
-</p>
-<h2>
-$${anticipoPedidoGuardado}
-</h2>
-</div>
-<div>
-<p>
-Saldo
-</p>
-<h2>
-$${saldoPedidoGuardado}
-</h2>
-</div>
-<p>
-Generado el ${escaparHTML(fechaActual)}
-</p>
-</div>
-<div class="footer">
-TUCHIS alcancías · Imagina, pinta y disfruta
-</div>
-</div>
-</section>
-<script>
-let pdfListo = false
-const ajustarAUnaHoja = () => {
-if (pdfListo) return
-const hoja =
-document.querySelector(".sheet")
-const contenido =
-document.querySelector("#pdf-content")
-if (!hoja || !contenido) return
-contenido.style.transform = "scale(1)"
-const escalaAncho =
-hoja.clientWidth / contenido.scrollWidth
-const escalaAlto =
-hoja.clientHeight / contenido.scrollHeight
-const escala =
-Math.min(
-1,
-escalaAncho,
-escalaAlto
-)
-contenido.style.transform =
-"scale(" + escala + ")"
-pdfListo = true
-window.focus()
-setTimeout(() => window.print(), 120)
-}
-window.addEventListener(
-"load",
-() => setTimeout(ajustarAUnaHoja, 180)
-)
-setTimeout(ajustarAUnaHoja, 900)
-</script>
-</body>
-</html>
-`)
-ventana.document.close()
-}
+const pasoActivo = exitoPedido ? 3 : carritoConPrecios.length > 0 ? 2 : 1
 return (
 <div className="space-y-8 px-4 md:px-8 py-6 max-w-7xl mx-auto">
 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -1418,282 +683,13 @@ return (
 Pedidos
 </h1>
 <a
-href="/catalogo"
+href="/pedido/nuevo"
 className="inline-flex items-center gap-2 bg-[#20B8C9] hover:bg-[#17A7B8] text-white px-6 py-4 rounded-2xl font-black text-base shadow-lg transition"
 >
 + Nuevo pedido
 </a>
 </div>
-<div className="section-card">
-<h2 className="text-3xl font-black text-cyan-600 mb-8">
-Nuevo pedido
-</h2>
-<div className="space-y-5">
-<input
-type="text"
-placeholder="Nombre del cliente"
-value={nombre}
-onChange={(e) =>
-setNombre(e.target.value)
-}
-className="input-premium input-cliente-grande"
-/>
-<input
-type="text"
-placeholder="Teléfono"
-value={telefono}
-onChange={(e) =>
-setTelefono(e.target.value)
-}
-className="input-premium"
-/>
-<div>
-<label className="block text-sm font-semibold text-zinc-500 mb-2">
-Modalidad
-</label>
-<select
-value={modalidadPedido}
-onChange={(e) =>
-actualizarModalidadPedido(
-e.target.value
-)
-}
-className="input-premium"
->
-<option value="">
-Selecciona modalidad
-</option>
-{MODALIDADES.map((opcion) => (
-<option
-key={opcion}
-value={opcion}
->
-{opcion}
-</option>
-))}
-</select>
-</div>
-<div className="rounded-3xl border border-[#FFD9D4] bg-white p-5">
-<p className="text-sm font-black uppercase text-zinc-400">
-Fecha de pedido
-</p>
-<p className="text-xl font-black text-cyan-600 mt-1">
-{formatearFecha(obtenerFechaLocal())}
-</p>
-</div>
-<div>
-<label className="block text-sm font-semibold text-zinc-500 mb-2">
-Fecha de entrega
-</label>
-<input
-type="date"
-value={fecha}
-onChange={(e) =>
-setFecha(e.target.value)
-}
-className="input-premium"
-/>
-</div>
-<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-<div>
-<label className="block text-sm font-semibold text-zinc-500 mb-2">
-Anticipo
-</label>
-<input
-type="number"
-min="0"
-value={anticipo}
-onChange={(e) => {
-const valor =
-e.target.value
-setAnticipo(valor)
-if (estadoPagoPedido !== "pagado") {
-setEstadoPagoPedido(
-numero(valor) > 0
-? "anticipo"
-: "pendiente"
-)
-}
-}}
-className="input-premium"
-placeholder="Monto del anticipo"
-/>
-</div>
-<div>
-<label className="block text-sm font-semibold text-zinc-500 mb-2">
-Estado de pago
-</label>
-<div className="grid grid-cols-3 gap-3">
-<button
-type="button"
-onClick={() =>
-setEstadoPagoPedido("pendiente")
-}
-className={`badge-action ${
-estadoPagoCalculado === "pendiente"
-? "badge-pendiente"
-: "badge-neutral"
-}`}
->
-Pendiente
-</button>
-<button
-type="button"
-onClick={() =>
-setEstadoPagoPedido("anticipo")
-}
-className={`badge-action ${
-estadoPagoCalculado === "anticipo"
-? "badge-anticipo"
-: "badge-neutral"
-}`}
->
-Anticipo
-</button>
-<button
-type="button"
-onClick={() =>
-setEstadoPagoPedido("pagado")
-}
-className={`badge-action ${
-estadoPagoCalculado === "pagado"
-? "badge-pagado"
-: "badge-neutral"
-}`}
->
-Pagado
-</button>
-</div>
-</div>
-</div>
-<textarea
-placeholder="Notas del pedido"
-value={notas}
-onChange={(e) =>
-setNotas(e.target.value)
-}
-className="input-premium min-h-[120px]"
-/>
-</div>
-{carritoConPrecios.length > 0 && (
-<div className="mt-8 space-y-4">
-{carritoConPrecios.map((item, index) => (
-<div
-key={index}
-className="bg-white rounded-3xl border border-[#FFD9D4] p-5"
->
-<h3 className="text-2xl font-black text-cyan-600">
-{item.nombre}
-</h3>
-<p className="mt-2 text-zinc-600">
-{item.cantidad}
-{" x "}
-{moneda(item.precio)}
-</p>
-{Number(item.minimo_mayoreo || 0) > 0 && (
-<p className="text-xs font-black uppercase text-zinc-400 mt-2">
-Mayoreo desde {item.minimo_mayoreo} piezas
-</p>
-)}
-{obtenerTamanosProducto(item).length > 0 && (
-<select
-value={item.tamano || ""}
-onChange={(e) =>
-actualizarTamanoCarrito(
-index,
-e.target.value
-)
-}
-className="input-premium mt-4"
->
-{obtenerNombresTamanos(item).map((tamano) => (
-<option
-key={tamano}
-value={tamano}
->
-{tamano}
-</option>
-))}
-</select>
-)}
-<select
-value={item.modalidad || ""}
-onChange={(e) =>
-actualizarModalidadCarrito(
-index,
-e.target.value
-)
-}
-className="input-premium mt-4"
->
-<option value="">
-Selecciona modalidad
-</option>
-{(obtenerTamanosProducto(item).length > 0
-? obtenerModalidadesTamano(
-item,
-item.tamano
-)
-: MODALIDADES
-).map((opcion: string) => (
-<option
-key={opcion}
-value={opcion}
->
-{opcion}
-</option>
-))}
-</select>
-</div>
-))}
-<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-<div className="rounded-3xl bg-[#D9F5F8] p-5">
-<p className="text-sm font-black uppercase text-zinc-500">
-Total pedido
-</p>
-<p className="text-2xl font-black text-cyan-600">
-{moneda(total)}
-</p>
-</div>
-<div className="rounded-3xl bg-[#FFF0B8] p-5">
-<p className="text-sm font-black uppercase text-zinc-500">
-Anticipo
-</p>
-<p className="text-2xl font-black text-zinc-700">
-{moneda(anticipoPedido)}
-</p>
-</div>
-<div className="rounded-3xl bg-[#FFE0DD] p-5">
-<p className="text-sm font-black uppercase text-zinc-500">
-Saldo
-</p>
-<p className="text-2xl font-black text-rose-400">
-{moneda(saldoPedido)}
-</p>
-</div>
-</div>
-{errorPedido && (
-<div className="rounded-2xl bg-[#FFE0DD] border border-[#F8C4BE] px-5 py-4 text-[#C95F67] font-bold text-sm">
-{errorPedido}
-</div>
-)}
-{exitoPedido && (
-<div className="rounded-2xl bg-[#DDF5EA] border border-[#BFEAD8] px-5 py-4 text-[#238657] font-bold text-sm flex items-center gap-3">
-<span className="text-xl">✓</span>
-Pedido guardado correctamente
-</div>
-)}
-<button
-onClick={generarPedido}
-disabled={enviando}
-className={`btn-primary mt-4 transition-opacity ${enviando ? "opacity-60" : ""}`}
->
-{enviando ? "Guardando..." : "Generar pedido"}
-</button>
-</div>
-)}
-</div>
-<div className="section-card">
+<div id="pedidos-guardados" className="section-card">
 <h2 className="text-3xl font-black text-cyan-600 mb-8">
 Pedidos guardados
 </h2>
@@ -1711,6 +707,21 @@ className="bg-white border border-[#FFD9D4] rounded-[28px] p-6 shadow-sm"
 <p className="text-zinc-500 mt-2">
 {pedido.telefono}
 </p>
+{pedido.email && (
+<p className="text-zinc-500 text-sm">
+{pedido.email}
+</p>
+)}
+{pedido.lugar_entrega && (
+<p className="text-zinc-500 text-sm">
+📍 {pedido.lugar_entrega}
+</p>
+)}
+{pedido.municipio && (
+<p className="text-zinc-500 text-sm">
+🏙️ {pedido.municipio}
+</p>
+)}
 <div className="mt-3 space-y-1 text-zinc-500">
 <p>
 Pedido: {formatearFecha(
@@ -1722,30 +733,6 @@ Entrega: {formatearFecha(
 obtenerFechaEntrega(pedido)
 ) || "Sin fecha"}
 </p>
-</div>
-<div className="mt-4 flex flex-wrap gap-3">
-<span className={`badge-pedido ${
-obtenerEstadoEntrega(pedido) === "entregado"
-? "badge-entregado"
-: "badge-pendiente"
-}`}>
-{obtenerEstadoEntrega(pedido) === "entregado"
-? "Entregado"
-: "Pendiente"}
-</span>
-<span className={`badge-pedido ${
-obtenerEstadoPago(pedido) === "pagado"
-? "badge-pagado"
- : obtenerEstadoPago(pedido) === "anticipo"
- ? "badge-anticipo"
-: "badge-pendiente"
-}`}>
-{obtenerEstadoPago(pedido) === "pagado"
-? "Pagado"
-: obtenerEstadoPago(pedido) === "anticipo"
-? "Anticipo"
-: "Pendiente"}
-</span>
 </div>
 {pedido.notas && (
 <p className="mt-4 text-zinc-600 whitespace-pre-wrap">
@@ -1781,26 +768,30 @@ className="text-zinc-700"
 )
 )}
 </div>
-<div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm font-black uppercase">
-<div className="rounded-2xl bg-[#D9F5F8] p-3 text-cyan-700">
+<div className="mt-3 flex flex-wrap gap-3 text-sm font-black uppercase">
+<div className="rounded-2xl bg-[#D9F5F8] p-3 text-cyan-700 flex-1 min-w-[80px]">
 Total {moneda(pedido.total)}
 </div>
-<div className="rounded-2xl bg-[#FFF0B8] p-3 text-zinc-700">
+<div className="rounded-2xl bg-[#FFF0B8] p-3 text-zinc-700 flex-1 min-w-[80px]">
 Anticipo {moneda(obtenerAnticipo(pedido))}
 </div>
-<div className="rounded-2xl bg-[#FFE0DD] p-3 text-rose-500">
+{obtenerAbono(pedido) > 0 && (
+<div className="rounded-2xl bg-[#E7D9FF] p-3 text-purple-700 flex-1 min-w-[80px]">
+Abono {moneda(obtenerAbono(pedido))}
+</div>
+)}
+<div className="rounded-2xl bg-[#FFE0DD] p-3 text-rose-500 flex-1 min-w-[80px]">
 Saldo {moneda(obtenerSaldo(pedido))}
 </div>
 </div>
 </div>
 <div className="flex flex-col gap-3 min-w-[220px]">
+{/* Entrega */}
+<p className="text-xs font-black uppercase text-zinc-400 tracking-wide">
+Entrega
+</p>
 <button
-onClick={() =>
-cambiarEstadoEntrega(
-pedido,
-"pendiente"
-)
-}
+onClick={() => cambiarEstadoEntrega(pedido, "pendiente")}
 className={`badge-action ${
 obtenerEstadoEntrega(pedido) === "pendiente"
 ? "badge-pendiente"
@@ -1810,12 +801,7 @@ obtenerEstadoEntrega(pedido) === "pendiente"
 Pendiente
 </button>
 <button
-onClick={() =>
-cambiarEstadoEntrega(
-pedido,
-"entregado"
-)
-}
+onClick={() => cambiarEstadoEntrega(pedido, "entregado")}
 className={`badge-action ${
 obtenerEstadoEntrega(pedido) === "entregado"
 ? "badge-entregado"
@@ -1824,15 +810,14 @@ obtenerEstadoEntrega(pedido) === "entregado"
 >
 Entregado
 </button>
+{/* Pago */}
+<p className="text-xs font-black uppercase text-zinc-400 tracking-wide mt-2">
+Pago
+</p>
 <button
-onClick={() =>
-cambiarEstadoPago(
-pedido,
-"pendiente"
-)
-}
+onClick={() => cambiarEstadoPago(pedido, "anticipo")}
 className={`badge-action ${
-obtenerEstadoPago(pedido) === "pendiente"
+obtenerSaldo(pedido) > 0
 ? "badge-pendiente"
 : "badge-neutral"
 }`}
@@ -1840,29 +825,9 @@ obtenerEstadoPago(pedido) === "pendiente"
 Pendiente
 </button>
 <button
-onClick={() =>
-cambiarEstadoPago(
-pedido,
-"anticipo"
-)
-}
+onClick={() => cambiarEstadoPago(pedido, "pagado")}
 className={`badge-action ${
-obtenerEstadoPago(pedido) === "anticipo"
-? "badge-anticipo"
-: "badge-neutral"
-}`}
->
-Anticipo
-</button>
-<button
-onClick={() =>
-cambiarEstadoPago(
-pedido,
-"pagado"
-)
-}
-className={`badge-action ${
-obtenerEstadoPago(pedido) === "pagado"
+obtenerSaldo(pedido) <= 0
 ? "badge-pagado"
 : "badge-neutral"
 }`}
@@ -1878,12 +843,16 @@ className="bg-green-500 hover:bg-green-600 text-white py-3 rounded-2xl font-bold
 WhatsApp
 </button>
 <button
-onClick={() =>
-generarPDF(pedido)
-}
-className="bg-rose-400 hover:bg-rose-500 text-white py-3 rounded-2xl font-bold transition"
+onClick={() => {
+setGenerandoPDF(pedido.id)
+generarPDF(pedido, (estado) => {
+if (estado !== "generando") setGenerandoPDF(null)
+}).catch(() => setGenerandoPDF(null))
+}}
+disabled={generandoPDF === pedido.id}
+className={`bg-rose-400 hover:bg-rose-500 text-white py-3 rounded-2xl font-bold transition ${generandoPDF === pedido.id ? "opacity-60" : ""}`}
 >
-PDF
+{generandoPDF === pedido.id ? "Generando..." : "PDF"}
 </button>
 <button
 onClick={() =>
@@ -1994,6 +963,18 @@ telefono: e.target.value,
 }
 className="input-premium"
 />
+<input
+type="text"
+placeholder="Municipio"
+value={pedidoEditando.municipio || ""}
+onChange={(e) =>
+setPedidoEditando({
+...pedidoEditando,
+municipio: e.target.value,
+})
+}
+className="input-premium"
+/>
 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 <div className="rounded-3xl border border-[#FFD9D4] bg-[#FFF8F5] p-5">
 <p className="text-sm font-black uppercase text-zinc-400">
@@ -2045,18 +1026,38 @@ type="number"
 min="0"
 value={pedidoEditando.anticipo || 0}
 onChange={(e) => {
-const valor =
-Number(e.target.value) || 0
+const anticipo = Number(e.target.value) || 0
+const abono = numero(pedidoEditando.abono)
+const totalEdit = calcularTotalProductos(pedidoEditando.productos || [])
+const totalPagado = anticipo + abono
 setPedidoEditando({
 ...pedidoEditando,
-anticipo: valor,
+anticipo,
 estado_pago:
-pedidoEditando.estado_pago === "pagado"
-? "pagado"
-: resolverEstadoPago(
-pedidoEditando.estado_pago,
-valor
-),
+totalEdit > 0 && totalPagado >= totalEdit ? "pagado" : "anticipo",
+})
+}}
+className="input-premium"
+/>
+</div>
+<div>
+<label className="block text-sm font-semibold text-zinc-500 mb-2">
+Abono
+</label>
+<input
+type="number"
+min="0"
+value={pedidoEditando.abono || 0}
+onChange={(e) => {
+const abono = Number(e.target.value) || 0
+const anticipo = numero(pedidoEditando.anticipo)
+const totalEdit = calcularTotalProductos(pedidoEditando.productos || [])
+const totalPagado = anticipo + abono
+setPedidoEditando({
+...pedidoEditando,
+abono,
+estado_pago:
+totalEdit > 0 && totalPagado >= totalEdit ? "pagado" : "anticipo",
 })
 }}
 className="input-premium"
@@ -2106,26 +1107,7 @@ Entregado
 <p className="text-sm font-semibold text-zinc-500 mb-2">
 Estado de pago
 </p>
-<div className="grid grid-cols-3 gap-3">
-<button
-type="button"
-onClick={() =>
-setPedidoEditando({
-...pedidoEditando,
-estado_pago: "pendiente",
-})
-}
-className={`badge-action ${
-resolverEstadoPago(
-pedidoEditando.estado_pago,
-pedidoEditando.anticipo
-) === "pendiente"
-? "badge-pendiente"
-: "badge-neutral"
-}`}
->
-Pendiente
-</button>
+<div className="grid grid-cols-2 gap-3">
 <button
 type="button"
 onClick={() =>
@@ -2135,10 +1117,7 @@ estado_pago: "anticipo",
 })
 }
 className={`badge-action ${
-resolverEstadoPago(
-pedidoEditando.estado_pago,
-pedidoEditando.anticipo
-) === "anticipo"
+pedidoEditando.estado_pago === "anticipo"
 ? "badge-anticipo"
 : "badge-neutral"
 }`}
@@ -2154,10 +1133,7 @@ estado_pago: "pagado",
 })
 }
 className={`badge-action ${
-resolverEstadoPago(
-pedidoEditando.estado_pago,
-pedidoEditando.anticipo
-) === "pagado"
+pedidoEditando.estado_pago === "pagado"
 ? "badge-pagado"
 : "badge-neutral"
 }`}
@@ -2222,69 +1198,27 @@ Number(e.target.value) || 0,
 }
 className="input-premium"
 />
-{obtenerTamanosProducto(producto).length > 0 && (
-<select
-value={producto.tamano || ""}
-onChange={(e) => {
-const modalidades =
-obtenerModalidadesTamano(
-producto,
-e.target.value
-)
-actualizarProductoPedido(
-index,
-{
-tamano: e.target.value,
-modalidad:
-modalidades[0] ||
-producto.modalidad ||
-"",
-},
-true
-)
-}}
-className="input-premium"
->
-{obtenerNombresTamanos(producto).map((tamano) => (
-<option
-key={tamano}
-value={tamano}
->
-{tamano}
-</option>
-))}
-</select>
-)}
 <select
 value={producto.modalidad || ""}
 onChange={(e) =>
 actualizarProductoPedido(
 index,
-{
-modalidad: e.target.value,
-},
+{ modalidad: e.target.value },
 true
 )
 }
 className="input-premium"
 >
-<option value="">
-Modalidad
-</option>
-{(obtenerTamanosProducto(producto).length > 0
-? obtenerModalidadesTamano(
-producto,
-producto.tamano
-)
-: MODALIDADES
-).map((opcion: string) => (
-<option
-key={opcion}
-value={opcion}
->
-{opcion}
-</option>
-))}
+<option value="">Modalidad</option>
+{(() => {
+const tid = Number(producto.tamano_id) || 0
+const opciones = tid > 0 && escalas.length > 0
+? Array.from(new Set(escalas.filter((e) => e.tamano_id === tid).map((e) => e.modalidad)))
+: [...MODALIDADES]
+return opciones.map((opcion: string) => (
+<option key={opcion} value={opcion}>{opcion}</option>
+))
+})()}
 </select>
 <button
 onClick={() =>
@@ -2296,13 +1230,9 @@ Quitar
 </button>
 </div>
 <p className="text-sm font-black uppercase text-zinc-500">
-Subtotal: {moneda(numero(producto.precio) * numero(producto.cantidad))}
-{Number(producto.minimo_mayoreo || 0) > 0 && (
-<>
+{[producto.tamano || producto.tamano_nombre, producto.modalidad].filter(Boolean).join(" · ")}
 {" · "}
-Mayoreo desde {producto.minimo_mayoreo} piezas
-</>
-)}
+Subtotal: {moneda(numero(producto.precio) * numero(producto.cantidad))}
 </p>
 </div>
 )
@@ -2468,52 +1398,27 @@ className="w-full h-56 object-cover bg-white"
 {producto.nombre}
 </h4>
 <div className="mt-4 space-y-2">
-{obtenerTamanosProducto(producto).length > 0 ? (
-obtenerTamanosProducto(producto).map((tamano: any) => (
+{(() => {
+const tid = Number(producto.tamano_id) || 0
+const mods = tid > 0 && escalas.length > 0
+? Array.from(new Set(escalas.filter((e) => e.tamano_id === tid).map((e) => e.modalidad)))
+: [...MODALIDADES]
+return mods.map((mod: string) => (
 <div
-key={`${tamano.tamano_id}-${tamano.modalidad}`}
+key={mod}
 className="rounded-2xl bg-[#FFF8F5] border border-[#F8D6D0] p-3"
 >
 <p className="text-xs font-black uppercase text-zinc-400">
-{tamano.nombre} / {tamano.modalidad}
+{mod}
 </p>
-<p className="text-lg font-black text-rose-300">
-Menudeo {moneda(tamano.precio_menudeo)}
-</p>
-<p className="text-base font-black text-cyan-500">
-Mayoreo {moneda(tamano.precio_mayoreo)}
-</p>
-</div>
-))
-) : (
-MODALIDADES_PRECIO.map((modalidad) => (
-<div
-key={modalidad.clave}
-className="rounded-2xl bg-[#FFF8F5] border border-[#F8D6D0] p-3"
->
-<p className="text-xs font-black uppercase text-zinc-400">
-{modalidad.label}
-</p>
-<p className="text-lg font-black text-rose-300">
-Menudeo {moneda(obtenerPrecioMenudeo(
-producto,
-modalidad.clave
-))}
-</p>
-<p className="text-base font-black text-cyan-500">
-Mayoreo {moneda(obtenerPrecioMayoreo(
-producto,
-modalidad.clave
-))}
-</p>
-</div>
-))
-)}
-{obtenerMinimoMayoreo(producto) > 0 && (
-<p className="text-xs font-black uppercase text-zinc-400">
-Desde {obtenerMinimoMayoreo(producto)} piezas
+{tid > 0 && escalas.length > 0 && (
+<p className="text-sm font-bold text-zinc-500 mt-1">
+Precio dinámico por cantidad
 </p>
 )}
+</div>
+))
+})()}
 </div>
 <button
 onClick={() =>
@@ -2561,14 +1466,12 @@ calcularTotalProductos(pedidoEditando.productos || [])
 Saldo
 </p>
 <p className="text-2xl font-black text-rose-400">
-{moneda(resolverEstadoPago(
-pedidoEditando.estado_pago,
-pedidoEditando.anticipo
-) === "pagado"
+{moneda(pedidoEditando.estado_pago === "pagado"
 ? 0
 : Math.max(
 calcularTotalProductos(pedidoEditando.productos || []) -
-numero(pedidoEditando.anticipo),
+numero(pedidoEditando.anticipo) -
+numero(pedidoEditando.abono),
 0
 ))}
 </p>
@@ -2600,7 +1503,7 @@ return
 const faltaTamano =
 productos.some(
 (producto: any) =>
-obtenerTamanosProducto(producto).length > 0 &&
+Number(producto.tamano_id) > 0 &&
 !producto.tamano
 )
 if (faltaTamano) {
@@ -2618,18 +1521,24 @@ if (numero(pedidoEditando.anticipo) > totalActualizado) {
 setErrorEdicion("El anticipo no puede ser mayor al total del pedido")
 return
 }
+const abonoActualizado = Math.max(0, numero(pedidoEditando.abono))
+const totalPagado = anticipoActualizado + abonoActualizado
+const estadoPagoActualizado =
+totalActualizado > 0 && totalPagado >= totalActualizado
+? "pagado"
+: "anticipo"
 const pedidoActualizado = {
 cliente: pedidoEditando.cliente,
 telefono: pedidoEditando.telefono,
+email: pedidoEditando.email || null,
+lugar_entrega: pedidoEditando.lugar_entrega || null,
+municipio: pedidoEditando.municipio || null,
 fecha: pedidoEditando.fecha,
 notas: pedidoEditando.notas,
 estado: pedidoEditando.estado,
-estado_pago:
-resolverEstadoPago(
-pedidoEditando.estado_pago,
-anticipoActualizado
-),
+estado_pago: estadoPagoActualizado,
 anticipo: anticipoActualizado,
+abono: abonoActualizado,
 productos:
 productos.map((producto: any) => ({
 producto_id: producto.producto_id,

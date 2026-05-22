@@ -103,7 +103,7 @@ const editarCategoria = async (
   return (
     <div className="min-h-screen bg-[#FFF8F5] p-8">
 
-      <div className="flex gap-4 mb-8">
+      <div className="flex gap-4 mb-8 flex-wrap">
 
         <Link
           href="/admin"
@@ -124,6 +124,20 @@ const editarCategoria = async (
           className="bg-[#FFD56B] text-[#444] px-5 py-3 rounded-2xl font-bold"
         >
           Categorías
+        </Link>
+
+        <Link
+          href="/admin/tamanos"
+          className="bg-[#E7D9FF] text-[#444] px-5 py-3 rounded-2xl font-bold"
+        >
+          Tamaños
+        </Link>
+
+        <Link
+          href="/admin/escalas"
+          className="bg-[#E0D5FF] text-[#444] px-5 py-3 rounded-2xl font-bold"
+        >
+          Escalas
         </Link>
 
       </div>
