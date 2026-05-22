@@ -288,6 +288,8 @@ function buildHTML(pedido: any, origen: string): string {
 
     ${card("Teléfono", esc(pedido.telefono))}
 
+    ${pedido.email ? card("Email", esc(pedido.email)) : ""}
+
     <!-- Estados -->
     <div style="
       background:white;
@@ -307,6 +309,8 @@ function buildHTML(pedido: any, origen: string): string {
 
     ${card("Fecha de pedido", fechaPedido)}
     ${card("Fecha de entrega", fechaEntrega)}
+
+    ${pedido.lugar_entrega ? card("Lugar de entrega", esc(pedido.lugar_entrega)) : ""}
 
     ${
       pedido.notas
