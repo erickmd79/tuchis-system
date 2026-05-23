@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { supabase } from "../../../lib/supabase"
+import AdminLogoutBtn from "../../components/AdminLogoutBtn"
 
 type Tamano = {
   id: number
@@ -167,6 +168,7 @@ export default function TamanosPage() {
                 >
                   Ver catálogo
                 </Link>
+                <AdminLogoutBtn />
               </div>
             </div>
           </aside>

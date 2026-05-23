@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { supabase } from "../../../lib/supabase"
+import AdminLogoutBtn from "../../components/AdminLogoutBtn"
 import { moneda } from "../../../lib/pricing"
 
 type Tamano = {
@@ -256,6 +257,7 @@ export default function EscalasPage() {
                 >
                   Ver catálogo
                 </Link>
+                <AdminLogoutBtn />
               </div>
             </div>
           </aside>
