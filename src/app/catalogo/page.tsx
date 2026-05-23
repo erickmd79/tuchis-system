@@ -285,7 +285,6 @@ export default function CatalogoPage() {
     producto: any
   ) => {
     const tamanoId = Number(producto.tamano_id) || 0
-    let modalidadDefault = ""
 
     if (tamanoId > 0 && escalas.length > 0) {
       const mods = obtenerModalidadesDisponibles(escalas, tamanoId)
@@ -293,13 +292,10 @@ export default function CatalogoPage() {
         addToast("Este producto no tiene escalas de precio configuradas", "error")
         return
       }
-      modalidadDefault = mods[0]
-    } else {
-      modalidadDefault = MODALIDADES[0]
     }
 
     setProductoSeleccionado(producto)
-    setSeleccion({ modalidad: modalidadDefault, cantidad: 1 })
+    setSeleccion({ modalidad: "", cantidad: 1 })
   }
 
   const confirmarSeleccionProducto = () => {
@@ -799,11 +795,21 @@ export default function CatalogoPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-3xl bg-[#FFF8F5] border border-[#F8D6D0] p-4">
                     <p className="text-xs font-black uppercase text-gray-400">Precio unitario</p>
-                    <p className="text-2xl font-black text-[#F49B93]">{moneda(precioSeleccion)}</p>
+                    {seleccion.modalidad && precioSeleccion > 0 ? (
+                      <p className="text-2xl font-black text-[#F49B93]">{moneda(precioSeleccion)}</p>
+                    ) : seleccion.modalidad && precioSeleccion === 0 ? (
+                      <p className="text-sm font-bold text-red-400">Sin escala configurada</p>
+                    ) : (
+                      <p className="text-sm font-bold text-gray-400">Elige modalidad</p>
+                    )}
                   </div>
                   <div className="rounded-3xl bg-[#FFE0DD] p-4">
                     <p className="text-xs font-black uppercase text-gray-500">Subtotal</p>
-                    <p className="text-2xl font-black text-[#C95F67]">{moneda(precioSeleccion * seleccion.cantidad)}</p>
+                    {seleccion.modalidad && precioSeleccion > 0 ? (
+                      <p className="text-2xl font-black text-[#C95F67]">{moneda(precioSeleccion * seleccion.cantidad)}</p>
+                    ) : (
+                      <p className="text-sm font-bold text-gray-400">—</p>
+                    )}
                   </div>
                 </div>
 
