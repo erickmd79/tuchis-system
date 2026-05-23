@@ -4,6 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
+import { supabase } from "../../lib/supabase"
 
 const leerProductosCarrito = () => {
   if (typeof window === "undefined") return 0
@@ -28,6 +29,7 @@ export default function Navbar() {
     useState(0)
   const [badgeKey, setBadgeKey] = useState(0)
   const prevCount = useRef(0)
+  const [adminHref, setAdminHref] = useState("/login")
 
   useEffect(() => {
     const actualizarContador = () =>
@@ -62,6 +64,18 @@ export default function Navbar() {
     }
     prevCount.current = productosCarrito
   }, [productosCarrito])
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAdminHref(session ? "/admin" : "/login")
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setAdminHref(session ? "/admin" : "/login")
+      }
+    )
+    return () => subscription.unsubscribe()
+  }, [])
 
   const abrirCarrito = () => {
     setMenuAbierto(false)
@@ -134,6 +148,13 @@ export default function Navbar() {
             onClick={cerrarMenu}
           >
             Mis pedidos
+          </Link>
+
+          <Link
+            href={adminHref}
+            onClick={cerrarMenu}
+          >
+            Admin
           </Link>
         </div>
       </div>
