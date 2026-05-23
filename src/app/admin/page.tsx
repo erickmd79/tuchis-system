@@ -320,29 +320,6 @@ export default function AdminPage() {
     <div className="w-full">
       <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-6 md:py-10">
 
-        {/* Mobile nav pills */}
-        <div className="lg:hidden overflow-x-auto pb-2 -mx-4 px-4 mb-6">
-          <div className="flex gap-2 w-max">
-            {[
-              { href: "/admin", label: "Dashboard", bg: "bg-cyan-500 text-white" },
-              { href: "/pedido", label: "Pedidos", bg: "bg-[#FFD6A8] text-gray-800" },
-              { href: "/admin/productos", label: "Productos", bg: "bg-[#FFE0DD] text-gray-800" },
-              { href: "/admin/categorias", label: "Categorías", bg: "bg-[#FFE9A8] text-gray-800" },
-              { href: "/admin/tamanos", label: "Tamaños", bg: "bg-[#E7D9FF] text-gray-800" },
-              { href: "/admin/escalas", label: "Escalas", bg: "bg-[#E0D5FF] text-gray-800" },
-            ].map(({ href, label, bg }) => (
-              <Link
-                key={href}
-                href={href}
-                className={`${bg} px-4 py-2 rounded-xl font-bold text-sm whitespace-nowrap`}
-              >
-                {label}
-              </Link>
-            ))}
-            <AdminLogoutBtn className="bg-[#FFD6D6] text-red-700 px-4 py-2 rounded-xl font-bold text-sm whitespace-nowrap hover:opacity-90 transition" />
-          </div>
-        </div>
-
         <div className="flex flex-col lg:flex-row gap-8">
 
           {/* Desktop sidebar */}
