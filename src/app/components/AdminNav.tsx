@@ -9,7 +9,6 @@ const TABS_MOBILE = [
   { href: "/admin",           icon: "📊", label: "Dashboard" },
   { href: "/pedido",          icon: "📋", label: "Pedidos"   },
   { href: "/admin/productos", icon: "📦", label: "Productos" },
-  { href: "/catalogo",        icon: "🛍️", label: "Catálogo"  },
 ]
 
 const MAS_MOBILE = [
