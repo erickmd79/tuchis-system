@@ -31,7 +31,7 @@ export default function AdminNav() {
   return (
     <>
       {/* Spacer: empuja el contenido sobre la barra fija (solo mobile) */}
-      <div aria-hidden className="h-20 lg:hidden" />
+      <div aria-hidden className="h-[76px] lg:hidden" />
 
       {/* ── Barra inferior mobile (< lg) ── */}
       <nav
@@ -39,16 +39,17 @@ export default function AdminNav() {
                    bg-white border-t border-[#F4D4CF]
                    shadow-[0_-2px_20px_rgba(0,0,0,0.08)]"
       >
-        <div className="flex h-[68px]">
+        <div className="flex h-[76px]">
           {ALL_TABS.map(({ href, icon, label }) => (
             <Link
               key={href}
               href={href}
-              className="flex flex-col items-center justify-center flex-1 gap-1
-                         text-[#20B8C9] hover:bg-[#F0FAFA] active:bg-[#D9F5F8] transition"
+              className="flex flex-col items-center justify-center flex-1 gap-[3px]
+                         text-[#20B8C9] hover:bg-[#F0FAFA] active:bg-[#D9F5F8] transition
+                         px-0.5"
             >
-              <span className="text-[18px] leading-none">{icon}</span>
-              <span className="text-[8px] font-bold tracking-wide leading-none">
+              <span className="text-[22px] leading-none">{icon}</span>
+              <span className="text-[9px] font-bold tracking-wide leading-none">
                 {label}
               </span>
             </Link>
