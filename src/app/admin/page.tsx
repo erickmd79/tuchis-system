@@ -330,7 +330,6 @@ export default function AdminPage() {
               { href: "/admin/categorias", label: "Categorías", bg: "bg-[#FFE9A8] text-gray-800" },
               { href: "/admin/tamanos", label: "Tamaños", bg: "bg-[#E7D9FF] text-gray-800" },
               { href: "/admin/escalas", label: "Escalas", bg: "bg-[#E0D5FF] text-gray-800" },
-              { href: "/catalogo", label: "Catálogo", bg: "bg-[#D9F5F8] text-gray-800" },
             ].map(({ href, label, bg }) => (
               <Link
                 key={href}
@@ -358,7 +357,6 @@ export default function AdminPage() {
                 <Link href="/admin/categorias" className="bg-[#FFE9A8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Categorías</Link>
                 <Link href="/admin/tamanos" className="bg-[#E7D9FF] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Tamaños</Link>
                 <Link href="/admin/escalas" className="bg-[#E0D5FF] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Escalas</Link>
-                <Link href="/catalogo" className="bg-[#D9F5F8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Ver catálogo</Link>
                 <AdminLogoutBtn />
               </div>
             </div>

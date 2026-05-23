@@ -211,12 +211,6 @@ export default function ProductosPage() {
                   Escalas
                 </Link>
 
-                <Link
-                  href="/catalogo"
-                  className="bg-[#D9F5F8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
-                >
-                  Ver catálogo
-                </Link>
                 <AdminLogoutBtn />
               </div>
             </div>
