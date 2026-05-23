@@ -324,6 +324,7 @@ export default function AdminPage() {
           <div className="flex gap-2 w-max">
             {[
               { href: "/admin", label: "Dashboard", bg: "bg-cyan-500 text-white" },
+              { href: "/pedido", label: "Pedidos", bg: "bg-[#FFD6A8] text-gray-800" },
               { href: "/admin/productos", label: "Productos", bg: "bg-[#FFE0DD] text-gray-800" },
               { href: "/admin/categorias", label: "Categorías", bg: "bg-[#FFE9A8] text-gray-800" },
               { href: "/admin/tamanos", label: "Tamaños", bg: "bg-[#E7D9FF] text-gray-800" },
@@ -350,6 +351,7 @@ export default function AdminPage() {
               <p className="text-gray-500 mt-2 text-base">Admin Panel</p>
               <div className="mt-8 flex flex-col gap-4">
                 <Link href="/admin" className="bg-cyan-500 text-white px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Dashboard</Link>
+                <Link href="/pedido" className="bg-[#FFD6A8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Pedidos</Link>
                 <Link href="/admin/productos" className="bg-[#FFE0DD] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Productos</Link>
                 <Link href="/admin/categorias" className="bg-[#FFE9A8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Categorías</Link>
                 <Link href="/admin/tamanos" className="bg-[#E7D9FF] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Tamaños</Link>
