@@ -11,7 +11,7 @@ import {
   obtenerPrecioPorEscala,
   type Escala,
 } from "../../lib/pricing"
-import { ADMIN_WHATSAPP } from "../../lib/constants"
+import { ADMIN_WHATSAPP, DRAFT_KEY } from "../../lib/constants"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,9 +69,9 @@ type ReorderDraft = {
   }
   productos: ProductoModal[]
   expiresAt: number
+  autoOpen?: boolean
 }
 
-const DRAFT_KEY = "tuchis_reorder_draft"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -222,7 +222,14 @@ export default function MisPedidosPage() {
 
   useEffect(() => {
     const draft = leerDraft()
-    if (draft) setDraftGuardado(draft)
+    if (!draft) return
+    if (draft.autoOpen) {
+      // Came back from catalog after adding a product — open modal directly
+      recuperarBorrador(draft)
+    } else {
+      setDraftGuardado(draft)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // ── Modal "Volver a pedir" ───────────────────────────────────────────────────
@@ -481,7 +488,7 @@ export default function MisPedidosPage() {
   const irAlCatalogo = () => {
     guardarBorrador()
     cerrarModalVolver()
-    window.location.href = "/catalogo"
+    window.location.href = "/catalogo?modo=volver-a-pedir"
   }
 
   // ── Draft: discard ───────────────────────────────────────────────────────────
@@ -493,34 +500,33 @@ export default function MisPedidosPage() {
 
   // ── Draft: recover ───────────────────────────────────────────────────────────
 
-  const recuperarBorrador = async () => {
-    if (!draftGuardado) return
+  const recuperarBorrador = async (draftOverride?: ReorderDraft) => {
+    const draft = draftOverride ?? draftGuardado
+    if (!draft) return
     setRecuperandoDraft(true)
 
-    // Fetch current escalas for price recalculation
     const { data: escData } = await supabase.from("escalas").select("*")
     const escalas = (escData ?? []) as Escala[]
 
-    // Convert any cart items to ProductoModal and merge with draft products
+    // When autoOpen (back from catalog), products are already in draft.productos.
+    // When manual recovery, merge any normal cart items too.
     let itemsCarrito: ProductoModal[] = []
-    try {
-      const carritoBruto: any[] = JSON.parse(
-        localStorage.getItem("carrito") || "[]"
-      )
-      itemsCarrito = carritoBruto.map((item, i) =>
-        convertirItemCarrito(item, i, escalas)
-      )
-    } catch {
-      // malformed cart — ignore
+    if (!draft.autoOpen) {
+      try {
+        const carritoBruto: any[] = JSON.parse(
+          localStorage.getItem("carrito") || "[]"
+        )
+        itemsCarrito = carritoBruto.map((item, i) =>
+          convertirItemCarrito(item, i, escalas)
+        )
+      } catch {
+        // malformed cart — ignore
+      }
     }
 
-    const productosFusionados = [
-      ...draftGuardado.productos,
-      ...itemsCarrito,
-    ]
+    const productosFusionados = [...draft.productos, ...itemsCarrito]
 
-    // Restore all form state
-    const f = draftGuardado.form
+    const f = draft.form
     setVNombre(f.nombre)
     setVTelefono(f.telefono)
     setVEmail(f.email)
@@ -533,7 +539,6 @@ export default function MisPedidosPage() {
     setEscalasModal(escalas)
     setErrorModal("")
 
-    // Recalculate anticipo suggestion based on merged products
     const totalFusionado = productosFusionados.reduce(
       (a, p) => a + p.precio_actual * p.cantidad,
       0
@@ -542,14 +547,12 @@ export default function MisPedidosPage() {
       setVAnticipo(String(Math.round(totalFusionado * 0.5)))
     }
 
-    setPedidoActivo(draftGuardado.pedidoOriginal)
+    setPedidoActivo(draft.pedidoOriginal)
 
-    // Clean up
     localStorage.removeItem(DRAFT_KEY)
     setDraftGuardado(null)
     setRecuperandoDraft(false)
 
-    // Open modal
     setModalVolverAbierto(true)
 
     if (itemsCarrito.length > 0) {
@@ -750,7 +753,7 @@ export default function MisPedidosPage() {
             </div>
             <div className="flex gap-2 w-full sm:w-auto flex-shrink-0">
               <button
-                onClick={recuperarBorrador}
+                onClick={() => recuperarBorrador()}
                 disabled={recuperandoDraft}
                 className="flex-1 sm:flex-none bg-[#6D4AA8] text-white font-black rounded-2xl px-4 py-2.5 text-sm hover:opacity-90 transition disabled:opacity-60"
               >
