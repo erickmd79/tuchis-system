@@ -262,9 +262,10 @@ export default function MisPedidosPage() {
 
   // ── Data helpers ─────────────────────────────────────────────────────────────
 
-  const fetchPedidos = async (): Promise<Pedido[]> => {
-    const telNorm = normalizarTelefono(telefonoInput)
-    const telOrig = telefonoInput.trim()
+  const fetchPedidos = async (telOverride?: string): Promise<Pedido[]> => {
+    const phone = telOverride ?? telefonoInput
+    const telNorm = normalizarTelefono(phone)
+    const telOrig = phone.trim()
     const candidatos = [...new Set([telNorm, telOrig])].filter(Boolean)
     const { data } = await supabase
       .from("pedidos")
@@ -700,18 +701,24 @@ export default function MisPedidosPage() {
       return
     }
 
-    // Success: close modal, refresh list, go to step 2
+    // Success: close modal, refresh list, go to step 2.
+    // telefonoInput can be empty when the user arrived via the catalog redirect
+    // (page reload resets state). Fall back to the phone from the modal form so
+    // the list always refreshes correctly without asking for the number again.
+    const telEfectivo = telefonoInput.trim() || vTelefono.trim()
+    if (telEfectivo && !telefonoInput.trim()) {
+      setTelefonoInput(telEfectivo)
+    }
+
     setModalVolverAbierto(false)
     setPedidoActivo(null)
 
-    const listActualizada = await fetchPedidos()
+    const listActualizada = await fetchPedidos(telEfectivo || undefined)
     setPedidos(listActualizada)
     setPaso(2)
     window.scrollTo({ top: 0, behavior: "smooth" })
 
-    mostrarToast(
-      "¡Pedido generado correctamente! Ya puedes descargar tu PDF o enviarlo por WhatsApp."
-    )
+    mostrarToast("Pedido generado correctamente.")
   }
 
   // ── Render ───────────────────────────────────────────────────────────────────
