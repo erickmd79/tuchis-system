@@ -216,6 +216,13 @@ export default function EscalasPage() {
                 </Link>
 
                 <Link
+                  href="/pedido"
+                  className="bg-[#FFD6A8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
+                >
+                  Pedidos
+                </Link>
+
+                <Link
                   href="/admin/productos"
                   className="bg-[#FFE0DD] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
                 >

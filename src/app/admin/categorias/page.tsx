@@ -113,6 +113,13 @@ const editarCategoria = async (
         </Link>
 
         <Link
+          href="/pedido"
+          className="bg-[#FFD6A8] text-gray-800 px-5 py-3 rounded-2xl font-bold"
+        >
+          Pedidos
+        </Link>
+
+        <Link
           href="/admin/productos"
           className="bg-[#F49B93] text-white px-5 py-3 rounded-2xl font-bold"
         >
