@@ -2,25 +2,19 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { supabase } from "../../lib/supabase"
 
-const TABS_MOBILE = [
-  { href: "/admin",           icon: "📊", label: "Dashboard" },
-  { href: "/pedido",          icon: "📋", label: "Pedidos"   },
-  { href: "/admin/productos", icon: "📦", label: "Productos" },
-]
-
-const MAS_MOBILE = [
+const ALL_TABS = [
+  { href: "/admin",            icon: "📊", label: "Dashboard"  },
+  { href: "/pedido",           icon: "📋", label: "Pedidos"    },
+  { href: "/admin/productos",  icon: "📦", label: "Productos"  },
   { href: "/admin/categorias", icon: "🏷️", label: "Categorías" },
   { href: "/admin/tamanos",    icon: "📏", label: "Tamaños"    },
   { href: "/admin/escalas",    icon: "💰", label: "Escalas"    },
 ]
 
 export default function AdminNav() {
-  const router = useRouter()
   const [isAdmin, setIsAdmin] = useState(false)
-  const [masOpen, setMasOpen] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -31,12 +25,6 @@ export default function AdminNav() {
     )
     return () => subscription.unsubscribe()
   }, [])
-
-  const cerrarSesion = async () => {
-    await supabase.auth.signOut()
-    setMasOpen(false)
-    router.replace("/login")
-  }
 
   if (!isAdmin) return null
 
@@ -52,78 +40,21 @@ export default function AdminNav() {
                    shadow-[0_-2px_20px_rgba(0,0,0,0.08)]"
       >
         <div className="flex h-[68px]">
-
-          {TABS_MOBILE.map(({ href, icon, label }) => (
+          {ALL_TABS.map(({ href, icon, label }) => (
             <Link
               key={href}
               href={href}
               className="flex flex-col items-center justify-center flex-1 gap-1
                          text-[#20B8C9] hover:bg-[#F0FAFA] active:bg-[#D9F5F8] transition"
             >
-              <span className="text-[22px] leading-none">{icon}</span>
-              <span className="text-[9px] font-bold tracking-wide leading-none">
+              <span className="text-[18px] leading-none">{icon}</span>
+              <span className="text-[8px] font-bold tracking-wide leading-none">
                 {label}
               </span>
             </Link>
           ))}
-
-          <button
-            type="button"
-            onClick={() => setMasOpen(true)}
-            className="flex flex-col items-center justify-center flex-1 gap-1
-                       text-[#20B8C9] hover:bg-[#F0FAFA] active:bg-[#D9F5F8] transition"
-          >
-            <span className="text-[18px] font-black leading-none tracking-tighter">···</span>
-            <span className="text-[9px] font-bold tracking-wide leading-none">Más</span>
-          </button>
-
         </div>
       </nav>
-
-      {/* ── Sheet "Más" ── */}
-      {masOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-[60] bg-black/30 lg:hidden"
-            onClick={() => setMasOpen(false)}
-          />
-          <div className="fixed bottom-0 left-0 right-0 z-[70] lg:hidden
-                          bg-white rounded-t-[28px] border-t border-[#F4D4CF]
-                          shadow-2xl px-4 pb-10 pt-4">
-            <div className="w-10 h-1 rounded-full bg-[#F4D4CF] mx-auto mb-5" />
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-3 mb-3">
-              Admin Panel
-            </p>
-            <div className="space-y-1">
-              {MAS_MOBILE.map(({ href, icon, label }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={() => setMasOpen(false)}
-                  className="flex items-center gap-3 px-3 py-3 rounded-2xl
-                             font-bold text-base text-[#20B8C9]
-                             hover:bg-[#F0FAFA] transition"
-                >
-                  <span className="text-xl">{icon}</span>
-                  {label}
-                </Link>
-              ))}
-              <div className="border-t border-[#F4D4CF] my-1" />
-              <button
-                type="button"
-                onClick={cerrarSesion}
-                className="flex items-center gap-3 px-3 py-3 rounded-2xl
-                           font-bold text-base text-red-600 w-full
-                           hover:bg-[#FFD6D6] transition"
-              >
-                <span className="text-xl">🚪</span>
-                Cerrar sesión
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-
     </>
   )
 }

@@ -198,7 +198,7 @@ export default function EscalasPage() {
         <div className="flex flex-col lg:flex-row gap-8">
 
           {/* ── Sidebar ── */}
-          <aside className="w-full lg:w-[280px] lg:flex-shrink-0">
+          <aside className="hidden lg:block w-full lg:w-[280px] lg:flex-shrink-0">
             <div className="bg-white rounded-[32px] border border-[#F4D4CF] shadow-sm p-6 lg:sticky lg:top-28">
               <h1 className="text-4xl md:text-5xl font-black text-cyan-500">
                 TUCHIS
