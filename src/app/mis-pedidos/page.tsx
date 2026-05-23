@@ -1,10 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { supabase } from "../../lib/supabase"
 import { generarPDF } from "../pedido/generarPDF"
-import { moneda, numero } from "../../lib/pricing"
+import {
+  moneda,
+  numero,
+  obtenerModalidadesDisponibles,
+  obtenerPrecioPorEscala,
+  type Escala,
+} from "../../lib/pricing"
 import { ADMIN_WHATSAPP } from "../../lib/constants"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -27,10 +33,41 @@ type Pedido = {
   productos: any[]
 }
 
+type ProductoModal = {
+  uid: string
+  producto_id: number
+  nombre: string
+  tamano: string
+  tamano_id: number
+  modalidad: string
+  cantidad: number
+  precio_original: number
+  precio_actual: number
+  imagenes: string[]
+  precio_menudeo?: number
+  precio_mayoreo?: number
+  precio_blanca_menudeo?: number
+  precio_blanca_mayoreo?: number
+  precio_pintada_menudeo?: number
+  precio_pintada_mayoreo?: number
+  precio_kit_menudeo?: number
+  precio_kit_mayoreo?: number
+  minimo_mayoreo?: number
+}
+
+type ProductoCatalogo = { id: number; nombre: string; imagenes: string[] }
+type TamanoCatalogo = { id: number; nombre: string }
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const normalizarTelefono = (tel: string): string =>
-  tel.replace(/\D/g, "")
+const normalizarTelefono = (tel: string): string => tel.replace(/\D/g, "")
+
+const obtenerFechaHoy = (): string => {
+  const f = new Date()
+  return new Date(f.getTime() - f.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 10)
+}
 
 const formatearFecha = (valor?: string): string => {
   if (!valor) return "—"
@@ -52,20 +89,14 @@ const calcularSaldo = (p: Pedido): number => {
   )
 }
 
-const badgePago = (
-  p: Pedido
-): { label: string; clase: string } => {
+const badgePago = (p: Pedido): { label: string; clase: string } => {
   const saldo = calcularSaldo(p)
-  if (saldo <= 0)
-    return { label: "Pagado", clase: "badge-pagado" }
-  if (numero(p.anticipo) > 0)
-    return { label: "Anticipo", clase: "badge-anticipo" }
+  if (saldo <= 0) return { label: "Pagado", clase: "badge-pagado" }
+  if (numero(p.anticipo) > 0) return { label: "Anticipo", clase: "badge-anticipo" }
   return { label: "Pendiente", clase: "badge-pendiente" }
 }
 
-const badgeEntrega = (
-  p: Pedido
-): { label: string; clase: string } => {
+const badgeEntrega = (p: Pedido): { label: string; clase: string } => {
   if (p.estado === "entregado")
     return { label: "Entregado", clase: "badge-entregado" }
   return { label: "Pendiente", clase: "badge-pendiente" }
@@ -78,25 +109,15 @@ const armarMensajeWhatsApp = (pedido: Pedido): string => {
   const abono = numero(pedido.abono ?? 0)
   const saldo = calcularSaldo(pedido)
 
-  const prods = (
-    Array.isArray(pedido.productos) ? pedido.productos : []
-  )
+  const prods = (Array.isArray(pedido.productos) ? pedido.productos : [])
     .map((p: any) => {
       const tamano = p.tamano_nombre || p.tamano || ""
       const detalle = [tamano, p.modalidad].filter(Boolean).join(", ")
-      const sub = numero(p.precio_unitario || p.precio) * numero(p.cantidad)
+      const sub =
+        numero(p.precio_unitario || p.precio) * numero(p.cantidad)
       return `• ${p.nombre} x${p.cantidad}${detalle ? ` (${detalle})` : ""} — ${moneda(sub)}`
     })
     .join("\n")
-
-  const estadoEntrega =
-    pedido.estado === "entregado" ? "✅ Entregado" : "⏳ Pendiente"
-  const estadoPago =
-    saldo <= 0
-      ? "✅ Pagado"
-      : anticipo > 0
-      ? "🔄 Con anticipo"
-      : "⏳ Pendiente"
 
   return [
     `🎀 *TUCHIS alcancías — ${folio}*`,
@@ -118,8 +139,16 @@ const armarMensajeWhatsApp = (pedido: Pedido): string => {
     abono > 0 ? `➕ *Abono:* ${moneda(abono)}` : null,
     `📊 *Saldo:* ${moneda(saldo)}`,
     ``,
-    `🚚 *Entrega:* ${estadoEntrega}`,
-    `💳 *Pago:* ${estadoPago}`,
+    `🚚 *Entrega:* ${
+      pedido.estado === "entregado" ? "✅ Entregado" : "⏳ Pendiente"
+    }`,
+    `💳 *Pago:* ${
+      saldo <= 0
+        ? "✅ Pagado"
+        : anticipo > 0
+        ? "🔄 Con anticipo"
+        : "⏳ Pendiente"
+    }`,
     pedido.notas ? `\n📝 *Notas:* ${pedido.notas}` : null,
   ]
     .filter((l) => l !== null)
@@ -131,6 +160,7 @@ const armarMensajeWhatsApp = (pedido: Pedido): string => {
 type Paso = 1 | 2 | 3
 
 export default function MisPedidosPage() {
+  // ── Base state ──────────────────────────────────────────────────────────────
   const [paso, setPaso] = useState<Paso>(1)
   const [telefonoInput, setTelefonoInput] = useState("")
   const [pedidos, setPedidos] = useState<Pedido[]>([])
@@ -139,46 +169,99 @@ export default function MisPedidosPage() {
   const [generandoPDF, setGenerandoPDF] = useState(false)
   const [error, setError] = useState("")
 
-  // ── Step 1: search ──────────────────────────────────────────────────────────
+  // ── Toast ───────────────────────────────────────────────────────────────────
+  const [toastMsg, setToastMsg] = useState("")
+  const [toastOn, setToastOn] = useState(false)
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const buscarPedidos = async () => {
+  const mostrarToast = (msg: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current)
+    setToastMsg(msg)
+    setToastOn(true)
+    toastTimer.current = setTimeout(() => setToastOn(false), 5500)
+  }
+
+  // ── Modal "Volver a pedir" ───────────────────────────────────────────────────
+  const [modalVolverAbierto, setModalVolverAbierto] = useState(false)
+  const [cargandoModal, setCargandoModal] = useState(false)
+  const [escalasModal, setEscalasModal] = useState<Escala[]>([])
+  const [tamanosCat, setTamanosCat] = useState<TamanoCatalogo[]>([])
+  const [productosCat, setProductosCat] = useState<ProductoCatalogo[]>([])
+
+  // Form
+  const [vNombre, setVNombre] = useState("")
+  const [vTelefono, setVTelefono] = useState("")
+  const [vEmail, setVEmail] = useState("")
+  const [vMunicipio, setVMunicipio] = useState("")
+  const [vLugarEntrega, setVLugarEntrega] = useState("")
+  const [vFecha, setVFecha] = useState("")
+  const [vNotas, setVNotas] = useState("")
+  const [vAnticipo, setVAnticipo] = useState("")
+  const [vProductos, setVProductos] = useState<ProductoModal[]>([])
+
+  // Product picker
+  const [pickerAbierto, setPickerAbierto] = useState(false)
+  const [pProductoId, setPProductoId] = useState("")
+  const [pTamanoId, setPTamanoId] = useState("")
+  const [pModalidad, setPModalidad] = useState("")
+  const [pCantidad, setPCantidad] = useState("1")
+
+  // Save
+  const [guardandoNuevo, setGuardandoNuevo] = useState(false)
+  const [errorModal, setErrorModal] = useState("")
+
+  // Computed modal values
+  const totalModal = useMemo(
+    () => vProductos.reduce((a, p) => a + p.precio_actual * p.cantidad, 0),
+    [vProductos]
+  )
+  const anticipoNum = Math.min(Math.max(0, numero(vAnticipo)), totalModal)
+  const saldoModal = Math.max(totalModal - anticipoNum, 0)
+
+  // Picker derived
+  const tamanosConEscalas = tamanosCat.filter((t) =>
+    escalasModal.some((e) => e.tamano_id === t.id)
+  )
+  const modalidadesParaTamano = pTamanoId
+    ? obtenerModalidadesDisponibles(escalasModal, Number(pTamanoId))
+    : []
+
+  // ── Data helpers ─────────────────────────────────────────────────────────────
+
+  const fetchPedidos = async (): Promise<Pedido[]> => {
     const telNorm = normalizarTelefono(telefonoInput)
     const telOrig = telefonoInput.trim()
-
-    if (telNorm.length < 8) {
-      setError("Ingresa un teléfono válido (mínimo 8 dígitos).")
-      return
-    }
-
-    setBuscando(true)
-    setError("")
-
     const candidatos = [...new Set([telNorm, telOrig])].filter(Boolean)
-
-    const { data, error: dbError } = await supabase
+    const { data } = await supabase
       .from("pedidos")
       .select(
-        "id, cliente, telefono, email, lugar_entrega, municipio, fecha, created_at, total, anticipo, abono, estado, estado_pago, notas, productos"
+        "id,cliente,telefono,email,lugar_entrega,municipio,fecha,created_at,total,anticipo,abono,estado,estado_pago,notas,productos"
       )
       .in("telefono", candidatos)
       .order("id", { ascending: false })
       .limit(20)
+    return (data || []) as Pedido[]
+  }
 
-    setBuscando(false)
+  // ── Step 1: search ───────────────────────────────────────────────────────────
 
-    if (dbError) {
-      setError("Ocurrió un error al buscar. Intenta de nuevo.")
+  const buscarPedidos = async () => {
+    const telNorm = normalizarTelefono(telefonoInput)
+    if (telNorm.length < 8) {
+      setError("Ingresa un teléfono válido (mínimo 8 dígitos).")
       return
     }
-
-    if (!data || data.length === 0) {
+    setBuscando(true)
+    setError("")
+    const data = await fetchPedidos()
+    setBuscando(false)
+    if (data.length === 0) {
       setError(
         "No encontramos pedidos con ese teléfono. Verifica el número e intenta de nuevo."
       )
       return
     }
-
-    setPedidos(data as Pedido[])
+    setPedidos(data)
     setPaso(2)
   }
 
@@ -189,7 +272,7 @@ export default function MisPedidosPage() {
     setError("")
   }
 
-  // ── Step 2: select pedido ───────────────────────────────────────────────────
+  // ── Step 2: list ─────────────────────────────────────────────────────────────
 
   const abrirDetalle = (pedido: Pedido) => {
     setPedidoActivo(pedido)
@@ -203,7 +286,7 @@ export default function MisPedidosPage() {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
-  // ── Step 3: actions ─────────────────────────────────────────────────────────
+  // ── Step 3: actions ──────────────────────────────────────────────────────────
 
   const descargarPDF = async () => {
     if (!pedidoActivo) return
@@ -224,10 +307,308 @@ export default function MisPedidosPage() {
     )
   }
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ── Modal: open ──────────────────────────────────────────────────────────────
+
+  const abrirModalVolver = async () => {
+    if (!pedidoActivo) return
+    setModalVolverAbierto(true)
+    setCargandoModal(true)
+    setErrorModal("")
+    setPickerAbierto(false)
+
+    // Pre-fill form
+    setVNombre(pedidoActivo.cliente)
+    setVTelefono(pedidoActivo.telefono)
+    setVEmail(pedidoActivo.email ?? "")
+    setVMunicipio(pedidoActivo.municipio ?? "")
+    setVLugarEntrega(pedidoActivo.lugar_entrega ?? "")
+    setVFecha("")
+    setVNotas(pedidoActivo.notas ?? "")
+
+    // Fetch escalas + catalog data in parallel
+    const [escRes, tamRes, prodRes] = await Promise.all([
+      supabase.from("escalas").select("*"),
+      supabase.from("tamanos").select("id,nombre").order("nombre"),
+      supabase
+        .from("productos")
+        .select("id,nombre,imagenes")
+        .order("nombre"),
+    ])
+
+    const escalasData = (escRes.data ?? []) as Escala[]
+    setEscalasModal(escalasData)
+    setTamanosCat((tamRes.data ?? []) as TamanoCatalogo[])
+    setProductosCat((prodRes.data ?? []) as ProductoCatalogo[])
+
+    // Prepare products from original order, recalculate prices
+    const productosPreparados: ProductoModal[] = (
+      pedidoActivo.productos ?? []
+    ).map((p: any, i: number) => {
+      const tamanoId = Number(p.tamano_id) || 0
+      const modalidad = p.modalidad ?? ""
+      const cantidad = Math.max(1, numero(p.cantidad))
+      const precioOriginal = numero(p.precio_unitario ?? p.precio)
+
+      let precioActual = precioOriginal
+      if (tamanoId > 0 && modalidad && escalasData.length > 0) {
+        const desdeEscala = obtenerPrecioPorEscala(
+          escalasData,
+          tamanoId,
+          modalidad,
+          cantidad
+        )
+        // Only use escala price if found; keep original otherwise
+        if (desdeEscala > 0) precioActual = desdeEscala
+      }
+
+      return {
+        uid: `orig-${i}-${p.producto_id ?? i}`,
+        producto_id: p.producto_id ?? p.id,
+        nombre: p.nombre ?? "Producto",
+        tamano: p.tamano_nombre ?? p.tamano ?? "",
+        tamano_id: tamanoId,
+        modalidad,
+        cantidad,
+        precio_original: precioOriginal,
+        precio_actual: precioActual,
+        imagenes: p.imagenes ?? [],
+        precio_menudeo: p.precio_menudeo,
+        precio_mayoreo: p.precio_mayoreo,
+        precio_blanca_menudeo: p.precio_blanca_menudeo,
+        precio_blanca_mayoreo: p.precio_blanca_mayoreo,
+        precio_pintada_menudeo: p.precio_pintada_menudeo,
+        precio_pintada_mayoreo: p.precio_pintada_mayoreo,
+        precio_kit_menudeo: p.precio_kit_menudeo,
+        precio_kit_mayoreo: p.precio_kit_mayoreo,
+        minimo_mayoreo: p.minimo_mayoreo,
+      }
+    })
+
+    setVProductos(productosPreparados)
+
+    const totalInicial = productosPreparados.reduce(
+      (a, p) => a + p.precio_actual * p.cantidad,
+      0
+    )
+    setVAnticipo(String(Math.round(totalInicial * 0.5)))
+
+    setCargandoModal(false)
+  }
+
+  const cerrarModalVolver = () => {
+    setModalVolverAbierto(false)
+    setErrorModal("")
+    setPickerAbierto(false)
+  }
+
+  // ── Modal: product edits ─────────────────────────────────────────────────────
+
+  const actualizarProducto = (
+    uid: string,
+    campo: "modalidad" | "cantidad",
+    valor: string
+  ) => {
+    setVProductos((prev) =>
+      prev.map((p) => {
+        if (p.uid !== uid) return p
+        const nuevaCantidad =
+          campo === "cantidad" ? Math.max(1, numero(valor) || 1) : p.cantidad
+        const nuevaModalidad = campo === "modalidad" ? valor : p.modalidad
+        let precioActual = p.precio_original
+
+        if (p.tamano_id > 0 && nuevaModalidad && escalasModal.length > 0) {
+          const desdeEscala = obtenerPrecioPorEscala(
+            escalasModal,
+            p.tamano_id,
+            nuevaModalidad,
+            nuevaCantidad
+          )
+          if (desdeEscala > 0) precioActual = desdeEscala
+          else if (nuevaModalidad) precioActual = 0 // escala missing → warn
+        }
+
+        return {
+          ...p,
+          cantidad: nuevaCantidad,
+          modalidad: nuevaModalidad,
+          precio_actual: precioActual,
+        }
+      })
+    )
+  }
+
+  const quitarProducto = (uid: string) => {
+    setVProductos((prev) => prev.filter((p) => p.uid !== uid))
+  }
+
+  // ── Modal: add new product ───────────────────────────────────────────────────
+
+  const resetPicker = () => {
+    setPProductoId("")
+    setPTamanoId("")
+    setPModalidad("")
+    setPCantidad("1")
+  }
+
+  const agregarProducto = () => {
+    const producto = productosCat.find((p) => String(p.id) === pProductoId)
+    const tamano = tamanosCat.find((t) => String(t.id) === pTamanoId)
+    if (!producto || !tamano || !pModalidad) return
+
+    const tamanoId = Number(pTamanoId)
+    const cantidad = Math.max(1, numero(pCantidad) || 1)
+    const precioActual = obtenerPrecioPorEscala(
+      escalasModal,
+      tamanoId,
+      pModalidad,
+      cantidad
+    )
+
+    const nuevo: ProductoModal = {
+      uid: `new-${Date.now()}`,
+      producto_id: producto.id,
+      nombre: producto.nombre,
+      tamano: tamano.nombre,
+      tamano_id: tamanoId,
+      modalidad: pModalidad,
+      cantidad,
+      precio_original: 0,
+      precio_actual: precioActual,
+      imagenes: producto.imagenes ?? [],
+    }
+
+    setVProductos((prev) => [...prev, nuevo])
+    resetPicker()
+    setPickerAbierto(false)
+  }
+
+  // ── Modal: save new order ────────────────────────────────────────────────────
+
+  const guardarNuevoPedido = async () => {
+    setErrorModal("")
+
+    if (!vNombre.trim()) {
+      setErrorModal("El nombre del cliente es obligatorio.")
+      return
+    }
+    if (!vTelefono.trim()) {
+      setErrorModal("El teléfono es obligatorio.")
+      return
+    }
+    if (!vLugarEntrega.trim()) {
+      setErrorModal("El lugar de entrega es obligatorio.")
+      return
+    }
+    if (!vMunicipio.trim()) {
+      setErrorModal("El municipio es obligatorio.")
+      return
+    }
+    if (!vFecha) {
+      setErrorModal("La fecha de entrega es obligatoria.")
+      return
+    }
+    if (vProductos.length === 0) {
+      setErrorModal("Agrega al menos un producto.")
+      return
+    }
+    if (vProductos.some((p) => !p.modalidad)) {
+      setErrorModal("Selecciona la modalidad de todos los productos.")
+      return
+    }
+    if (vProductos.some((p) => p.precio_actual === 0)) {
+      setErrorModal(
+        "Algunos productos no tienen precio en escalas. Cambia la modalidad o contacta a TUCHIS."
+      )
+      return
+    }
+    if (anticipoNum > totalModal) {
+      setErrorModal("El anticipo no puede ser mayor al total.")
+      return
+    }
+
+    setGuardandoNuevo(true)
+
+    const estadoPagoFinal =
+      totalModal > 0 && anticipoNum >= totalModal ? "pagado" : "anticipo"
+
+    const { error: dbError } = await supabase.from("pedidos").insert([
+      {
+        cliente: vNombre.trim(),
+        telefono: vTelefono.trim(),
+        email: vEmail.trim() || null,
+        lugar_entrega: vLugarEntrega.trim() || null,
+        municipio: vMunicipio.trim() || null,
+        fecha: vFecha,
+        notas: vNotas.trim(),
+        productos: vProductos.map((p) => ({
+          producto_id: p.producto_id,
+          nombre: p.nombre,
+          precio: p.precio_actual,
+          precio_unitario: p.precio_actual,
+          cantidad: p.cantidad,
+          tamano: p.tamano,
+          tamano_id: p.tamano_id || undefined,
+          modalidad: p.modalidad,
+          precio_menudeo: p.precio_menudeo,
+          precio_mayoreo: p.precio_mayoreo,
+          precio_blanca_menudeo: p.precio_blanca_menudeo,
+          precio_blanca_mayoreo: p.precio_blanca_mayoreo,
+          precio_pintada_menudeo: p.precio_pintada_menudeo,
+          precio_pintada_mayoreo: p.precio_pintada_mayoreo,
+          precio_kit_menudeo: p.precio_kit_menudeo,
+          precio_kit_mayoreo: p.precio_kit_mayoreo,
+          minimo_mayoreo: p.minimo_mayoreo,
+          imagenes: p.imagenes ?? [],
+        })),
+        total: totalModal,
+        anticipo: anticipoNum,
+        estado_pago: estadoPagoFinal,
+        estado: "pendiente",
+      },
+    ])
+
+    setGuardandoNuevo(false)
+
+    if (dbError) {
+      setErrorModal(`Error al guardar: ${dbError.message}`)
+      return
+    }
+
+    // Close modal, refresh list, go to step 2
+    setModalVolverAbierto(false)
+    setPedidoActivo(null)
+
+    const listActualizada = await fetchPedidos()
+    setPedidos(listActualizada)
+    setPaso(2)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+
+    mostrarToast(
+      "¡Pedido generado correctamente! Ya puedes descargar tu PDF o enviarlo por WhatsApp."
+    )
+  }
+
+  // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
     <div className="w-full min-h-[70vh]">
+      {/* Toast */}
+      {toastOn && (
+        <div
+          className="fixed bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:w-[400px] z-[9999] bg-[#DDF5EA] border border-[#BFEAD8] text-[#238657] rounded-2xl px-5 py-4 flex items-start gap-3 shadow-xl"
+          style={{ animation: "toast-in .28s ease-out forwards" }}
+        >
+          <span className="text-2xl mt-0.5">✓</span>
+          <p className="font-bold text-sm flex-1 leading-snug">{toastMsg}</p>
+          <button
+            onClick={() => setToastOn(false)}
+            className="font-black text-lg leading-none opacity-50 hover:opacity-100 flex-shrink-0"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <div className="max-w-[720px] mx-auto px-4 py-8 md:py-12">
 
         {/* ── Paso 1: Buscar ── */}
@@ -255,9 +636,7 @@ export default function MisPedidosPage() {
                   setTelefonoInput(e.target.value)
                   setError("")
                 }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") buscarPedidos()
-                }}
+                onKeyDown={(e) => { if (e.key === "Enter") buscarPedidos() }}
                 placeholder="Ej: 2721234567"
                 className="input-premium mb-2"
                 autoFocus
@@ -280,10 +659,7 @@ export default function MisPedidosPage() {
 
             <p className="text-center text-sm text-gray-400 mt-8">
               ¿Quieres hacer un nuevo pedido?{" "}
-              <Link
-                href="/catalogo"
-                className="font-bold text-cyan-500 underline"
-              >
+              <Link href="/catalogo" className="font-bold text-cyan-500 underline">
                 Ver catálogo
               </Link>
             </p>
@@ -320,7 +696,6 @@ export default function MisPedidosPage() {
                     className="section-card text-left hover:shadow-md transition-shadow w-full"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                      {/* Folio + cliente */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-1">
                           <span className="text-xl font-black text-cyan-600">
@@ -338,7 +713,6 @@ export default function MisPedidosPage() {
                         </div>
                       </div>
 
-                      {/* Monto + badges */}
                       <div className="flex flex-row sm:flex-col items-center sm:items-end gap-3 sm:gap-2 flex-shrink-0">
                         <span className="text-xl font-black text-[#F49B93]">
                           {moneda(pedido.total)}
@@ -366,10 +740,7 @@ export default function MisPedidosPage() {
 
             <p className="text-center text-sm text-gray-400 mt-10">
               ¿Quieres hacer un nuevo pedido?{" "}
-              <Link
-                href="/catalogo"
-                className="font-bold text-cyan-500 underline"
-              >
+              <Link href="/catalogo" className="font-bold text-cyan-500 underline">
                 Ver catálogo
               </Link>
             </p>
@@ -396,7 +767,6 @@ export default function MisPedidosPage() {
                 ← Mis pedidos
               </button>
 
-              {/* Header folio + cliente */}
               <div className="mb-8">
                 <div className="flex flex-wrap items-baseline gap-3 mb-1">
                   <span className="text-2xl font-black text-gray-400">
@@ -407,36 +777,22 @@ export default function MisPedidosPage() {
                   </h1>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-3">
-                  <span className={`badge-pedido ${be.clase}`}>
-                    {be.label}
-                  </span>
-                  <span className={`badge-pedido ${bp.clase}`}>
-                    {bp.label}
-                  </span>
+                  <span className={`badge-pedido ${be.clase}`}>{be.label}</span>
+                  <span className={`badge-pedido ${bp.clase}`}>{bp.label}</span>
                 </div>
               </div>
 
-              {/* Info cards grid */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
                 <InfoCard label="Teléfono" value={p.telefono} />
                 {p.email && <InfoCard label="Email" value={p.email} />}
-                {p.municipio && (
-                  <InfoCard label="Municipio" value={p.municipio} />
-                )}
+                {p.municipio && <InfoCard label="Municipio" value={p.municipio} />}
                 {p.lugar_entrega && (
                   <InfoCard label="Lugar de entrega" value={p.lugar_entrega} />
                 )}
-                <InfoCard
-                  label="Fecha de entrega"
-                  value={formatearFecha(p.fecha)}
-                />
-                <InfoCard
-                  label="Fecha de pedido"
-                  value={formatearFecha(p.created_at)}
-                />
+                <InfoCard label="Fecha de entrega" value={formatearFecha(p.fecha)} />
+                <InfoCard label="Fecha de pedido" value={formatearFecha(p.created_at)} />
               </div>
 
-              {/* Notas */}
               {p.notas && (
                 <div className="section-card mb-6">
                   <div className="text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
@@ -448,7 +804,6 @@ export default function MisPedidosPage() {
                 </div>
               )}
 
-              {/* Productos */}
               <div className="section-card mb-6">
                 <div className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">
                   Productos · {productos.length}{" "}
@@ -461,9 +816,7 @@ export default function MisPedidosPage() {
                     const detalles = [tamano, prod.modalidad]
                       .filter(Boolean)
                       .join(" · ")
-                    const precioUnit = numero(
-                      prod.precio_unitario || prod.precio
-                    )
+                    const precioUnit = numero(prod.precio_unitario || prod.precio)
                     const sub = precioUnit * numero(prod.cantidad)
 
                     return (
@@ -471,7 +824,6 @@ export default function MisPedidosPage() {
                         key={i}
                         className="flex items-center gap-3 bg-[#FFF8F5] rounded-2xl p-3"
                       >
-                        {/* Imagen o número */}
                         {prod.imagenes?.[0] || prod.imagen ? (
                           <img
                             src={prod.imagenes?.[0] || prod.imagen}
@@ -483,7 +835,6 @@ export default function MisPedidosPage() {
                             {i + 1}
                           </div>
                         )}
-
                         <div className="flex-1 min-w-0">
                           <div className="font-black text-cyan-600 truncate">
                             {prod.nombre}
@@ -494,7 +845,6 @@ export default function MisPedidosPage() {
                             </div>
                           )}
                         </div>
-
                         <div className="text-right flex-shrink-0">
                           <div className="font-black text-[#F49B93]">
                             {moneda(sub)}
@@ -509,32 +859,23 @@ export default function MisPedidosPage() {
                 </div>
               </div>
 
-              {/* Totales */}
               <div
                 className="rounded-[24px] p-5 mb-8 text-white"
-                style={{
-                  background:
-                    "linear-gradient(135deg,#20B8C9 0%,#1AA8B8 100%)",
-                }}
+                style={{ background: "linear-gradient(135deg,#20B8C9 0%,#1AA8B8 100%)" }}
               >
                 <div
                   className={`grid gap-4 ${
-                    abono > 0
-                      ? "grid-cols-2 md:grid-cols-4"
-                      : "grid-cols-3"
+                    abono > 0 ? "grid-cols-2 md:grid-cols-4" : "grid-cols-3"
                   }`}
                 >
                   <TotalItem label="Total" value={moneda(total)} grande />
                   <TotalItem label="Anticipo" value={moneda(anticipo)} />
-                  {abono > 0 && (
-                    <TotalItem label="Abono" value={moneda(abono)} />
-                  )}
+                  {abono > 0 && <TotalItem label="Abono" value={moneda(abono)} />}
                   <TotalItem label="Saldo" value={moneda(saldo)} />
                 </div>
               </div>
 
-              {/* Acciones */}
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 mb-4">
                 <button
                   onClick={descargarPDF}
                   disabled={generandoPDF}
@@ -553,12 +894,16 @@ export default function MisPedidosPage() {
                 </button>
               </div>
 
+              <button
+                onClick={abrirModalVolver}
+                className="w-full bg-[#E0D5FF] text-[#6D4AA8] font-black rounded-[18px] px-6 py-4 hover:opacity-90 transition"
+              >
+                🔁 Volver a pedir
+              </button>
+
               <p className="text-center text-sm text-gray-400 mt-8">
-                ¿Quieres hacer un nuevo pedido?{" "}
-                <Link
-                  href="/catalogo"
-                  className="font-bold text-cyan-500 underline"
-                >
+                ¿Quieres explorar más productos?{" "}
+                <Link href="/catalogo" className="font-bold text-cyan-500 underline">
                   Ver catálogo
                 </Link>
               </p>
@@ -566,19 +911,542 @@ export default function MisPedidosPage() {
           )
         })()}
       </div>
+
+      {/* ── Modal Volver a pedir ── */}
+      {modalVolverAbierto && (
+        <div
+          className="modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) cerrarModalVolver()
+          }}
+        >
+          <div className="modal-content modal-enter max-w-2xl w-full">
+
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-3xl font-black text-cyan-600">
+                  Volver a pedir
+                </h2>
+                {pedidoActivo && (
+                  <p className="text-sm text-gray-400 font-bold mt-1">
+                    Basado en pedido TCH-{pedidoActivo.id}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={cerrarModalVolver}
+                className="w-11 h-11 rounded-2xl bg-[#FFE0DD] text-gray-700 font-black text-xl flex items-center justify-center hover:opacity-80 transition flex-shrink-0"
+              >
+                ✕
+              </button>
+            </div>
+
+            {cargandoModal ? (
+              <div className="flex flex-col items-center gap-4 py-16 text-gray-400">
+                <div className="w-10 h-10 rounded-full border-4 border-[#D9F5F8] border-t-cyan-500 animate-spin" />
+                <p className="font-bold text-sm">Cargando datos del pedido…</p>
+              </div>
+            ) : (
+              <div className="space-y-8">
+
+                {/* ── Datos del cliente ── */}
+                <section>
+                  <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">
+                    Datos del cliente
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-black text-gray-500 mb-1 uppercase tracking-wide">
+                        Nombre *
+                      </label>
+                      <input
+                        type="text"
+                        value={vNombre}
+                        onChange={(e) => setVNombre(e.target.value)}
+                        placeholder="Nombre completo"
+                        className="input-premium"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-gray-500 mb-1 uppercase tracking-wide">
+                        Teléfono *
+                      </label>
+                      <input
+                        type="tel"
+                        value={vTelefono}
+                        onChange={(e) => setVTelefono(e.target.value)}
+                        placeholder="Teléfono"
+                        className="input-premium"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-gray-500 mb-1 uppercase tracking-wide">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={vEmail}
+                        onChange={(e) => setVEmail(e.target.value)}
+                        placeholder="Email (opcional)"
+                        className="input-premium"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-gray-500 mb-1 uppercase tracking-wide">
+                        Municipio *
+                      </label>
+                      <input
+                        type="text"
+                        value={vMunicipio}
+                        onChange={(e) => setVMunicipio(e.target.value)}
+                        placeholder="Municipio"
+                        className="input-premium"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-gray-500 mb-1 uppercase tracking-wide">
+                        Lugar de entrega *
+                      </label>
+                      <input
+                        type="text"
+                        value={vLugarEntrega}
+                        onChange={(e) => setVLugarEntrega(e.target.value)}
+                        placeholder="Domicilio, colonia…"
+                        className="input-premium"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-gray-500 mb-1 uppercase tracking-wide">
+                        Fecha de entrega *
+                      </label>
+                      <input
+                        type="date"
+                        value={vFecha}
+                        min={obtenerFechaHoy()}
+                        onChange={(e) => setVFecha(e.target.value)}
+                        className="input-premium"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-black text-gray-500 mb-1 uppercase tracking-wide">
+                        Notas
+                      </label>
+                      <textarea
+                        value={vNotas}
+                        onChange={(e) => setVNotas(e.target.value)}
+                        placeholder="Indicaciones adicionales…"
+                        rows={2}
+                        className="textarea"
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                {/* ── Productos ── */}
+                <section>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">
+                      Productos
+                    </h3>
+                    <button
+                      onClick={() => {
+                        setPickerAbierto((v) => !v)
+                        resetPicker()
+                      }}
+                      className="text-xs font-black text-cyan-600 bg-[#D9F5F8] px-3 py-1.5 rounded-xl hover:opacity-80 transition"
+                    >
+                      + Agregar producto
+                    </button>
+                  </div>
+
+                  {/* Product list */}
+                  {vProductos.length === 0 ? (
+                    <p className="text-sm text-gray-400 font-bold text-center py-6">
+                      Sin productos. Agrega uno con el botón de arriba.
+                    </p>
+                  ) : (
+                    <div className="flex flex-col gap-3 mb-4">
+                      {vProductos.map((prod) => {
+                        const preciosCambiaron =
+                          prod.precio_original > 0 &&
+                          Math.abs(prod.precio_actual - prod.precio_original) > 0.01
+                        const sinPrecio = prod.precio_actual === 0 && prod.tamano_id > 0
+
+                        return (
+                          <div
+                            key={prod.uid}
+                            className="bg-[#FFF8F5] border border-[#F5D3CD] rounded-2xl p-4"
+                          >
+                            <div className="flex items-start gap-3">
+                              {/* Image / number */}
+                              {prod.imagenes[0] ? (
+                                <img
+                                  src={prod.imagenes[0]}
+                                  alt={prod.nombre}
+                                  className="w-12 h-12 rounded-xl object-cover flex-shrink-0"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-xl bg-[#D9F5F8] flex items-center justify-center flex-shrink-0 text-cyan-500 font-black">
+                                  {prod.nombre.charAt(0)}
+                                </div>
+                              )}
+
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <p className="font-black text-cyan-600 truncate text-sm">
+                                      {prod.nombre}
+                                    </p>
+                                    {prod.tamano && (
+                                      <p className="text-xs text-gray-400 mt-0.5">
+                                        {prod.tamano}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <button
+                                    onClick={() => quitarProducto(prod.uid)}
+                                    className="text-xs font-black text-red-400 bg-red-50 px-2 py-1 rounded-lg hover:opacity-80 flex-shrink-0"
+                                  >
+                                    Quitar
+                                  </button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 mt-3">
+                                  <div>
+                                    <label className="text-xs text-gray-400 font-bold block mb-1">
+                                      Modalidad
+                                    </label>
+                                    {prod.tamano_id > 0 &&
+                                    obtenerModalidadesDisponibles(
+                                      escalasModal,
+                                      prod.tamano_id
+                                    ).length > 0 ? (
+                                      <select
+                                        value={prod.modalidad}
+                                        onChange={(e) =>
+                                          actualizarProducto(
+                                            prod.uid,
+                                            "modalidad",
+                                            e.target.value
+                                          )
+                                        }
+                                        className="input-premium"
+                                        style={{ minHeight: 44, fontSize: 14 }}
+                                      >
+                                        <option value="">— Elige —</option>
+                                        {obtenerModalidadesDisponibles(
+                                          escalasModal,
+                                          prod.tamano_id
+                                        ).map((m) => (
+                                          <option key={m} value={m}>
+                                            {m}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    ) : (
+                                      <p className="text-sm font-bold text-gray-600 py-2">
+                                        {prod.modalidad || "—"}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <label className="text-xs text-gray-400 font-bold block mb-1">
+                                      Cantidad
+                                    </label>
+                                    <input
+                                      type="number"
+                                      min={1}
+                                      value={prod.cantidad}
+                                      onChange={(e) =>
+                                        actualizarProducto(
+                                          prod.uid,
+                                          "cantidad",
+                                          e.target.value
+                                        )
+                                      }
+                                      className="input-premium"
+                                      style={{ minHeight: 44, fontSize: 14 }}
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Price info */}
+                                <div className="flex flex-wrap items-center gap-3 mt-3">
+                                  <div>
+                                    <span className="text-xs text-gray-400">
+                                      Precio actual:{" "}
+                                    </span>
+                                    <span className="font-black text-[#F49B93]">
+                                      {sinPrecio
+                                        ? "Sin precio"
+                                        : moneda(prod.precio_actual)}
+                                    </span>
+                                    {preciosCambiaron && !sinPrecio && (
+                                      <span className="text-xs text-gray-400 line-through ml-2">
+                                        {moneda(prod.precio_original)}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="text-xs text-gray-400">
+                                    Subtotal:{" "}
+                                    <span className="font-black text-gray-700">
+                                      {moneda(prod.precio_actual * prod.cantidad)}
+                                    </span>
+                                  </span>
+                                </div>
+
+                                {/* Warnings */}
+                                {sinPrecio && (
+                                  <p className="text-xs font-bold text-red-500 bg-red-50 rounded-xl px-3 py-2 mt-2">
+                                    Sin precio en escalas. Cambia la modalidad o contacta a TUCHIS.
+                                  </p>
+                                )}
+                                {preciosCambiaron && !sinPrecio && (
+                                  <p className="text-xs font-bold text-[#8A6A00] bg-[#FFF0B8] border border-[#FFE28A] rounded-xl px-3 py-2 mt-2">
+                                    Precio actualizado respecto al pedido original.
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {/* Product picker */}
+                  {pickerAbierto && (
+                    <div className="bg-[#F5FFFE] border border-[#BEE9E8] rounded-2xl p-4">
+                      <p className="text-xs font-black uppercase tracking-widest text-cyan-600 mb-4">
+                        Agregar producto
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-bold text-gray-500 block mb-1">
+                            Producto
+                          </label>
+                          <select
+                            value={pProductoId}
+                            onChange={(e) => setPProductoId(e.target.value)}
+                            className="input-premium"
+                            style={{ fontSize: 14 }}
+                          >
+                            <option value="">Selecciona producto</option>
+                            {productosCat.map((p) => (
+                              <option key={p.id} value={String(p.id)}>
+                                {p.nombre}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-gray-500 block mb-1">
+                            Tamaño
+                          </label>
+                          <select
+                            value={pTamanoId}
+                            onChange={(e) => {
+                              setPTamanoId(e.target.value)
+                              setPModalidad("")
+                            }}
+                            className="input-premium"
+                            style={{ fontSize: 14 }}
+                          >
+                            <option value="">Selecciona tamaño</option>
+                            {tamanosConEscalas.map((t) => (
+                              <option key={t.id} value={String(t.id)}>
+                                {t.nombre}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-gray-500 block mb-1">
+                            Modalidad
+                          </label>
+                          <select
+                            value={pModalidad}
+                            onChange={(e) => setPModalidad(e.target.value)}
+                            className="input-premium"
+                            style={{ fontSize: 14 }}
+                            disabled={!pTamanoId}
+                          >
+                            <option value="">
+                              {pTamanoId
+                                ? "Selecciona modalidad"
+                                : "Elige tamaño primero"}
+                            </option>
+                            {modalidadesParaTamano.map((m) => (
+                              <option key={m} value={m}>
+                                {m}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-gray-500 block mb-1">
+                            Cantidad
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            value={pCantidad}
+                            onChange={(e) => setPCantidad(e.target.value)}
+                            className="input-premium"
+                            style={{ fontSize: 14 }}
+                          />
+                        </div>
+                      </div>
+
+                      {pProductoId && pTamanoId && pModalidad && (
+                        <p className="text-sm font-bold text-cyan-700 mt-3">
+                          Precio:{" "}
+                          {(() => {
+                            const precio = obtenerPrecioPorEscala(
+                              escalasModal,
+                              Number(pTamanoId),
+                              pModalidad,
+                              Math.max(1, numero(pCantidad))
+                            )
+                            return precio > 0 ? moneda(precio) : "Sin precio en escalas"
+                          })()}
+                        </p>
+                      )}
+
+                      <div className="flex gap-3 mt-4">
+                        <button
+                          onClick={agregarProducto}
+                          disabled={!pProductoId || !pTamanoId || !pModalidad}
+                          className="btn-primary disabled:opacity-50"
+                          style={{ padding: "10px 20px", fontSize: 14 }}
+                        >
+                          Agregar
+                        </button>
+                        <button
+                          onClick={() => {
+                            setPickerAbierto(false)
+                            resetPicker()
+                          }}
+                          className="bg-[#F5EEEC] text-gray-600 font-black rounded-2xl px-5 py-2 text-sm hover:opacity-80 transition"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </section>
+
+                {/* ── Totales + Anticipo ── */}
+                <section>
+                  <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">
+                    Pago
+                  </h3>
+
+                  <div
+                    className="rounded-2xl p-4 text-white mb-4"
+                    style={{
+                      background: "linear-gradient(135deg,#20B8C9 0%,#1AA8B8 100%)",
+                    }}
+                  >
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div>
+                        <div className="text-xs font-bold uppercase opacity-75 mb-1">
+                          Total
+                        </div>
+                        <div className="text-2xl font-black">
+                          {moneda(totalModal)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold uppercase opacity-75 mb-1">
+                          Anticipo
+                        </div>
+                        <div className="text-2xl font-black">
+                          {moneda(anticipoNum)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold uppercase opacity-75 mb-1">
+                          Saldo
+                        </div>
+                        <div className="text-2xl font-black">
+                          {moneda(saldoModal)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black text-gray-500 mb-1 uppercase tracking-wide">
+                      Anticipo
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={vAnticipo}
+                      onChange={(e) => setVAnticipo(e.target.value)}
+                      placeholder="0"
+                      className="input-premium"
+                    />
+                    <div className="flex items-center justify-between mt-1.5">
+                      <span className="text-xs text-gray-400">
+                        Sugerido (50%): {moneda(totalModal * 0.5)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setVAnticipo(
+                            String(Math.round(totalModal * 0.5))
+                          )
+                        }
+                        className="text-xs font-black text-cyan-600 hover:opacity-70 transition"
+                      >
+                        Usar 50%
+                      </button>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Error */}
+                {errorModal && (
+                  <p className="text-sm font-bold text-red-500 bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
+                    {errorModal}
+                  </p>
+                )}
+
+                {/* Actions */}
+                <div className="flex flex-col sm:flex-row gap-4 pt-2">
+                  <button
+                    onClick={guardarNuevoPedido}
+                    disabled={guardandoNuevo}
+                    className="btn-primary flex-1 disabled:opacity-60"
+                  >
+                    {guardandoNuevo ? "Guardando…" : "Guardar nuevo pedido"}
+                  </button>
+                  <button
+                    onClick={cerrarModalVolver}
+                    className="bg-[#F5EEEC] text-gray-700 px-6 py-4 rounded-2xl font-black hover:opacity-80 transition"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+
+                <p className="text-xs text-gray-400 text-center">
+                  Se creará un pedido nuevo. El pedido original no se modifica.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-// ─── Sub-components ────────────────────────────────────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
-function InfoCard({
-  label,
-  value,
-}: {
-  label: string
-  value: string
-}) {
+function InfoCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-white border border-[#F5D3CD] rounded-2xl p-3 md:p-4">
       <div className="text-xs font-black uppercase tracking-widest text-gray-400 mb-1">
@@ -605,11 +1473,7 @@ function TotalItem({
       <div className="text-xs font-bold uppercase tracking-wider opacity-75 mb-1">
         {label}
       </div>
-      <div
-        className={`font-black leading-none ${
-          grande ? "text-3xl" : "text-xl"
-        }`}
-      >
+      <div className={`font-black leading-none ${grande ? "text-3xl" : "text-xl"}`}>
         {value}
       </div>
     </div>
