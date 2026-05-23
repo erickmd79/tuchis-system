@@ -130,17 +130,10 @@ export default function Navbar() {
           </Link>
 
           <Link
-            href="/pedido"
+            href="/mis-pedidos"
             onClick={cerrarMenu}
           >
-            Pedidos
-          </Link>
-
-          <Link
-            href="/admin"
-            onClick={cerrarMenu}
-          >
-            Admin
+            Mis pedidos
           </Link>
         </div>
       </div>
