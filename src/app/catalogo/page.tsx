@@ -13,6 +13,7 @@ import {
   obtenerPrecioDesde,
   obtenerModalidadesDisponibles,
 } from "../../lib/pricing"
+import { DRAFT_KEY } from "../../lib/constants"
 
 
 const limpiarMedidas = (valor: string) =>
@@ -91,6 +92,7 @@ export default function CatalogoPage() {
   const [escalas, setEscalas] = useState<Escala[]>([])
   const [tamanos, setTamanos] = useState<any[]>([])
   const [filtroTamano, setFiltroTamano] = useState("")
+  const [modoVolver, setModoVolver] = useState(false)
 
   const crearIdCarrito = (item: any) =>
     [
@@ -176,6 +178,10 @@ export default function CatalogoPage() {
       carritoGuardado.length > 0
     ) {
       setCarritoAbierto(true)
+    }
+
+    if (parametros.get("modo") === "volver-a-pedir") {
+      setModoVolver(true)
     }
 
   }, [])
@@ -322,6 +328,46 @@ export default function CatalogoPage() {
       precio = numero(productoSeleccionado.precio_menudeo || productoSeleccionado.precio || 0)
     }
 
+    // ── Modo "volver a pedir": escribe en el borrador, NO en el carrito ───────
+    if (modoVolver) {
+      try {
+        const raw = localStorage.getItem(DRAFT_KEY)
+        if (!raw) {
+          addToast(
+            "Tu borrador ya no está disponible. Vuelve a Mis pedidos e inicia de nuevo.",
+            "error"
+          )
+          return
+        }
+        const draft = JSON.parse(raw)
+        draft.productos = [
+          ...(draft.productos || []),
+          {
+            uid: `cat-${Date.now()}`,
+            producto_id: productoSeleccionado.id,
+            nombre: productoSeleccionado.nombre,
+            tamano: tamanoNombre,
+            tamano_id: tamanoId,
+            modalidad,
+            cantidad,
+            precio_original: 0,
+            precio_actual: precio,
+            imagenes: productoSeleccionado.imagenes || [],
+          },
+        ]
+        draft.autoOpen = true
+        draft.expiresAt = Date.now() + 24 * 60 * 60 * 1000
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+      } catch {
+        addToast("Error al guardar el producto. Inténtalo de nuevo.", "error")
+        return
+      }
+      setProductoSeleccionado(null)
+      window.location.href = "/mis-pedidos"
+      return
+    }
+
+    // ── Flujo normal: agrega al carrito ───────────────────────────────────────
     const item = {
       producto_id: productoSeleccionado.id,
       nombre: productoSeleccionado.nombre,
@@ -446,7 +492,23 @@ export default function CatalogoPage() {
 
   return (
 
-    <div className="min-h-screen bg-[#FFF8F5] px-3 sm:px-4 md:px-8 py-5 md:py-7">
+    <div className={`min-h-screen bg-[#FFF8F5] px-3 sm:px-4 md:px-8 ${modoVolver ? "pt-[132px] pb-7" : "py-5 md:py-7"}`}>
+
+      {/* Banner: modo "volver a pedir" */}
+      {modoVolver && (
+        <div className="fixed top-[82px] left-0 right-0 z-[999] bg-[#E0D5FF] border-b border-[#D7C3FF] px-4 py-3 flex items-center justify-between gap-3 shadow-sm">
+          <span className="text-sm font-bold text-[#6B3FA0]">
+            🛒 Estás agregando productos a tu nuevo pedido
+          </span>
+          <button
+            type="button"
+            onClick={() => { window.location.href = "/mis-pedidos" }}
+            className="shrink-0 text-xs font-black text-[#6B3FA0] border border-[#C4A8F0] px-3 py-1.5 rounded-full hover:bg-[#D7C3FF] transition whitespace-nowrap"
+          >
+            Volver al pedido
+          </button>
+        </div>
+      )}
 
       <div className="mb-6 md:mb-8 max-w-[1280px] mx-auto">
 
@@ -813,13 +875,13 @@ export default function CatalogoPage() {
                   </div>
                 </div>
 
-                {/* Agregar al carrito button */}
+                {/* Agregar al carrito / pedido button */}
                 <button
                   type="button"
                   onClick={confirmarSeleccionProducto}
                   className="w-full bg-[#20B8C9] hover:bg-[#17A7B8] active:scale-[.97] text-white py-5 rounded-2xl font-black text-lg transition-all shadow-lg shadow-cyan-200/60"
                 >
-                  Agregar al carrito
+                  {modoVolver ? "Agregar al pedido" : "Agregar al carrito"}
                 </button>
 
               </div>
