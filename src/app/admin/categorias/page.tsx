@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { supabase } from "../../../lib/supabase"
+import AdminLogoutBtn from "../../components/AdminLogoutBtn"
 
 export default function CategoriasAdmin() {
 
@@ -146,6 +147,8 @@ const editarCategoria = async (
         >
           Escalas
         </Link>
+
+        <AdminLogoutBtn className="bg-[#FFD6D6] text-red-700 px-5 py-3 rounded-2xl font-bold hover:opacity-90 transition" />
 
       </div>
 

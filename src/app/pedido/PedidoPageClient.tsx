@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react"
 import { supabase } from "../../lib/supabase"
 import { generarPDF } from "./generarPDF"
+import AdminLogoutBtn from "../components/AdminLogoutBtn"
 import {
   MODALIDADES,
   numero,
@@ -682,12 +683,15 @@ return (
 <h1 className="page-title">
 Pedidos
 </h1>
-<a
-href="/pedido/nuevo"
-className="inline-flex items-center gap-2 bg-[#20B8C9] hover:bg-[#17A7B8] text-white px-6 py-4 rounded-2xl font-black text-base shadow-lg transition"
->
-+ Nuevo pedido
-</a>
+<div className="flex items-center gap-3">
+  <AdminLogoutBtn className="px-4 py-3 rounded-2xl font-bold text-sm bg-[#FFD6D6] text-red-700 hover:opacity-90 transition border border-[#FFB3B3]" />
+  <a
+  href="/pedido/nuevo"
+  className="inline-flex items-center gap-2 bg-[#20B8C9] hover:bg-[#17A7B8] text-white px-6 py-4 rounded-2xl font-black text-base shadow-lg transition"
+  >
+  + Nuevo pedido
+  </a>
+</div>
 </div>
 <div id="pedidos-guardados" className="section-card">
 <h2 className="text-3xl font-black text-cyan-600 mb-8">

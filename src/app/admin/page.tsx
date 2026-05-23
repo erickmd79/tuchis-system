@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "../../lib/supabase"
+import AdminLogoutBtn from "../components/AdminLogoutBtn"
 
 type Lapso = "hoy" | "7d" | "15d" | "30d" | "mes" | "personalizado"
 
@@ -339,6 +340,7 @@ export default function AdminPage() {
                 {label}
               </Link>
             ))}
+            <AdminLogoutBtn className="bg-[#FFD6D6] text-red-700 px-4 py-2 rounded-xl font-bold text-sm whitespace-nowrap hover:opacity-90 transition" />
           </div>
         </div>
 
@@ -357,6 +359,7 @@ export default function AdminPage() {
                 <Link href="/admin/tamanos" className="bg-[#E7D9FF] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Tamaños</Link>
                 <Link href="/admin/escalas" className="bg-[#E0D5FF] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Escalas</Link>
                 <Link href="/catalogo" className="bg-[#D9F5F8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Ver catálogo</Link>
+                <AdminLogoutBtn />
               </div>
             </div>
           </aside>

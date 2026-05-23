@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "../../../lib/supabase"
+import AdminLogoutBtn from "../../components/AdminLogoutBtn"
 import { type Escala, moneda, obtenerPrecioDesde } from "../../../lib/pricing"
 
 const limpiarMedidas = (valor: string) =>
@@ -216,6 +217,7 @@ export default function ProductosPage() {
                 >
                   Ver catálogo
                 </Link>
+                <AdminLogoutBtn />
               </div>
             </div>
           </aside>
