@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { supabase } from "../../lib/supabase"
 import { generarPDF } from "../pedido/generarPDF"
@@ -55,8 +55,23 @@ type ProductoModal = {
   minimo_mayoreo?: number
 }
 
-type ProductoCatalogo = { id: number; nombre: string; imagenes: string[] }
-type TamanoCatalogo = { id: number; nombre: string }
+type ReorderDraft = {
+  pedidoOriginal: Pedido
+  form: {
+    nombre: string
+    telefono: string
+    email: string
+    municipio: string
+    lugarEntrega: string
+    fecha: string
+    notas: string
+    anticipo: string
+  }
+  productos: ProductoModal[]
+  expiresAt: number
+}
+
+const DRAFT_KEY = "tuchis_reorder_draft"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -92,7 +107,8 @@ const calcularSaldo = (p: Pedido): number => {
 const badgePago = (p: Pedido): { label: string; clase: string } => {
   const saldo = calcularSaldo(p)
   if (saldo <= 0) return { label: "Pagado", clase: "badge-pagado" }
-  if (numero(p.anticipo) > 0) return { label: "Anticipo", clase: "badge-anticipo" }
+  if (numero(p.anticipo) > 0)
+    return { label: "Anticipo", clase: "badge-anticipo" }
   return { label: "Pendiente", clase: "badge-pendiente" }
 }
 
@@ -115,7 +131,9 @@ const armarMensajeWhatsApp = (pedido: Pedido): string => {
       const detalle = [tamano, p.modalidad].filter(Boolean).join(", ")
       const sub =
         numero(p.precio_unitario || p.precio) * numero(p.cantidad)
-      return `• ${p.nombre} x${p.cantidad}${detalle ? ` (${detalle})` : ""} — ${moneda(sub)}`
+      return `• ${p.nombre} x${p.cantidad}${
+        detalle ? ` (${detalle})` : ""
+      } — ${moneda(sub)}`
     })
     .join("\n")
 
@@ -155,6 +173,23 @@ const armarMensajeWhatsApp = (pedido: Pedido): string => {
     .join("\n")
 }
 
+const leerDraft = (): ReorderDraft | null => {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY)
+    if (!raw) return null
+    const draft: ReorderDraft = JSON.parse(raw)
+    if (Date.now() > draft.expiresAt) {
+      localStorage.removeItem(DRAFT_KEY)
+      return null
+    }
+    return draft
+  } catch {
+    localStorage.removeItem(DRAFT_KEY)
+    return null
+  }
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 type Paso = 1 | 2 | 3
@@ -181,12 +216,19 @@ export default function MisPedidosPage() {
     toastTimer.current = setTimeout(() => setToastOn(false), 5500)
   }
 
+  // ── Draft (borrador "Volver a pedir") ───────────────────────────────────────
+  const [draftGuardado, setDraftGuardado] = useState<ReorderDraft | null>(null)
+  const [recuperandoDraft, setRecuperandoDraft] = useState(false)
+
+  useEffect(() => {
+    const draft = leerDraft()
+    if (draft) setDraftGuardado(draft)
+  }, [])
+
   // ── Modal "Volver a pedir" ───────────────────────────────────────────────────
   const [modalVolverAbierto, setModalVolverAbierto] = useState(false)
   const [cargandoModal, setCargandoModal] = useState(false)
   const [escalasModal, setEscalasModal] = useState<Escala[]>([])
-  const [tamanosCat, setTamanosCat] = useState<TamanoCatalogo[]>([])
-  const [productosCat, setProductosCat] = useState<ProductoCatalogo[]>([])
 
   // Form
   const [vNombre, setVNombre] = useState("")
@@ -199,13 +241,6 @@ export default function MisPedidosPage() {
   const [vAnticipo, setVAnticipo] = useState("")
   const [vProductos, setVProductos] = useState<ProductoModal[]>([])
 
-  // Product picker
-  const [pickerAbierto, setPickerAbierto] = useState(false)
-  const [pProductoId, setPProductoId] = useState("")
-  const [pTamanoId, setPTamanoId] = useState("")
-  const [pModalidad, setPModalidad] = useState("")
-  const [pCantidad, setPCantidad] = useState("1")
-
   // Save
   const [guardandoNuevo, setGuardandoNuevo] = useState(false)
   const [errorModal, setErrorModal] = useState("")
@@ -217,14 +252,6 @@ export default function MisPedidosPage() {
   )
   const anticipoNum = Math.min(Math.max(0, numero(vAnticipo)), totalModal)
   const saldoModal = Math.max(totalModal - anticipoNum, 0)
-
-  // Picker derived
-  const tamanosConEscalas = tamanosCat.filter((t) =>
-    escalasModal.some((e) => e.tamano_id === t.id)
-  )
-  const modalidadesParaTamano = pTamanoId
-    ? obtenerModalidadesDisponibles(escalasModal, Number(pTamanoId))
-    : []
 
   // ── Data helpers ─────────────────────────────────────────────────────────────
 
@@ -241,6 +268,47 @@ export default function MisPedidosPage() {
       .order("id", { ascending: false })
       .limit(20)
     return (data || []) as Pedido[]
+  }
+
+  const convertirItemCarrito = (
+    item: any,
+    index: number,
+    escalas: Escala[]
+  ): ProductoModal => {
+    const tamanoId = Number(item.tamano_id) || 0
+    const modalidad = item.modalidad ?? ""
+    const cantidad = Math.max(1, numero(item.cantidad))
+    let precioActual = numero(item.precio_unitario ?? item.precio)
+    if (tamanoId > 0 && modalidad && escalas.length > 0) {
+      const desdeEscala = obtenerPrecioPorEscala(
+        escalas,
+        tamanoId,
+        modalidad,
+        cantidad
+      )
+      if (desdeEscala > 0) precioActual = desdeEscala
+    }
+    return {
+      uid: `cart-${Date.now()}-${index}`,
+      producto_id: item.producto_id ?? item.id,
+      nombre: item.nombre ?? "Producto",
+      tamano: item.tamano_nombre ?? item.tamano ?? "",
+      tamano_id: tamanoId,
+      modalidad,
+      cantidad,
+      precio_original: 0,
+      precio_actual: precioActual,
+      imagenes: item.imagenes ?? [],
+      precio_menudeo: item.precio_menudeo,
+      precio_mayoreo: item.precio_mayoreo,
+      precio_blanca_menudeo: item.precio_blanca_menudeo,
+      precio_blanca_mayoreo: item.precio_blanca_mayoreo,
+      precio_pintada_menudeo: item.precio_pintada_menudeo,
+      precio_pintada_mayoreo: item.precio_pintada_mayoreo,
+      precio_kit_menudeo: item.precio_kit_menudeo,
+      precio_kit_mayoreo: item.precio_kit_mayoreo,
+      minimo_mayoreo: item.minimo_mayoreo,
+    }
   }
 
   // ── Step 1: search ───────────────────────────────────────────────────────────
@@ -272,7 +340,7 @@ export default function MisPedidosPage() {
     setError("")
   }
 
-  // ── Step 2: list ─────────────────────────────────────────────────────────────
+  // ── Step 2 ───────────────────────────────────────────────────────────────────
 
   const abrirDetalle = (pedido: Pedido) => {
     setPedidoActivo(pedido)
@@ -309,38 +377,36 @@ export default function MisPedidosPage() {
 
   // ── Modal: open ──────────────────────────────────────────────────────────────
 
+  const poblarModal = (
+    pedido: Pedido,
+    escalas: Escala[],
+    productosIniciales: ProductoModal[]
+  ) => {
+    setVNombre(pedido.cliente)
+    setVTelefono(pedido.telefono)
+    setVEmail(pedido.email ?? "")
+    setVMunicipio(pedido.municipio ?? "")
+    setVLugarEntrega(pedido.lugar_entrega ?? "")
+    setVFecha("")
+    setVNotas(pedido.notas ?? "")
+    setVProductos(productosIniciales)
+    const totalInicial = productosIniciales.reduce(
+      (a, p) => a + p.precio_actual * p.cantidad,
+      0
+    )
+    setVAnticipo(String(Math.round(totalInicial * 0.5)))
+    setEscalasModal(escalas)
+    setErrorModal("")
+  }
+
   const abrirModalVolver = async () => {
     if (!pedidoActivo) return
     setModalVolverAbierto(true)
     setCargandoModal(true)
-    setErrorModal("")
-    setPickerAbierto(false)
 
-    // Pre-fill form
-    setVNombre(pedidoActivo.cliente)
-    setVTelefono(pedidoActivo.telefono)
-    setVEmail(pedidoActivo.email ?? "")
-    setVMunicipio(pedidoActivo.municipio ?? "")
-    setVLugarEntrega(pedidoActivo.lugar_entrega ?? "")
-    setVFecha("")
-    setVNotas(pedidoActivo.notas ?? "")
+    const { data: escData } = await supabase.from("escalas").select("*")
+    const escalas = (escData ?? []) as Escala[]
 
-    // Fetch escalas + catalog data in parallel
-    const [escRes, tamRes, prodRes] = await Promise.all([
-      supabase.from("escalas").select("*"),
-      supabase.from("tamanos").select("id,nombre").order("nombre"),
-      supabase
-        .from("productos")
-        .select("id,nombre,imagenes")
-        .order("nombre"),
-    ])
-
-    const escalasData = (escRes.data ?? []) as Escala[]
-    setEscalasModal(escalasData)
-    setTamanosCat((tamRes.data ?? []) as TamanoCatalogo[])
-    setProductosCat((prodRes.data ?? []) as ProductoCatalogo[])
-
-    // Prepare products from original order, recalculate prices
     const productosPreparados: ProductoModal[] = (
       pedidoActivo.productos ?? []
     ).map((p: any, i: number) => {
@@ -348,19 +414,16 @@ export default function MisPedidosPage() {
       const modalidad = p.modalidad ?? ""
       const cantidad = Math.max(1, numero(p.cantidad))
       const precioOriginal = numero(p.precio_unitario ?? p.precio)
-
       let precioActual = precioOriginal
-      if (tamanoId > 0 && modalidad && escalasData.length > 0) {
+      if (tamanoId > 0 && modalidad && escalas.length > 0) {
         const desdeEscala = obtenerPrecioPorEscala(
-          escalasData,
+          escalas,
           tamanoId,
           modalidad,
           cantidad
         )
-        // Only use escala price if found; keep original otherwise
         if (desdeEscala > 0) precioActual = desdeEscala
       }
-
       return {
         uid: `orig-${i}-${p.producto_id ?? i}`,
         producto_id: p.producto_id ?? p.id,
@@ -384,21 +447,120 @@ export default function MisPedidosPage() {
       }
     })
 
-    setVProductos(productosPreparados)
-
-    const totalInicial = productosPreparados.reduce(
-      (a, p) => a + p.precio_actual * p.cantidad,
-      0
-    )
-    setVAnticipo(String(Math.round(totalInicial * 0.5)))
-
+    poblarModal(pedidoActivo, escalas, productosPreparados)
     setCargandoModal(false)
   }
 
   const cerrarModalVolver = () => {
     setModalVolverAbierto(false)
     setErrorModal("")
-    setPickerAbierto(false)
+  }
+
+  // ── Draft: save & go to catalog ──────────────────────────────────────────────
+
+  const guardarBorrador = () => {
+    if (!pedidoActivo) return
+    const draft: ReorderDraft = {
+      pedidoOriginal: pedidoActivo,
+      form: {
+        nombre: vNombre,
+        telefono: vTelefono,
+        email: vEmail,
+        municipio: vMunicipio,
+        lugarEntrega: vLugarEntrega,
+        fecha: vFecha,
+        notas: vNotas,
+        anticipo: vAnticipo,
+      },
+      productos: vProductos,
+      expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+    }
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+  }
+
+  const irAlCatalogo = () => {
+    guardarBorrador()
+    cerrarModalVolver()
+    window.location.href = "/catalogo"
+  }
+
+  // ── Draft: discard ───────────────────────────────────────────────────────────
+
+  const descartarBorrador = () => {
+    localStorage.removeItem(DRAFT_KEY)
+    setDraftGuardado(null)
+  }
+
+  // ── Draft: recover ───────────────────────────────────────────────────────────
+
+  const recuperarBorrador = async () => {
+    if (!draftGuardado) return
+    setRecuperandoDraft(true)
+
+    // Fetch current escalas for price recalculation
+    const { data: escData } = await supabase.from("escalas").select("*")
+    const escalas = (escData ?? []) as Escala[]
+
+    // Convert any cart items to ProductoModal and merge with draft products
+    let itemsCarrito: ProductoModal[] = []
+    try {
+      const carritoBruto: any[] = JSON.parse(
+        localStorage.getItem("carrito") || "[]"
+      )
+      itemsCarrito = carritoBruto.map((item, i) =>
+        convertirItemCarrito(item, i, escalas)
+      )
+    } catch {
+      // malformed cart — ignore
+    }
+
+    const productosFusionados = [
+      ...draftGuardado.productos,
+      ...itemsCarrito,
+    ]
+
+    // Restore all form state
+    const f = draftGuardado.form
+    setVNombre(f.nombre)
+    setVTelefono(f.telefono)
+    setVEmail(f.email)
+    setVMunicipio(f.municipio)
+    setVLugarEntrega(f.lugarEntrega)
+    setVFecha(f.fecha)
+    setVNotas(f.notas)
+    setVAnticipo(f.anticipo)
+    setVProductos(productosFusionados)
+    setEscalasModal(escalas)
+    setErrorModal("")
+
+    // Recalculate anticipo suggestion based on merged products
+    const totalFusionado = productosFusionados.reduce(
+      (a, p) => a + p.precio_actual * p.cantidad,
+      0
+    )
+    if (!f.anticipo || f.anticipo === "0") {
+      setVAnticipo(String(Math.round(totalFusionado * 0.5)))
+    }
+
+    setPedidoActivo(draftGuardado.pedidoOriginal)
+
+    // Clean up
+    localStorage.removeItem(DRAFT_KEY)
+    setDraftGuardado(null)
+    setRecuperandoDraft(false)
+
+    // Open modal
+    setModalVolverAbierto(true)
+
+    if (itemsCarrito.length > 0) {
+      mostrarToast(
+        `${itemsCarrito.length} producto${
+          itemsCarrito.length > 1 ? "s" : ""
+        } del carrito agregado${
+          itemsCarrito.length > 1 ? "s" : ""
+        } al pedido.`
+      )
+    }
   }
 
   // ── Modal: product edits ─────────────────────────────────────────────────────
@@ -412,8 +574,11 @@ export default function MisPedidosPage() {
       prev.map((p) => {
         if (p.uid !== uid) return p
         const nuevaCantidad =
-          campo === "cantidad" ? Math.max(1, numero(valor) || 1) : p.cantidad
-        const nuevaModalidad = campo === "modalidad" ? valor : p.modalidad
+          campo === "cantidad"
+            ? Math.max(1, numero(valor) || 1)
+            : p.cantidad
+        const nuevaModalidad =
+          campo === "modalidad" ? valor : p.modalidad
         let precioActual = p.precio_original
 
         if (p.tamano_id > 0 && nuevaModalidad && escalasModal.length > 0) {
@@ -423,8 +588,7 @@ export default function MisPedidosPage() {
             nuevaModalidad,
             nuevaCantidad
           )
-          if (desdeEscala > 0) precioActual = desdeEscala
-          else if (nuevaModalidad) precioActual = 0 // escala missing → warn
+          precioActual = desdeEscala > 0 ? desdeEscala : 0
         }
 
         return {
@@ -439,47 +603,6 @@ export default function MisPedidosPage() {
 
   const quitarProducto = (uid: string) => {
     setVProductos((prev) => prev.filter((p) => p.uid !== uid))
-  }
-
-  // ── Modal: add new product ───────────────────────────────────────────────────
-
-  const resetPicker = () => {
-    setPProductoId("")
-    setPTamanoId("")
-    setPModalidad("")
-    setPCantidad("1")
-  }
-
-  const agregarProducto = () => {
-    const producto = productosCat.find((p) => String(p.id) === pProductoId)
-    const tamano = tamanosCat.find((t) => String(t.id) === pTamanoId)
-    if (!producto || !tamano || !pModalidad) return
-
-    const tamanoId = Number(pTamanoId)
-    const cantidad = Math.max(1, numero(pCantidad) || 1)
-    const precioActual = obtenerPrecioPorEscala(
-      escalasModal,
-      tamanoId,
-      pModalidad,
-      cantidad
-    )
-
-    const nuevo: ProductoModal = {
-      uid: `new-${Date.now()}`,
-      producto_id: producto.id,
-      nombre: producto.nombre,
-      tamano: tamano.nombre,
-      tamano_id: tamanoId,
-      modalidad: pModalidad,
-      cantidad,
-      precio_original: 0,
-      precio_actual: precioActual,
-      imagenes: producto.imagenes ?? [],
-    }
-
-    setVProductos((prev) => [...prev, nuevo])
-    resetPicker()
-    setPickerAbierto(false)
   }
 
   // ── Modal: save new order ────────────────────────────────────────────────────
@@ -574,7 +697,7 @@ export default function MisPedidosPage() {
       return
     }
 
-    // Close modal, refresh list, go to step 2
+    // Success: close modal, refresh list, go to step 2
     setModalVolverAbierto(false)
     setPedidoActivo(null)
 
@@ -592,6 +715,7 @@ export default function MisPedidosPage() {
 
   return (
     <div className="w-full min-h-[70vh]">
+
       {/* Toast */}
       {toastOn && (
         <div
@@ -610,6 +734,37 @@ export default function MisPedidosPage() {
       )}
 
       <div className="max-w-[720px] mx-auto px-4 py-8 md:py-12">
+
+        {/* Draft recovery banner */}
+        {draftGuardado && (
+          <div className="bg-[#E0D5FF] border border-[#D7C3FF] rounded-2xl p-4 mb-8 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="font-black text-[#6D4AA8] text-base">
+                🔁 Tienes un pedido en borrador
+              </p>
+              <p className="text-sm text-[#6D4AA8] opacity-75 mt-0.5">
+                Basado en TCH-{draftGuardado.pedidoOriginal.id} ·{" "}
+                {draftGuardado.productos.length} producto
+                {draftGuardado.productos.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto flex-shrink-0">
+              <button
+                onClick={recuperarBorrador}
+                disabled={recuperandoDraft}
+                className="flex-1 sm:flex-none bg-[#6D4AA8] text-white font-black rounded-2xl px-4 py-2.5 text-sm hover:opacity-90 transition disabled:opacity-60"
+              >
+                {recuperandoDraft ? "Cargando…" : "Continuar pedido"}
+              </button>
+              <button
+                onClick={descartarBorrador}
+                className="bg-white text-[#6D4AA8] font-black rounded-2xl px-4 py-2.5 text-sm hover:opacity-80 transition border border-[#D7C3FF]"
+              >
+                Descartar
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ── Paso 1: Buscar ── */}
         {paso === 1 && (
@@ -636,7 +791,9 @@ export default function MisPedidosPage() {
                   setTelefonoInput(e.target.value)
                   setError("")
                 }}
-                onKeyDown={(e) => { if (e.key === "Enter") buscarPedidos() }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") buscarPedidos()
+                }}
                 placeholder="Ej: 2721234567"
                 className="input-premium mb-2"
                 autoFocus
@@ -659,7 +816,10 @@ export default function MisPedidosPage() {
 
             <p className="text-center text-sm text-gray-400 mt-8">
               ¿Quieres hacer un nuevo pedido?{" "}
-              <Link href="/catalogo" className="font-bold text-cyan-500 underline">
+              <Link
+                href="/catalogo"
+                className="font-bold text-cyan-500 underline"
+              >
                 Ver catálogo
               </Link>
             </p>
@@ -681,7 +841,9 @@ export default function MisPedidosPage() {
             </h1>
             <p className="text-gray-500 text-sm mb-8">
               {pedidos.length}{" "}
-              {pedidos.length === 1 ? "pedido encontrado" : "pedidos encontrados"}{" "}
+              {pedidos.length === 1
+                ? "pedido encontrado"
+                : "pedidos encontrados"}{" "}
               · {normalizarTelefono(telefonoInput)}
             </p>
 
@@ -740,7 +902,10 @@ export default function MisPedidosPage() {
 
             <p className="text-center text-sm text-gray-400 mt-10">
               ¿Quieres hacer un nuevo pedido?{" "}
-              <Link href="/catalogo" className="font-bold text-cyan-500 underline">
+              <Link
+                href="/catalogo"
+                className="font-bold text-cyan-500 underline"
+              >
                 Ver catálogo
               </Link>
             </p>
@@ -748,168 +913,208 @@ export default function MisPedidosPage() {
         )}
 
         {/* ── Paso 3: Detalle ── */}
-        {paso === 3 && pedidoActivo && (() => {
-          const p = pedidoActivo
-          const bp = badgePago(p)
-          const be = badgeEntrega(p)
-          const total = numero(p.total)
-          const anticipo = numero(p.anticipo)
-          const abono = numero(p.abono ?? 0)
-          const saldo = calcularSaldo(p)
-          const productos: any[] = Array.isArray(p.productos) ? p.productos : []
+        {paso === 3 &&
+          pedidoActivo &&
+          (() => {
+            const p = pedidoActivo
+            const bp = badgePago(p)
+            const be = badgeEntrega(p)
+            const total = numero(p.total)
+            const anticipo = numero(p.anticipo)
+            const abono = numero(p.abono ?? 0)
+            const saldo = calcularSaldo(p)
+            const productos: any[] = Array.isArray(p.productos)
+              ? p.productos
+              : []
 
-          return (
-            <div>
-              <button
-                onClick={volverALista}
-                className="inline-flex items-center gap-2 text-cyan-600 font-bold text-sm mb-8 hover:opacity-70 transition"
-              >
-                ← Mis pedidos
-              </button>
+            return (
+              <div>
+                <button
+                  onClick={volverALista}
+                  className="inline-flex items-center gap-2 text-cyan-600 font-bold text-sm mb-8 hover:opacity-70 transition"
+                >
+                  ← Mis pedidos
+                </button>
 
-              <div className="mb-8">
-                <div className="flex flex-wrap items-baseline gap-3 mb-1">
-                  <span className="text-2xl font-black text-gray-400">
-                    TCH-{p.id}
-                  </span>
-                  <h1 className="text-4xl md:text-6xl font-black text-cyan-500 leading-none">
-                    {p.cliente}
-                  </h1>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-3">
-                  <span className={`badge-pedido ${be.clase}`}>{be.label}</span>
-                  <span className={`badge-pedido ${bp.clase}`}>{bp.label}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
-                <InfoCard label="Teléfono" value={p.telefono} />
-                {p.email && <InfoCard label="Email" value={p.email} />}
-                {p.municipio && <InfoCard label="Municipio" value={p.municipio} />}
-                {p.lugar_entrega && (
-                  <InfoCard label="Lugar de entrega" value={p.lugar_entrega} />
-                )}
-                <InfoCard label="Fecha de entrega" value={formatearFecha(p.fecha)} />
-                <InfoCard label="Fecha de pedido" value={formatearFecha(p.created_at)} />
-              </div>
-
-              {p.notas && (
-                <div className="section-card mb-6">
-                  <div className="text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
-                    Notas
+                <div className="mb-8">
+                  <div className="flex flex-wrap items-baseline gap-3 mb-1">
+                    <span className="text-2xl font-black text-gray-400">
+                      TCH-{p.id}
+                    </span>
+                    <h1 className="text-4xl md:text-6xl font-black text-cyan-500 leading-none">
+                      {p.cliente}
+                    </h1>
                   </div>
-                  <p className="text-sm font-bold text-gray-600 leading-relaxed">
-                    {p.notas}
-                  </p>
-                </div>
-              )}
-
-              <div className="section-card mb-6">
-                <div className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">
-                  Productos · {productos.length}{" "}
-                  {productos.length === 1 ? "artículo" : "artículos"}
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <span className={`badge-pedido ${be.clase}`}>
+                      {be.label}
+                    </span>
+                    <span className={`badge-pedido ${bp.clase}`}>
+                      {bp.label}
+                    </span>
+                  </div>
                 </div>
 
-                <div className="flex flex-col gap-3">
-                  {productos.map((prod: any, i: number) => {
-                    const tamano = prod.tamano_nombre || prod.tamano || ""
-                    const detalles = [tamano, prod.modalidad]
-                      .filter(Boolean)
-                      .join(" · ")
-                    const precioUnit = numero(prod.precio_unitario || prod.precio)
-                    const sub = precioUnit * numero(prod.cantidad)
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+                  <InfoCard label="Teléfono" value={p.telefono} />
+                  {p.email && (
+                    <InfoCard label="Email" value={p.email} />
+                  )}
+                  {p.municipio && (
+                    <InfoCard label="Municipio" value={p.municipio} />
+                  )}
+                  {p.lugar_entrega && (
+                    <InfoCard
+                      label="Lugar de entrega"
+                      value={p.lugar_entrega}
+                    />
+                  )}
+                  <InfoCard
+                    label="Fecha de entrega"
+                    value={formatearFecha(p.fecha)}
+                  />
+                  <InfoCard
+                    label="Fecha de pedido"
+                    value={formatearFecha(p.created_at)}
+                  />
+                </div>
 
-                    return (
-                      <div
-                        key={i}
-                        className="flex items-center gap-3 bg-[#FFF8F5] rounded-2xl p-3"
-                      >
-                        {prod.imagenes?.[0] || prod.imagen ? (
-                          <img
-                            src={prod.imagenes?.[0] || prod.imagen}
-                            alt={prod.nombre}
-                            className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
-                          />
-                        ) : (
-                          <div className="w-14 h-14 rounded-xl bg-[#D9F5F8] flex items-center justify-center flex-shrink-0 text-cyan-500 font-black text-lg">
-                            {i + 1}
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="font-black text-cyan-600 truncate">
-                            {prod.nombre}
-                          </div>
-                          {detalles && (
-                            <div className="text-xs text-gray-500 mt-0.5">
-                              {detalles} · {numero(prod.cantidad)} pza.
+                {p.notas && (
+                  <div className="section-card mb-6">
+                    <div className="text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
+                      Notas
+                    </div>
+                    <p className="text-sm font-bold text-gray-600 leading-relaxed">
+                      {p.notas}
+                    </p>
+                  </div>
+                )}
+
+                <div className="section-card mb-6">
+                  <div className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">
+                    Productos · {productos.length}{" "}
+                    {productos.length === 1 ? "artículo" : "artículos"}
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    {productos.map((prod: any, i: number) => {
+                      const tamano =
+                        prod.tamano_nombre || prod.tamano || ""
+                      const detalles = [tamano, prod.modalidad]
+                        .filter(Boolean)
+                        .join(" · ")
+                      const precioUnit = numero(
+                        prod.precio_unitario || prod.precio
+                      )
+                      const sub = precioUnit * numero(prod.cantidad)
+
+                      return (
+                        <div
+                          key={i}
+                          className="flex items-center gap-3 bg-[#FFF8F5] rounded-2xl p-3"
+                        >
+                          {prod.imagenes?.[0] || prod.imagen ? (
+                            <img
+                              src={prod.imagenes?.[0] || prod.imagen}
+                              alt={prod.nombre}
+                              className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-14 h-14 rounded-xl bg-[#D9F5F8] flex items-center justify-center flex-shrink-0 text-cyan-500 font-black text-lg">
+                              {i + 1}
                             </div>
                           )}
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="font-black text-[#F49B93]">
-                            {moneda(sub)}
+                          <div className="flex-1 min-w-0">
+                            <div className="font-black text-cyan-600 truncate">
+                              {prod.nombre}
+                            </div>
+                            {detalles && (
+                              <div className="text-xs text-gray-500 mt-0.5">
+                                {detalles} · {numero(prod.cantidad)} pza.
+                              </div>
+                            )}
                           </div>
-                          <div className="text-xs text-gray-400 mt-0.5">
-                            {moneda(precioUnit)} c/u
+                          <div className="text-right flex-shrink-0">
+                            <div className="font-black text-[#F49B93]">
+                              {moneda(sub)}
+                            </div>
+                            <div className="text-xs text-gray-400 mt-0.5">
+                              {moneda(precioUnit)} c/u
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )
-                  })}
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
 
-              <div
-                className="rounded-[24px] p-5 mb-8 text-white"
-                style={{ background: "linear-gradient(135deg,#20B8C9 0%,#1AA8B8 100%)" }}
-              >
                 <div
-                  className={`grid gap-4 ${
-                    abono > 0 ? "grid-cols-2 md:grid-cols-4" : "grid-cols-3"
-                  }`}
+                  className="rounded-[24px] p-5 mb-8 text-white"
+                  style={{
+                    background:
+                      "linear-gradient(135deg,#20B8C9 0%,#1AA8B8 100%)",
+                  }}
                 >
-                  <TotalItem label="Total" value={moneda(total)} grande />
-                  <TotalItem label="Anticipo" value={moneda(anticipo)} />
-                  {abono > 0 && <TotalItem label="Abono" value={moneda(abono)} />}
-                  <TotalItem label="Saldo" value={moneda(saldo)} />
+                  <div
+                    className={`grid gap-4 ${
+                      abono > 0
+                        ? "grid-cols-2 md:grid-cols-4"
+                        : "grid-cols-3"
+                    }`}
+                  >
+                    <TotalItem
+                      label="Total"
+                      value={moneda(total)}
+                      grande
+                    />
+                    <TotalItem label="Anticipo" value={moneda(anticipo)} />
+                    {abono > 0 && (
+                      <TotalItem label="Abono" value={moneda(abono)} />
+                    )}
+                    <TotalItem label="Saldo" value={moneda(saldo)} />
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                  <button
+                    onClick={descargarPDF}
+                    disabled={generandoPDF}
+                    className="btn-primary flex-1 disabled:opacity-60"
+                  >
+                    {generandoPDF
+                      ? "Generando PDF…"
+                      : "Ver / Descargar PDF"}
+                  </button>
+
+                  <button
+                    onClick={enviarWhatsApp}
+                    className="flex-1 flex items-center justify-center gap-2 font-black text-white rounded-[18px] px-6 py-4"
+                    style={{ background: "#25D366" }}
+                  >
+                    <WhatsAppIcon />
+                    Enviar a TUCHIS
+                  </button>
+                </div>
+
                 <button
-                  onClick={descargarPDF}
-                  disabled={generandoPDF}
-                  className="btn-primary flex-1 disabled:opacity-60"
+                  onClick={abrirModalVolver}
+                  className="w-full bg-[#E0D5FF] text-[#6D4AA8] font-black rounded-[18px] px-6 py-4 hover:opacity-90 transition"
                 >
-                  {generandoPDF ? "Generando PDF…" : "Ver / Descargar PDF"}
+                  🔁 Volver a pedir
                 </button>
 
-                <button
-                  onClick={enviarWhatsApp}
-                  className="flex-1 flex items-center justify-center gap-2 font-black text-white rounded-[18px] px-6 py-4"
-                  style={{ background: "#25D366" }}
-                >
-                  <WhatsAppIcon />
-                  Enviar a TUCHIS
-                </button>
+                <p className="text-center text-sm text-gray-400 mt-8">
+                  ¿Quieres explorar más productos?{" "}
+                  <Link
+                    href="/catalogo"
+                    className="font-bold text-cyan-500 underline"
+                  >
+                    Ver catálogo
+                  </Link>
+                </p>
               </div>
-
-              <button
-                onClick={abrirModalVolver}
-                className="w-full bg-[#E0D5FF] text-[#6D4AA8] font-black rounded-[18px] px-6 py-4 hover:opacity-90 transition"
-              >
-                🔁 Volver a pedir
-              </button>
-
-              <p className="text-center text-sm text-gray-400 mt-8">
-                ¿Quieres explorar más productos?{" "}
-                <Link href="/catalogo" className="font-bold text-cyan-500 underline">
-                  Ver catálogo
-                </Link>
-              </p>
-            </div>
-          )
-        })()}
+            )
+          })()}
       </div>
 
       {/* ── Modal Volver a pedir ── */}
@@ -945,7 +1150,9 @@ export default function MisPedidosPage() {
             {cargandoModal ? (
               <div className="flex flex-col items-center gap-4 py-16 text-gray-400">
                 <div className="w-10 h-10 rounded-full border-4 border-[#D9F5F8] border-t-cyan-500 animate-spin" />
-                <p className="font-bold text-sm">Cargando datos del pedido…</p>
+                <p className="font-bold text-sm">
+                  Cargando datos del pedido…
+                </p>
               </div>
             ) : (
               <div className="space-y-8">
@@ -1045,33 +1252,25 @@ export default function MisPedidosPage() {
 
                 {/* ── Productos ── */}
                 <section>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">
-                      Productos
-                    </h3>
-                    <button
-                      onClick={() => {
-                        setPickerAbierto((v) => !v)
-                        resetPicker()
-                      }}
-                      className="text-xs font-black text-cyan-600 bg-[#D9F5F8] px-3 py-1.5 rounded-xl hover:opacity-80 transition"
-                    >
-                      + Agregar producto
-                    </button>
-                  </div>
+                  <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">
+                    Productos
+                  </h3>
 
-                  {/* Product list */}
                   {vProductos.length === 0 ? (
                     <p className="text-sm text-gray-400 font-bold text-center py-6">
-                      Sin productos. Agrega uno con el botón de arriba.
+                      Sin productos. Agrégalos desde el catálogo.
                     </p>
                   ) : (
-                    <div className="flex flex-col gap-3 mb-4">
+                    <div className="flex flex-col gap-3 mb-5">
                       {vProductos.map((prod) => {
                         const preciosCambiaron =
                           prod.precio_original > 0 &&
-                          Math.abs(prod.precio_actual - prod.precio_original) > 0.01
-                        const sinPrecio = prod.precio_actual === 0 && prod.tamano_id > 0
+                          Math.abs(
+                            prod.precio_actual - prod.precio_original
+                          ) > 0.01
+                        const sinPrecio =
+                          prod.precio_actual === 0 &&
+                          prod.tamano_id > 0
 
                         return (
                           <div
@@ -1079,7 +1278,6 @@ export default function MisPedidosPage() {
                             className="bg-[#FFF8F5] border border-[#F5D3CD] rounded-2xl p-4"
                           >
                             <div className="flex items-start gap-3">
-                              {/* Image / number */}
                               {prod.imagenes[0] ? (
                                 <img
                                   src={prod.imagenes[0]}
@@ -1105,7 +1303,9 @@ export default function MisPedidosPage() {
                                     )}
                                   </div>
                                   <button
-                                    onClick={() => quitarProducto(prod.uid)}
+                                    onClick={() =>
+                                      quitarProducto(prod.uid)
+                                    }
                                     className="text-xs font-black text-red-400 bg-red-50 px-2 py-1 rounded-lg hover:opacity-80 flex-shrink-0"
                                   >
                                     Quitar
@@ -1132,7 +1332,10 @@ export default function MisPedidosPage() {
                                           )
                                         }
                                         className="input-premium"
-                                        style={{ minHeight: 44, fontSize: 14 }}
+                                        style={{
+                                          minHeight: 44,
+                                          fontSize: 14,
+                                        }}
                                       >
                                         <option value="">— Elige —</option>
                                         {obtenerModalidadesDisponibles(
@@ -1166,12 +1369,14 @@ export default function MisPedidosPage() {
                                         )
                                       }
                                       className="input-premium"
-                                      style={{ minHeight: 44, fontSize: 14 }}
+                                      style={{
+                                        minHeight: 44,
+                                        fontSize: 14,
+                                      }}
                                     />
                                   </div>
                                 </div>
 
-                                {/* Price info */}
                                 <div className="flex flex-wrap items-center gap-3 mt-3">
                                   <div>
                                     <span className="text-xs text-gray-400">
@@ -1191,20 +1396,23 @@ export default function MisPedidosPage() {
                                   <span className="text-xs text-gray-400">
                                     Subtotal:{" "}
                                     <span className="font-black text-gray-700">
-                                      {moneda(prod.precio_actual * prod.cantidad)}
+                                      {moneda(
+                                        prod.precio_actual * prod.cantidad
+                                      )}
                                     </span>
                                   </span>
                                 </div>
 
-                                {/* Warnings */}
                                 {sinPrecio && (
                                   <p className="text-xs font-bold text-red-500 bg-red-50 rounded-xl px-3 py-2 mt-2">
-                                    Sin precio en escalas. Cambia la modalidad o contacta a TUCHIS.
+                                    Sin precio en escalas. Cambia la
+                                    modalidad o contacta a TUCHIS.
                                   </p>
                                 )}
                                 {preciosCambiaron && !sinPrecio && (
                                   <p className="text-xs font-bold text-[#8A6A00] bg-[#FFF0B8] border border-[#FFE28A] rounded-xl px-3 py-2 mt-2">
-                                    Precio actualizado respecto al pedido original.
+                                    Precio actualizado respecto al pedido
+                                    original.
                                   </p>
                                 )}
                               </div>
@@ -1215,126 +1423,17 @@ export default function MisPedidosPage() {
                     </div>
                   )}
 
-                  {/* Product picker */}
-                  {pickerAbierto && (
-                    <div className="bg-[#F5FFFE] border border-[#BEE9E8] rounded-2xl p-4">
-                      <p className="text-xs font-black uppercase tracking-widest text-cyan-600 mb-4">
-                        Agregar producto
-                      </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-xs font-bold text-gray-500 block mb-1">
-                            Producto
-                          </label>
-                          <select
-                            value={pProductoId}
-                            onChange={(e) => setPProductoId(e.target.value)}
-                            className="input-premium"
-                            style={{ fontSize: 14 }}
-                          >
-                            <option value="">Selecciona producto</option>
-                            {productosCat.map((p) => (
-                              <option key={p.id} value={String(p.id)}>
-                                {p.nombre}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-xs font-bold text-gray-500 block mb-1">
-                            Tamaño
-                          </label>
-                          <select
-                            value={pTamanoId}
-                            onChange={(e) => {
-                              setPTamanoId(e.target.value)
-                              setPModalidad("")
-                            }}
-                            className="input-premium"
-                            style={{ fontSize: 14 }}
-                          >
-                            <option value="">Selecciona tamaño</option>
-                            {tamanosConEscalas.map((t) => (
-                              <option key={t.id} value={String(t.id)}>
-                                {t.nombre}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-xs font-bold text-gray-500 block mb-1">
-                            Modalidad
-                          </label>
-                          <select
-                            value={pModalidad}
-                            onChange={(e) => setPModalidad(e.target.value)}
-                            className="input-premium"
-                            style={{ fontSize: 14 }}
-                            disabled={!pTamanoId}
-                          >
-                            <option value="">
-                              {pTamanoId
-                                ? "Selecciona modalidad"
-                                : "Elige tamaño primero"}
-                            </option>
-                            {modalidadesParaTamano.map((m) => (
-                              <option key={m} value={m}>
-                                {m}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-xs font-bold text-gray-500 block mb-1">
-                            Cantidad
-                          </label>
-                          <input
-                            type="number"
-                            min={1}
-                            value={pCantidad}
-                            onChange={(e) => setPCantidad(e.target.value)}
-                            className="input-premium"
-                            style={{ fontSize: 14 }}
-                          />
-                        </div>
-                      </div>
-
-                      {pProductoId && pTamanoId && pModalidad && (
-                        <p className="text-sm font-bold text-cyan-700 mt-3">
-                          Precio:{" "}
-                          {(() => {
-                            const precio = obtenerPrecioPorEscala(
-                              escalasModal,
-                              Number(pTamanoId),
-                              pModalidad,
-                              Math.max(1, numero(pCantidad))
-                            )
-                            return precio > 0 ? moneda(precio) : "Sin precio en escalas"
-                          })()}
-                        </p>
-                      )}
-
-                      <div className="flex gap-3 mt-4">
-                        <button
-                          onClick={agregarProducto}
-                          disabled={!pProductoId || !pTamanoId || !pModalidad}
-                          className="btn-primary disabled:opacity-50"
-                          style={{ padding: "10px 20px", fontSize: 14 }}
-                        >
-                          Agregar
-                        </button>
-                        <button
-                          onClick={() => {
-                            setPickerAbierto(false)
-                            resetPicker()
-                          }}
-                          className="bg-[#F5EEEC] text-gray-600 font-black rounded-2xl px-5 py-2 text-sm hover:opacity-80 transition"
-                        >
-                          Cancelar
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                  {/* Agregar productos → catalog */}
+                  <button
+                    onClick={irAlCatalogo}
+                    className="btn-primary w-full flex items-center justify-center gap-3 text-base"
+                  >
+                    <span className="text-xl">🛒</span>
+                    Agregar productos desde el catálogo
+                  </button>
+                  <p className="text-xs text-gray-400 text-center mt-2">
+                    Tu progreso se guarda automáticamente al salir.
+                  </p>
                 </section>
 
                 {/* ── Totales + Anticipo ── */}
@@ -1346,7 +1445,8 @@ export default function MisPedidosPage() {
                   <div
                     className="rounded-2xl p-4 text-white mb-4"
                     style={{
-                      background: "linear-gradient(135deg,#20B8C9 0%,#1AA8B8 100%)",
+                      background:
+                        "linear-gradient(135deg,#20B8C9 0%,#1AA8B8 100%)",
                     }}
                   >
                     <div className="grid grid-cols-3 gap-4 text-center">
@@ -1422,7 +1522,9 @@ export default function MisPedidosPage() {
                     disabled={guardandoNuevo}
                     className="btn-primary flex-1 disabled:opacity-60"
                   >
-                    {guardandoNuevo ? "Guardando…" : "Guardar nuevo pedido"}
+                    {guardandoNuevo
+                      ? "Guardando…"
+                      : "Guardar nuevo pedido"}
                   </button>
                   <button
                     onClick={cerrarModalVolver}
@@ -1433,7 +1535,8 @@ export default function MisPedidosPage() {
                 </div>
 
                 <p className="text-xs text-gray-400 text-center">
-                  Se creará un pedido nuevo. El pedido original no se modifica.
+                  Se creará un pedido nuevo. El pedido original no se
+                  modifica.
                 </p>
               </div>
             )}
@@ -1473,7 +1576,11 @@ function TotalItem({
       <div className="text-xs font-bold uppercase tracking-wider opacity-75 mb-1">
         {label}
       </div>
-      <div className={`font-black leading-none ${grande ? "text-3xl" : "text-xl"}`}>
+      <div
+        className={`font-black leading-none ${
+          grande ? "text-3xl" : "text-xl"
+        }`}
+      >
         {value}
       </div>
     </div>
