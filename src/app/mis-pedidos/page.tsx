@@ -652,6 +652,10 @@ export default function MisPedidosPage() {
       setErrorModal("El anticipo no puede ser mayor al total.")
       return
     }
+    if (totalModal > 0 && anticipoNum < totalModal * 0.5) {
+      setErrorModal("El anticipo mínimo es del 50% del total del pedido.")
+      return
+    }
 
     setGuardandoNuevo(true)
 
@@ -1225,13 +1229,16 @@ export default function MisPedidosPage() {
                       <label className="block text-xs font-black text-gray-500 mb-1 uppercase tracking-wide">
                         Lugar de entrega *
                       </label>
-                      <input
-                        type="text"
+                      <select
                         value={vLugarEntrega}
                         onChange={(e) => setVLugarEntrega(e.target.value)}
-                        placeholder="Domicilio, colonia…"
                         className="input-premium"
-                      />
+                      >
+                        <option value="">— Lugar de entrega —</option>
+                        <option value="Orizaba">Orizaba</option>
+                        <option value="Río Blanco">Río Blanco</option>
+                        <option value="Cd. Mendoza">Cd. Mendoza</option>
+                      </select>
                     </div>
                     <div>
                       <label className="block text-xs font-black text-gray-500 mb-1 uppercase tracking-wide">

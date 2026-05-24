@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { supabase } from "../../lib/supabase"
 import { generarPDF } from "./generarPDF"
-import AdminLogoutBtn from "../components/AdminLogoutBtn"
+import AdminSidebar from "../components/AdminSidebar"
 import {
   MODALIDADES,
   numero,
@@ -396,6 +396,10 @@ if (anticipoCapturado > total) {
 setErrorPedido("El anticipo no puede ser mayor al total del pedido")
 return
 }
+if (total > 0 && anticipoCapturado < total * 0.5) {
+setErrorPedido("El anticipo mínimo es del 50% del total del pedido.")
+return
+}
 const pedido = {
 cliente: nombre,
 telefono,
@@ -682,21 +686,7 @@ return (
 <div className="w-full">
 <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-6 md:py-10">
 <div className="flex flex-col lg:flex-row gap-8">
-<aside className="hidden lg:block w-full lg:w-[280px] lg:flex-shrink-0">
-  <div className="bg-white rounded-[32px] border border-[#F4D4CF] shadow-sm p-6 lg:sticky lg:top-28">
-    <h1 className="text-4xl md:text-5xl font-black text-[#FF5C8A]">TUCHIS</h1>
-    <p className="text-gray-500 mt-2 text-base">Admin Panel</p>
-    <div className="mt-8 flex flex-col gap-4">
-      <Link href="/admin" className="bg-[#FFE4EC] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Dashboard</Link>
-      <Link href="/pedido" className="bg-[#FFD6A8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Pedidos</Link>
-      <Link href="/admin/productos" className="bg-[#FFE0DD] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Productos</Link>
-      <Link href="/admin/categorias" className="bg-[#FFE9A8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Categorías</Link>
-      <Link href="/admin/tamanos" className="bg-[#E7D9FF] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Tamaños</Link>
-      <Link href="/admin/escalas" className="bg-[#E0D5FF] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Escalas</Link>
-      <AdminLogoutBtn />
-    </div>
-  </div>
-</aside>
+<AdminSidebar />
 <main className="flex-1 min-w-0">
 <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 <h2 className="text-5xl md:text-7xl font-black text-[#FF5C8A] leading-none break-words">

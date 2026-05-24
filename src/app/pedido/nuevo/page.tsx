@@ -221,6 +221,10 @@ export default function NuevoPedidoPage() {
       setErrorPedido("El anticipo no puede ser mayor al total del pedido")
       return
     }
+    if (total > 0 && anticipoCapturado < total * 0.5) {
+      setErrorPedido("El anticipo mínimo es del 50% del total del pedido.")
+      return
+    }
 
     setEnviando(true)
     const ok = await guardarPedido({
@@ -417,13 +421,16 @@ export default function NuevoPedidoPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="input-premium"
               />
-              <input
-                type="text"
-                placeholder="Lugar de entrega"
+              <select
                 value={lugarEntrega}
                 onChange={(e) => setLugarEntrega(e.target.value)}
                 className="input-premium"
-              />
+              >
+                <option value="">— Lugar de entrega —</option>
+                <option value="Orizaba">Orizaba</option>
+                <option value="Río Blanco">Río Blanco</option>
+                <option value="Cd. Mendoza">Cd. Mendoza</option>
+              </select>
               <input
                 type="text"
                 placeholder="¿Desde qué municipio nos visitas?"
