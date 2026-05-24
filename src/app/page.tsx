@@ -22,6 +22,7 @@ type ProductoPreview = {
   mas_vendido?: boolean
 }
 
+// Cycling pastel backgrounds for product image areas
 const CARD_BG = [
   "#FFE4EC",
   "#BFF3DF",
@@ -84,12 +85,7 @@ export default function Home() {
   return (
     <div className="min-h-screen">
 
-      {/* ── Hero ── */}
-      {/*
-        Image: public/images/hero-tuchis.png
-        Desktop: covers the right side, text on left with gradient overlay
-        Mobile: image anchored right, overlay opaque on left for readable text
-      */}
+      {/* ── Hero — full-cover background image ── */}
       <section
         className="rounded-[28px] md:rounded-[36px] mb-5 md:mb-8 overflow-hidden relative
                    min-h-[320px] sm:min-h-[380px] md:min-h-[440px] lg:min-h-[480px]"
@@ -111,7 +107,7 @@ export default function Home() {
           }}
         />
 
-        {/* Text + CTAs */}
+        {/* Text + desktop CTAs */}
         <div className="relative z-10 px-5 sm:px-8 lg:px-12 py-8 md:py-12 lg:py-16 max-w-[560px]">
           <p
             className="text-xs sm:text-sm font-black uppercase tracking-widest mb-3"
@@ -129,31 +125,48 @@ export default function Home() {
           </h1>
 
           <p
-            className="mt-3 lg:mt-4 text-sm sm:text-base lg:text-lg leading-relaxed"
+            className="mt-3 lg:mt-4 text-xs sm:text-sm md:text-base lg:text-lg leading-relaxed max-w-[30ch] sm:max-w-[36ch]"
             style={{ color: "#7D7288" }}
           >
             Alcancías listas para fiestas, regalos y momentos creativos.
             Elige tus personajes favoritos y arma tu pedido en minutos.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3 mt-6 lg:mt-8">
+          {/* Desktop CTAs */}
+          <div className="hidden sm:flex flex-wrap gap-3 mt-6 lg:mt-8">
             <Link
               href="/catalogo"
-              className="flex items-center justify-center gap-2 text-white font-black
-                         px-7 py-4 rounded-2xl text-base transition-all active:scale-[.97]"
-              style={{ background: "#FF5C8A", boxShadow: "0 8px 24px rgba(255,92,138,.35)" }}
+              className="flex items-center gap-2 text-white font-black px-6 py-3 lg:px-8 lg:py-4 rounded-2xl text-sm lg:text-base transition-all active:scale-[.97] shadow-lg"
+              style={{ background: "#FF5C8A", boxShadow: "0 8px 24px #FF5C8A44" }}
             >
               ✦ Ver catálogo
             </Link>
             <Link
               href="/mis-pedidos"
-              className="flex items-center justify-center gap-2 font-black
-                         px-7 py-4 rounded-2xl border-2 text-base bg-white/80 transition hover:bg-white"
+              className="flex items-center gap-2 font-black px-6 py-3 lg:px-8 lg:py-4 rounded-2xl border-2 text-sm lg:text-base transition hover:bg-white bg-white/60"
               style={{ color: "#3F334A", borderColor: "#E0D0D6" }}
             >
               📋 Consultar mis pedidos
             </Link>
           </div>
+        </div>
+
+        {/* Mobile CTAs */}
+        <div className="relative z-10 flex flex-col gap-3 px-5 pt-3 pb-6 sm:hidden">
+          <Link
+            href="/catalogo"
+            className="flex items-center justify-center gap-2 text-white font-black px-6 py-4 rounded-2xl text-base transition-all active:scale-[.97]"
+            style={{ background: "#FF5C8A", boxShadow: "0 6px 20px #FF5C8A44" }}
+          >
+            ✦ Ver catálogo
+          </Link>
+          <Link
+            href="/mis-pedidos"
+            className="flex items-center justify-center gap-2 font-black px-6 py-4 rounded-2xl border-2 text-base bg-white"
+            style={{ color: "#3F334A", borderColor: "#E0D0D6" }}
+          >
+            📋 Consultar mis pedidos
+          </Link>
         </div>
       </section>
 
@@ -240,8 +253,10 @@ export default function Home() {
                                transition-all hover:shadow-md hover:-translate-y-0.5"
                     style={{ borderColor: "#F0E6E6" }}
                   >
+                    {/* Image with pastel background */}
                     <div
-                      className="w-[72px] h-[72px] lg:w-[96px] lg:h-[96px] rounded-[12px] overflow-hidden flex-shrink-0"
+                      className="w-[72px] h-[72px] lg:w-[96px] lg:h-[96px] rounded-[12px]
+                                 overflow-hidden flex-shrink-0"
                       style={{ background: CARD_BG[i % CARD_BG.length] }}
                     >
                       <img
@@ -252,6 +267,7 @@ export default function Home() {
                       />
                     </div>
 
+                    {/* Text */}
                     <div className="min-w-0 flex-1">
                       <h3
                         className="font-black text-xs sm:text-sm lg:text-base leading-tight line-clamp-2"
@@ -283,10 +299,11 @@ export default function Home() {
                      justify-between gap-5 md:gap-8 relative overflow-hidden"
           style={{ background: "#FFE4EC" }}
         >
+          {/* Decorative blob */}
           <div
             aria-hidden
-            className="pointer-events-none absolute right-0 bottom-0 w-56 h-56 rounded-full opacity-30"
-            style={{ background: "#FF5C8A", filter: "blur(64px)", transform: "translate(40%,40%)" }}
+            className="pointer-events-none absolute right-0 bottom-0 w-48 h-48 rounded-full opacity-30"
+            style={{ background: "#FF5C8A", filter: "blur(60px)", transform: "translate(40%, 40%)" }}
           />
 
           <div className="flex items-center gap-4 relative">
@@ -298,7 +315,10 @@ export default function Home() {
               >
                 Crea momentos inolvidables con TUCHIS
               </h2>
-              <p className="text-sm md:text-base mt-1 text-center md:text-left" style={{ color: "#7D7288" }}>
+              <p
+                className="text-sm md:text-base mt-1 text-center md:text-left"
+                style={{ color: "#7D7288" }}
+              >
                 Arma tu pedido en minutos y recibe alcancías listas para pintar, regalar y disfrutar.
               </p>
             </div>
@@ -308,7 +328,7 @@ export default function Home() {
             href="/catalogo"
             className="relative flex-shrink-0 flex items-center gap-2 text-white font-black
                        px-8 py-4 rounded-2xl text-base transition-all active:scale-[.97] whitespace-nowrap"
-            style={{ background: "#FF5C8A", boxShadow: "0 8px 24px rgba(255,92,138,.35)" }}
+            style={{ background: "#FF5C8A", boxShadow: "0 8px 24px #FF5C8A44" }}
           >
             ✦ Ver catálogo completo
           </Link>
