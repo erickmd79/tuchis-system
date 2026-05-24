@@ -24,9 +24,6 @@ const formatFecha = (valor?: string): string => {
   })
 }
 
-const imagenProducto = (p: any): string =>
-  p.imagen || p.imagenes?.[0] || ""
-
 // Pastel badge colors
 const colorPago = (estado: string) => {
   if (estado === "pagado")
@@ -81,80 +78,55 @@ function buildHTML(pedido: any, origen: string): string {
     ? pedido.productos
     : []
 
-  // ── product rows ──
-  const productosHTML = productos
-    .map((p: any, i: number) => {
-      const img = imagenProducto(p)
-      const tamanoLabel = p.tamano_nombre || p.tamano || ""
-      const detalles =
-        [tamanoLabel, p.modalidad].filter(Boolean).join(" · ") ||
-        "Sin especificar"
-      const precioUnitario = numero(p.precio_unitario || p.precio)
-      const subtotal = precioUnitario * numero(p.cantidad)
+  // ── product table ──
+  const thCell = (align: string) =>
+    `text-align:${align};padding:8px 10px;font-weight:900;font-size:11px;` +
+    `text-transform:uppercase;letter-spacing:.06em;color:#3F334A;` +
+    `border-bottom:2px solid #FFD0DC;white-space:nowrap;`
 
-      return `
-        <div style="
-          display:flex;
-          align-items:center;
-          gap:14px;
-          background:white;
-          border:1px solid #F5D3CD;
-          border-radius:14px;
-          padding:12px 16px;
-          margin-bottom:8px;
-        ">
-          ${
-            img
-              ? `<img
-                  src="${esc(img)}"
-                  crossorigin="anonymous"
-                  style="
-                    width:60px;
-                    height:60px;
-                    border-radius:10px;
-                    object-fit:cover;
-                    flex-shrink:0;
-                    background:#F5EEEC;
-                  "
-                  onerror="this.style.display='none';document.getElementById('ph-${i}').style.display='flex';"
-                />`
-              : ""
-          }
-          <div id="ph-${i}" style="
-            width:60px;
-            height:60px;
-            border-radius:10px;
-            background:#D9F5F8;
-            display:${img ? "none" : "flex"};
-            align-items:center;
-            justify-content:center;
-            font-size:20px;
-            font-weight:900;
-            color:#20B8C9;
-            flex-shrink:0;
-            line-height:1;
-          ">${i + 1}</div>
-          <div style="flex:1;min-width:0;">
-            <div style="
-              font-size:15px;
-              font-weight:900;
-              color:#20B8C9;
-              white-space:nowrap;
-              overflow:hidden;
-              text-overflow:ellipsis;
-            ">${esc(p.nombre)}</div>
-            <div style="font-size:12px;color:#888;margin-top:3px;">
-              ${esc(detalles)} · ${numero(p.cantidad)} pza.
-            </div>
-          </div>
-          <div style="text-align:right;flex-shrink:0;">
-            <div style="font-size:18px;font-weight:900;color:#F49B93;">${moneda(subtotal)}</div>
-            <div style="font-size:11px;color:#bbb;margin-top:2px;">${moneda(precioUnitario)} c/u</div>
-          </div>
-        </div>
-      `
-    })
-    .join("")
+  const productosHTML = (() => {
+    if (productos.length === 0) return ""
+
+    const filas = productos
+      .map((p: any, i: number) => {
+        const tamanoLabel = esc(p.tamano_nombre || p.tamano || "—")
+        const modalidad = esc(p.modalidad || "—")
+        const precioUnitario = numero(p.precio_unitario || p.precio)
+        const subtotal = precioUnitario * numero(p.cantidad)
+        const rowBg = i % 2 === 0 ? "#FFFFFF" : "#FFF5F7"
+        const td = (align: string, extra = "") =>
+          `text-align:${align};padding:7px 10px;font-size:13px;` +
+          `color:#3F334A;border-bottom:1px solid #FFE8ED;vertical-align:middle;${extra}`
+
+        return `
+          <tr style="background:${rowBg};">
+            <td style="${td("center", "font-weight:900;")}">${numero(p.cantidad)}</td>
+            <td style="${td("left", "font-weight:900;word-break:break-word;")}">${esc(p.nombre)}</td>
+            <td style="${td("left", "color:#999;font-size:12px;")}">${tamanoLabel}</td>
+            <td style="${td("left", "color:#999;font-size:12px;")}">${modalidad}</td>
+            <td style="${td("right", "white-space:nowrap;font-size:12px;color:#666;")}">${moneda(precioUnitario)}</td>
+            <td style="${td("right", "font-weight:900;color:#F49B93;white-space:nowrap;")}">${moneda(subtotal)}</td>
+          </tr>`
+      })
+      .join("")
+
+    return `
+      <div style="border:1px solid #FFD0DC;border-radius:14px;overflow:hidden;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="background:#FFE4EC;">
+              <th style="${thCell("center")}">Pzas.</th>
+              <th style="${thCell("left")}">Producto</th>
+              <th style="${thCell("left")}">Tamaño</th>
+              <th style="${thCell("left")}">Modalidad</th>
+              <th style="${thCell("right")}">Precio c/u</th>
+              <th style="${thCell("right")}">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>${filas}</tbody>
+        </table>
+      </div>`
+  })()
 
   // ── info card helper ──
   const card = (label: string, value: string) => `
