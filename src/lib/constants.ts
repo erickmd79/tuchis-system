@@ -1,6 +1,6 @@
-// Admin WhatsApp number (digits only, with country code, no "+").
-// To change it: update NEXT_PUBLIC_ADMIN_WHATSAPP in .env.local
-// (or in the Vercel dashboard under Settings → Environment Variables).
+// ─── Admin WhatsApp ────────────────────────────────────────────────────────
+// To change the number: set NEXT_PUBLIC_ADMIN_WHATSAPP in .env.local
+// Format: digits only, with country code, no "+" (e.g. "5212721112430")
 export const ADMIN_WHATSAPP =
   process.env.NEXT_PUBLIC_ADMIN_WHATSAPP ?? "5212721112430"
 
