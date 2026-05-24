@@ -22,21 +22,36 @@ type ProductoPreview = {
   mas_vendido?: boolean
 }
 
+// Cycling pastel backgrounds for product image areas
+const CARD_BG = [
+  "#FFE4EC",
+  "#BFF3DF",
+  "#EFE9FF",
+  "#FFD8C2",
+  "#FFECA8",
+  "#FFE4EC",
+  "#EFE9FF",
+  "#BFF3DF",
+]
+
 const BENEFICIOS = [
   {
-    icon: "🎨",
+    icon: "✏️",
+    bg: "#BFF3DF",
     title: "Personaliza tu pedido",
-    desc: "Escoge personajes, colores y modalidades a tu gusto.",
+    desc: "Elige, combina y crea alcancías únicas.",
   },
   {
-    icon: "📦",
+    icon: "🪙",
+    bg: "#FFD8C2",
     title: "Precios por volumen",
-    desc: "Descuentos automáticos según la cantidad que pidas.",
+    desc: "Más cantidad, mejor precio para ti.",
   },
   {
-    icon: "🎉",
+    icon: "🎈",
+    bg: "#EFE9FF",
     title: "Ideal para eventos",
-    desc: "Fiestas, bautizos, bodas y mucho más con tu sello único.",
+    desc: "Perfectas para fiestas, talleres y regalos.",
   },
 ]
 
@@ -45,6 +60,7 @@ export default function Home() {
   const [escalas, setEscalas] = useState<Escala[]>([])
   const [tamanos, setTamanos] = useState<{ id: number; nombre: string }[]>([])
   const [cargando, setCargando] = useState(true)
+  const [heroError, setHeroError] = useState(false)
 
   useEffect(() => {
     const cargarDatos = async () => {
@@ -68,180 +84,229 @@ export default function Home() {
   }, [])
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#FFF7F4]">
 
       {/* ── Hero ── */}
-      <section className="py-10 md:py-16">
-        <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
+      <section
+        className="rounded-[28px] md:rounded-[36px] mb-5 md:mb-8 overflow-hidden relative"
+        style={{
+          background: "linear-gradient(135deg, #FFE4EC 0%, #FFF0F4 55%, #FFF7F4 100%)",
+        }}
+      >
+        {/* Soft decorative blob */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-0 right-0 w-96 h-96 rounded-full opacity-40"
+          style={{
+            background: "#FFD8C2",
+            filter: "blur(80px)",
+            transform: "translate(30%, -30%)",
+          }}
+        />
 
-          <div className="flex-1 text-center lg:text-left">
-            <p className="text-sm font-black uppercase tracking-widest text-[#F49B93] mb-3">
-              Alcancías artesanales
-            </p>
+        {/* Content grid: text | image */}
+        <div className="grid grid-cols-2 lg:grid-cols-[1fr_460px] items-end gap-2 lg:gap-0 px-5 sm:px-8 lg:px-12 pt-8 lg:pt-12">
 
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-[#20B8C9] leading-[1.05]">
-              Imagina, pinta y disfruta con TUCHIS
+          {/* Left: text + desktop CTAs */}
+          <div className="flex flex-col pb-6 lg:pb-12">
+            <h1
+              className="font-black leading-[1.05] text-[1.6rem] sm:text-4xl md:text-5xl lg:text-6xl"
+              style={{ color: "#3F334A" }}
+            >
+              Imagina, pinta y disfruta con{" "}
+              <span style={{ color: "#FF5C8A" }}>TUCHIS</span>
             </h1>
 
-            <p className="text-gray-500 text-lg md:text-xl mt-5 max-w-xl mx-auto lg:mx-0">
+            <p
+              className="mt-3 lg:mt-4 text-xs sm:text-sm md:text-base lg:text-lg leading-relaxed max-w-[30ch] sm:max-w-[36ch]"
+              style={{ color: "#7D7288" }}
+            >
               Alcancías listas para fiestas, regalos y momentos creativos.
               Elige tus personajes favoritos y arma tu pedido en minutos.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 mt-8 justify-center lg:justify-start">
+            {/* Desktop CTAs */}
+            <div className="hidden sm:flex flex-wrap gap-3 mt-6 lg:mt-8">
               <Link
                 href="/catalogo"
-                className="bg-[#20B8C9] text-white px-8 py-4 rounded-2xl font-black
-                           text-lg hover:bg-[#17A7B8] active:scale-[.97] transition-all
-                           text-center shadow-lg shadow-cyan-200/60"
+                className="flex items-center gap-2 text-white font-black px-6 py-3 lg:px-8 lg:py-4 rounded-2xl text-sm lg:text-base transition-all active:scale-[.97] shadow-lg"
+                style={{ background: "#FF5C8A", boxShadow: "0 8px 24px #FF5C8A44" }}
               >
-                Ver catálogo
+                ✦ Ver catálogo
               </Link>
-
               <Link
                 href="/mis-pedidos"
-                className="bg-white text-[#20B8C9] border-2 border-[#20B8C9] px-8 py-4
-                           rounded-2xl font-black text-lg hover:bg-[#D9F5F8] transition
-                           text-center"
+                className="flex items-center gap-2 font-black px-6 py-3 lg:px-8 lg:py-4 rounded-2xl border-2 text-sm lg:text-base transition hover:bg-white bg-white/60"
+                style={{ color: "#3F334A", borderColor: "#E0D0D6" }}
               >
-                Consultar mis pedidos
+                📋 Consultar mis pedidos
               </Link>
             </div>
           </div>
 
-          {/* Decorative pastel blocks (desktop only) */}
-          <div className="hidden lg:flex gap-4 flex-shrink-0" aria-hidden>
-            <div className="flex flex-col gap-4">
-              <div className="w-[180px] h-[200px] bg-[#FFE0DD] rounded-[32px]" />
-              <div className="w-[180px] h-[120px] bg-[#D9F5F8] rounded-[32px]" />
-            </div>
-            <div className="flex flex-col gap-4 mt-8">
-              <div className="w-[180px] h-[120px] bg-[#FFF0B8] rounded-[32px]" />
-              <div className="w-[180px] h-[200px] bg-[#E0D5FF] rounded-[32px]" />
-            </div>
+          {/* Right: hero image */}
+          <div className="flex items-end justify-center">
+            {!heroError ? (
+              <img
+                src="/images/hero-tuchis.png"
+                alt="Alcancías TUCHIS — personajes para fiestas y regalos"
+                onError={() => setHeroError(true)}
+                className="w-full object-contain object-bottom drop-shadow-xl"
+                style={{ maxWidth: "460px", maxHeight: "400px" }}
+              />
+            ) : (
+              /* Placeholder until hero-tuchis.png is uploaded to public/images/ */
+              <div
+                className="w-full max-w-[220px] lg:max-w-[360px] aspect-square rounded-[28px]
+                           flex flex-col items-center justify-center gap-3 mb-6"
+                style={{ background: "#FFE4EC" }}
+              >
+                <span className="text-5xl">🪆</span>
+                <p
+                  className="text-[10px] sm:text-xs font-bold text-center px-4"
+                  style={{ color: "#7D7288" }}
+                >
+                  Coloca la imagen en<br />
+                  <code className="font-mono">public/images/hero-tuchis.png</code>
+                </p>
+              </div>
+            )}
           </div>
+        </div>
 
+        {/* Mobile CTAs (below image) */}
+        <div className="flex flex-col gap-3 px-5 pt-3 pb-6 sm:hidden">
+          <Link
+            href="/catalogo"
+            className="flex items-center justify-center gap-2 text-white font-black px-6 py-4 rounded-2xl text-base transition-all active:scale-[.97]"
+            style={{ background: "#FF5C8A", boxShadow: "0 6px 20px #FF5C8A44" }}
+          >
+            ✦ Ver catálogo
+          </Link>
+          <Link
+            href="/mis-pedidos"
+            className="flex items-center justify-center gap-2 font-black px-6 py-4 rounded-2xl border-2 text-base bg-white"
+            style={{ color: "#3F334A", borderColor: "#E0D0D6" }}
+          >
+            📋 Consultar mis pedidos
+          </Link>
         </div>
       </section>
 
       {/* ── Beneficios ── */}
-      <section className="pb-12 md:pb-16">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {BENEFICIOS.map(({ icon, title, desc }) => (
+      <section className="grid grid-cols-3 gap-3 md:gap-4 mb-5 md:mb-8">
+        {BENEFICIOS.map(({ icon, bg, title, desc }) => (
+          <div
+            key={title}
+            className="bg-white rounded-[18px] md:rounded-[24px] border p-3 sm:p-4 md:p-5
+                       flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4"
+            style={{ borderColor: "#F0E6E6" }}
+          >
             <div
-              key={title}
-              className="bg-white rounded-[28px] border border-[#F4D4CF] p-6 flex flex-col gap-3"
+              className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full flex-shrink-0
+                         flex items-center justify-center text-base sm:text-lg md:text-xl"
+              style={{ background: bg }}
             >
-              <span className="text-3xl">{icon}</span>
-              <h3 className="font-black text-lg text-[#20B8C9]">{title}</h3>
-              <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
+              {icon}
             </div>
-          ))}
-        </div>
+            <div>
+              <h3
+                className="font-black text-[10px] sm:text-xs md:text-sm lg:text-base leading-tight"
+                style={{ color: "#3F334A" }}
+              >
+                {title}
+              </h3>
+              <p
+                className="hidden sm:block text-[10px] sm:text-xs md:text-sm mt-0.5 leading-relaxed"
+                style={{ color: "#7D7288" }}
+              >
+                {desc}
+              </p>
+            </div>
+          </div>
+        ))}
       </section>
 
       {/* ── Productos destacados ── */}
-      <section className="pb-12 md:pb-16">
-        <div className="flex items-end justify-between gap-4 mb-6 md:mb-8">
-          <h2 className="text-3xl md:text-5xl font-black text-[#20B8C9]">
-            Nuestras alcancías
+      <section className="mb-5 md:mb-8">
+        <div className="flex items-center justify-between gap-4 mb-4 md:mb-6">
+          <h2
+            className="text-xl sm:text-2xl md:text-4xl font-black"
+            style={{ color: "#3F334A" }}
+          >
+            Nuestras alcancías ✨
           </h2>
           <Link
             href="/catalogo"
-            className="text-sm font-black text-[#20B8C9] hover:underline whitespace-nowrap"
+            className="text-xs sm:text-sm font-black whitespace-nowrap hover:underline"
+            style={{ color: "#FF5C8A" }}
           >
             Ver todas →
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {cargando
             ? Array.from({ length: 8 }).map((_, i) => (
                 <div
                   key={i}
-                  className="bg-white rounded-[22px] overflow-hidden border border-[#F8D6D0]"
+                  className="bg-white rounded-[16px] border p-3 flex gap-3 items-center"
+                  style={{ borderColor: "#F0E6E6" }}
                 >
-                  <div className="aspect-square skeleton-shimmer" />
-                  <div className="p-4 space-y-3">
-                    <div className="h-3 skeleton-shimmer rounded-full w-1/3" />
-                    <div className="h-5 skeleton-shimmer rounded-full w-3/4" />
-                    <div className="h-8 skeleton-shimmer rounded-full w-1/2 mt-2" />
-                    <div className="h-12 skeleton-shimmer rounded-2xl mt-3" />
+                  <div className="w-[72px] h-[72px] lg:w-[96px] lg:h-[96px] rounded-[12px] skeleton-shimmer flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 skeleton-shimmer rounded-full w-3/4" />
+                    <div className="h-3 skeleton-shimmer rounded-full w-1/2" />
+                    <div className="h-6 skeleton-shimmer rounded-full w-2/3" />
                   </div>
                 </div>
               ))
-            : productos.map((producto) => {
+            : productos.map((producto, i) => {
                 const tamanoId = Number(producto.tamano_id) || 0
                 const precioDesde =
                   tamanoId > 0 && escalas.length > 0
                     ? obtenerPrecioDesde(escalas, tamanoId)
                     : numero(producto.precio_menudeo || producto.precio || 0)
-                const tamanoNombre =
-                  tamanoId > 0
-                    ? (tamanos.find((t) => t.id === tamanoId)?.nombre ?? "")
-                    : ""
 
                 return (
                   <Link
                     key={producto.id}
                     href="/catalogo"
-                    className="bg-white rounded-[22px] md:rounded-[26px] overflow-hidden
-                               shadow-md border border-[#F8D6D0] product-card-hover block"
+                    className="bg-white rounded-[16px] border p-3 flex items-center gap-3
+                               transition-all hover:shadow-md hover:-translate-y-0.5"
+                    style={{ borderColor: "#F0E6E6" }}
                   >
-                    <div className="relative">
+                    {/* Image with pastel background */}
+                    <div
+                      className="w-[72px] h-[72px] lg:w-[96px] lg:h-[96px] rounded-[12px]
+                                 overflow-hidden flex-shrink-0"
+                      style={{ background: CARD_BG[i % CARD_BG.length] }}
+                    >
                       <img
                         src={producto.imagenes?.[0] || "/logo.png"}
                         alt={producto.nombre}
                         loading="lazy"
-                        className="w-full aspect-square object-cover"
+                        className="w-full h-full object-cover"
                       />
-                      {(producto.nuevo || producto.mas_vendido) && (
-                        <div className="absolute left-2 top-2 md:left-3 md:top-3 flex flex-wrap gap-1.5">
-                          {producto.nuevo && (
-                            <span className="bg-white/90 backdrop-blur px-2 md:px-3 py-0.5 md:py-1
-                                             rounded-full text-[10px] md:text-xs font-black uppercase
-                                             text-[#20B8C9] shadow">
-                              Nuevo
-                            </span>
-                          )}
-                          {producto.mas_vendido && (
-                            <span className="bg-white/90 backdrop-blur px-2 md:px-3 py-0.5 md:py-1
-                                             rounded-full text-[10px] md:text-xs font-black uppercase
-                                             text-[#20B8C9] shadow">
-                              Más vendido
-                            </span>
-                          )}
-                        </div>
-                      )}
                     </div>
 
-                    <div className="p-3 sm:p-4 md:p-5">
-                      <p className="text-pink-400 font-bold text-[10px] sm:text-xs uppercase">
-                        {producto.categoria}
-                      </p>
-
-                      <h3 className="text-lg sm:text-xl md:text-2xl font-black text-[#20B8C9]
-                                     mt-1.5 leading-tight break-words">
+                    {/* Text */}
+                    <div className="min-w-0 flex-1">
+                      <h3
+                        className="font-black text-xs sm:text-sm lg:text-base leading-tight line-clamp-2"
+                        style={{ color: "#3F334A" }}
+                      >
                         {producto.nombre}
                       </h3>
-
-                      <div className="mt-3 md:mt-4 space-y-1">
-                        <p className="text-[10px] sm:text-xs font-black uppercase text-gray-400">
-                          Precio desde
-                        </p>
-                        <p className="text-2xl md:text-3xl font-black text-[#F49B93]">
-                          {moneda(precioDesde)}
-                        </p>
-                        {tamanoNombre && (
-                          <p className="text-xs sm:text-sm font-bold text-[#20B8C9] truncate">
-                            {tamanoNombre}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="w-full mt-4 bg-[#20B8C9] text-white py-3 sm:py-4
-                                      rounded-2xl font-black text-sm sm:text-base text-center">
-                        Ver en catálogo
+                      <p className="text-[10px] sm:text-xs mt-1" style={{ color: "#7D7288" }}>
+                        Desde {moneda(precioDesde)}
+                      </p>
+                      <div
+                        className="mt-2 inline-block border rounded-full px-2 sm:px-3 py-0.5 sm:py-1
+                                   text-[10px] sm:text-xs font-bold"
+                        style={{ borderColor: "#FF5C8A", color: "#FF5C8A" }}
+                      >
+                        Ver más
                       </div>
                     </div>
                   </Link>
@@ -251,21 +316,44 @@ export default function Home() {
       </section>
 
       {/* ── CTA final ── */}
-      <section className="pb-16 md:pb-24">
-        <div className="bg-[#D9F5F8] rounded-[32px] p-8 md:p-12 text-center">
-          <h2 className="text-3xl md:text-5xl font-black text-[#20B8C9]">
-            ¿Lista para armar tu pedido?
-          </h2>
-          <p className="text-gray-600 mt-3 text-base md:text-lg max-w-lg mx-auto">
-            Explora todo el catálogo, agrega al carrito y genera tu pedido en minutos.
-          </p>
+      <section className="mb-8 md:mb-12">
+        <div
+          className="rounded-[28px] p-6 md:p-10 flex flex-col md:flex-row items-center
+                     justify-between gap-5 md:gap-8 relative overflow-hidden"
+          style={{ background: "#FFE4EC" }}
+        >
+          {/* Decorative blob */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute right-0 bottom-0 w-48 h-48 rounded-full opacity-30"
+            style={{ background: "#FF5C8A", filter: "blur(60px)", transform: "translate(40%, 40%)" }}
+          />
+
+          <div className="flex items-center gap-4 relative">
+            <span className="text-4xl hidden sm:block" aria-hidden>🎨</span>
+            <div>
+              <h2
+                className="text-lg sm:text-xl md:text-3xl font-black text-center md:text-left"
+                style={{ color: "#3F334A" }}
+              >
+                Crea momentos inolvidables con TUCHIS
+              </h2>
+              <p
+                className="text-sm md:text-base mt-1 text-center md:text-left"
+                style={{ color: "#7D7288" }}
+              >
+                Arma tu pedido en minutos y recibe alcancías listas para pintar, regalar y disfrutar.
+              </p>
+            </div>
+          </div>
+
           <Link
             href="/catalogo"
-            className="inline-block mt-8 bg-[#20B8C9] text-white px-10 py-4 rounded-2xl
-                       font-black text-lg hover:bg-[#17A7B8] active:scale-[.97] transition-all
-                       shadow-lg shadow-cyan-200/60"
+            className="relative flex-shrink-0 flex items-center gap-2 text-white font-black
+                       px-8 py-4 rounded-2xl text-base transition-all active:scale-[.97] whitespace-nowrap"
+            style={{ background: "#FF5C8A", boxShadow: "0 8px 24px #FF5C8A44" }}
           >
-            Ver catálogo completo
+            ✦ Ver catálogo completo
           </Link>
         </div>
       </section>
