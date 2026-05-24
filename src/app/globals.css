@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+/* ── TUCHIS color palette ────────────────────────────
+   Used in the public-facing home page and gradually
+   adopted across the project.
+   ──────────────────────────────────────────────────── */
+:root {
+  --tuchis-rose:        #FF5C8A;
+  --tuchis-rose-light:  #FFE4EC;
+  --tuchis-lila:        #B9A7F5;
+  --tuchis-lila-light:  #EFE9FF;
+  --tuchis-mint:        #BFF3DF;
+  --tuchis-peach:       #FFD8C2;
+  --tuchis-yellow:      #FFECA8;
+  --tuchis-dark:        #3F334A;
+  --tuchis-muted:       #7D7288;
+  --tuchis-bg:          #FFF7F4;
+}
+
 *{
   box-sizing:border-box;
 }
