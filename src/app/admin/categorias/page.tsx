@@ -66,7 +66,7 @@ export default function CategoriasAdmin() {
 
           <aside className="hidden lg:block w-full lg:w-[280px] lg:flex-shrink-0">
             <div className="bg-white rounded-[32px] border border-[#F4D4CF] shadow-sm p-6 lg:sticky lg:top-28">
-              <h1 className="text-4xl md:text-5xl font-black text-cyan-500">
+              <h1 className="text-4xl md:text-5xl font-black text-[#FF5C8A]">
                 TUCHIS
               </h1>
 
@@ -77,7 +77,7 @@ export default function CategoriasAdmin() {
               <div className="mt-8 flex flex-col gap-4">
                 <Link
                   href="/admin"
-                  className="bg-[#D9F5F8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
+                  className="bg-[#FFE4EC] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
                 >
                   Dashboard
                 </Link>
@@ -124,7 +124,7 @@ export default function CategoriasAdmin() {
 
           <main className="flex-1 min-w-0">
             <div className="mb-10">
-              <h2 className="text-5xl md:text-7xl font-black text-cyan-500 leading-none break-words">
+              <h2 className="text-5xl md:text-7xl font-black text-[#FF5C8A] leading-none break-words">
                 Categorías
               </h2>
 
@@ -134,7 +134,7 @@ export default function CategoriasAdmin() {
             </div>
 
             <div className="section-card mb-8">
-              <h3 className="text-3xl font-black text-cyan-600 mb-8">
+              <h3 className="text-3xl font-black text-[#3F334A] mb-8">
                 Nueva categoría
               </h3>
 
@@ -155,7 +155,7 @@ export default function CategoriasAdmin() {
             </div>
 
             <div className="section-card">
-              <h3 className="text-3xl font-black text-cyan-600 mb-8">
+              <h3 className="text-3xl font-black text-[#3F334A] mb-8">
                 Lista de categorías
               </h3>
 
@@ -163,17 +163,17 @@ export default function CategoriasAdmin() {
                 {categorias.map((cat) => (
                   <div
                     key={cat.id}
-                    className="rounded-[28px] border border-[#F4D4CF] bg-[#FFF8F5] p-5"
+                    className="rounded-[28px] border border-[#F4D4CF] bg-white p-5"
                   >
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                      <span className="text-xl font-bold text-cyan-700">
+                      <span className="text-xl font-bold text-[#3F334A]">
                         {cat.nombre}
                       </span>
 
                       <div className="flex gap-3">
                         <button
                           onClick={() => editarCategoria(cat.id, cat.nombre)}
-                          className="bg-[#BEE9E8] px-5 py-3 rounded-2xl font-bold"
+                          className="bg-[#BFF3DF] px-5 py-3 rounded-2xl font-bold"
                         >
                           Editar
                         </button>

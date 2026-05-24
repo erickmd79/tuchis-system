@@ -492,7 +492,7 @@ export default function CatalogoPage() {
 
   return (
 
-    <div className={`min-h-screen bg-[#FFF8F5] px-3 sm:px-4 md:px-8 ${modoVolver ? "pt-[132px] pb-7" : "py-5 md:py-7"}`}>
+    <div className={`min-h-screen px-3 sm:px-4 md:px-8 ${modoVolver ? "pt-[132px] pb-7" : "py-5 md:py-7"}`}>
 
       {/* Banner: modo "volver a pedir" */}
       {modoVolver && (
@@ -512,7 +512,7 @@ export default function CatalogoPage() {
 
       <div className="mb-6 md:mb-8 max-w-[1280px] mx-auto">
 
-        <h1 className="text-3xl md:text-5xl font-black text-[#20B8C9] leading-none">
+        <h1 className="text-3xl md:text-5xl font-black leading-none" style={{ color: "#3F334A" }}>
           Catálogo TUCHIS
         </h1>
 
@@ -710,7 +710,7 @@ export default function CatalogoPage() {
                     }
                   </p>
 
-                  <h2 className="text-lg sm:text-xl md:text-2xl font-black text-[#20B8C9] mt-1.5 leading-tight break-words">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-black mt-1.5 leading-tight break-words" style={{ color: "#3F334A" }}>
                     {producto.nombre}
                   </h2>
 
@@ -729,7 +729,7 @@ export default function CatalogoPage() {
                     </p>
 
                     {tamanoNombreProducto && (
-                      <p className="text-xs sm:text-sm font-bold text-[#20B8C9] truncate">
+                      <p className="text-xs sm:text-sm font-bold truncate" style={{ color: "#FF5C8A" }}>
                         {tamanoNombreProducto}
                       </p>
                     )}
@@ -737,7 +737,8 @@ export default function CatalogoPage() {
                   </div>
 
                   {cantidadEnCarrito > 0 && (
-                    <p className="mt-3 rounded-2xl bg-[#D9F5F8] px-3 py-2 text-xs sm:text-sm font-black text-[#0D8EA0]">
+                    <p className="mt-3 rounded-2xl px-3 py-2 text-xs sm:text-sm font-black"
+                       style={{ background: "#FFE4EC", color: "#FF5C8A" }}>
                       {cantidadEnCarrito} en carrito
                     </p>
                   )}
@@ -748,13 +749,9 @@ export default function CatalogoPage() {
                         producto
                       )
                     }
-                    className="w-full mt-4
-                    bg-[#20B8C9]
-                    hover:bg-[#17A7B8]
-                    active:scale-[.97]
-                    text-white py-3 sm:py-4
-                    rounded-2xl font-black
-                    text-sm sm:text-base transition-all"
+                    className="w-full mt-4 active:scale-[.97] text-white py-3 sm:py-4
+                               rounded-2xl font-black text-sm sm:text-base transition-all"
+                    style={{ background: "#FF5C8A" }}
                   >
                     {cantidadEnCarrito > 0 ? "Agregar más" : "Seleccionar"}
                   </button>
@@ -776,7 +773,7 @@ export default function CatalogoPage() {
                 <p className="text-pink-400 font-black uppercase text-sm">
                   Cotizar producto
                 </p>
-                <h3 className="text-3xl md:text-5xl font-black text-[#20B8C9] mt-2">
+                <h3 className="text-3xl md:text-5xl font-black mt-2" style={{ color: "#3F334A" }}>
                   {productoSeleccionado.nombre}
                 </h3>
               </div>
@@ -815,11 +812,12 @@ export default function CatalogoPage() {
                         key={opcion}
                         type="button"
                         onClick={() => setSeleccion({ ...seleccion, modalidad: opcion })}
-                        className={`rounded-2xl px-5 py-3 font-black border transition ${
+                        className="rounded-2xl px-5 py-3 font-black border transition"
+                        style={
                           seleccion.modalidad === opcion
-                            ? "bg-[#20B8C9] border-[#20B8C9] text-white"
-                            : "bg-[#FFF8F5] border-[#F8D6D0] text-gray-600"
-                        }`}
+                            ? { background: "#FF5C8A", borderColor: "#FF5C8A", color: "white" }
+                            : { background: "#FFF7F4", borderColor: "#FFD0DC", color: "#3F334A" }
+                        }
                       >
                         {opcion}
                       </button>
@@ -848,14 +846,15 @@ export default function CatalogoPage() {
                     <button
                       type="button"
                       onClick={() => setSeleccion({ ...seleccion, cantidad: seleccion.cantidad + 1 })}
-                      className="bg-[#BEE9E8] w-12 h-12 rounded-full text-2xl font-bold"
+                      className="w-12 h-12 rounded-full text-2xl font-bold"
+                      style={{ background: "#BFF3DF" }}
                     >+</button>
                   </div>
                 </div>
 
                 {/* Precio display */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-3xl bg-[#FFF8F5] border border-[#F8D6D0] p-4">
+                  <div className="rounded-3xl border p-4" style={{ background: "#FFF7F4", borderColor: "#FFD0DC" }}>
                     <p className="text-xs font-black uppercase text-gray-400">Precio unitario</p>
                     {seleccion.modalidad && precioSeleccion > 0 ? (
                       <p className="text-2xl font-black text-[#F49B93]">{moneda(precioSeleccion)}</p>
@@ -865,7 +864,7 @@ export default function CatalogoPage() {
                       <p className="text-sm font-bold text-gray-400">Elige modalidad</p>
                     )}
                   </div>
-                  <div className="rounded-3xl bg-[#FFE0DD] p-4">
+                  <div className="rounded-3xl p-4" style={{ background: "#FFE4EC" }}>
                     <p className="text-xs font-black uppercase text-gray-500">Subtotal</p>
                     {seleccion.modalidad && precioSeleccion > 0 ? (
                       <p className="text-2xl font-black text-[#C95F67]">{moneda(precioSeleccion * seleccion.cantidad)}</p>
@@ -879,7 +878,8 @@ export default function CatalogoPage() {
                 <button
                   type="button"
                   onClick={confirmarSeleccionProducto}
-                  className="w-full bg-[#20B8C9] hover:bg-[#17A7B8] active:scale-[.97] text-white py-5 rounded-2xl font-black text-lg transition-all shadow-lg shadow-cyan-200/60"
+                  className="w-full active:scale-[.97] text-white py-5 rounded-2xl font-black text-lg transition-all"
+                  style={{ background: "#FF5C8A", boxShadow: "0 8px 24px rgba(255,92,138,.30)" }}
                 >
                   {modoVolver ? "Agregar al pedido" : "Agregar al carrito"}
                 </button>
@@ -1029,7 +1029,7 @@ export default function CatalogoPage() {
 
             <div className="border-t border-[#F8D6D0] bg-white px-4 sm:px-6 py-5 space-y-4 shadow-[0_-18px_32px_rgba(0,0,0,.06)]">
               <div className="flex items-center justify-between text-2xl">
-                <span className="font-black text-[#20B8C9]">
+                <span className="font-black" style={{ color: "#3F334A" }}>
                   Total
                 </span>
                 <span className="font-black text-[#F49B93]">
@@ -1041,9 +1041,10 @@ export default function CatalogoPage() {
                 href="/pedido/nuevo"
                 className={`block w-full text-center rounded-2xl py-4 font-black text-white transition ${
                   carrito.length > 0
-                    ? "bg-[#20B8C9] hover:bg-[#17A7B8]"
+                    ? "hover:opacity-90"
                     : "bg-gray-300 pointer-events-none"
                 }`}
+                style={carrito.length > 0 ? { background: "#FF5C8A" } : undefined}
               >
                 Generar pedido
               </a>
@@ -1053,7 +1054,8 @@ export default function CatalogoPage() {
                 onClick={() =>
                   setCarritoAbierto(false)
                 }
-                className="w-full rounded-2xl py-4 font-black border border-[#20B8C9] text-[#20B8C9] bg-white"
+                className="w-full rounded-2xl py-4 font-black border bg-white"
+                style={{ borderColor: "#FF5C8A", color: "#FF5C8A" }}
               >
                 Continuar comprando
               </button>

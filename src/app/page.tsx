@@ -60,7 +60,6 @@ export default function Home() {
   const [escalas, setEscalas] = useState<Escala[]>([])
   const [tamanos, setTamanos] = useState<{ id: number; nombre: string }[]>([])
   const [cargando, setCargando] = useState(true)
-  const [heroError, setHeroError] = useState(false)
 
   useEffect(() => {
     const cargarDatos = async () => {
@@ -84,98 +83,76 @@ export default function Home() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#FFF7F4]">
+    <div className="min-h-screen">
 
-      {/* ── Hero ── */}
+      {/* ── Hero — full-cover background image ── */}
       <section
-        className="rounded-[28px] md:rounded-[36px] mb-5 md:mb-8 overflow-hidden relative"
+        className="rounded-[28px] md:rounded-[36px] mb-5 md:mb-8 overflow-hidden relative
+                   min-h-[320px] sm:min-h-[380px] md:min-h-[440px] lg:min-h-[480px]"
         style={{
-          background: "linear-gradient(135deg, #FFE4EC 0%, #FFF0F4 55%, #FFF7F4 100%)",
+          backgroundImage: "url('/images/hero-tuchis.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center right",
+          backgroundRepeat: "no-repeat",
+          backgroundColor: "#FFE4EC",
         }}
       >
-        {/* Soft decorative blob */}
+        {/* Gradient overlay: opaque left → transparent right */}
         <div
+          className="absolute inset-0"
           aria-hidden
-          className="pointer-events-none absolute top-0 right-0 w-96 h-96 rounded-full opacity-40"
           style={{
-            background: "#FFD8C2",
-            filter: "blur(80px)",
-            transform: "translate(30%, -30%)",
+            background:
+              "linear-gradient(105deg, rgba(255,228,236,0.98) 0%, rgba(255,235,242,0.93) 38%, rgba(255,240,246,0.72) 58%, rgba(255,247,250,0.25) 76%, transparent 100%)",
           }}
         />
 
-        {/* Content grid: text | image */}
-        <div className="grid grid-cols-2 lg:grid-cols-[1fr_460px] items-end gap-2 lg:gap-0 px-5 sm:px-8 lg:px-12 pt-8 lg:pt-12">
+        {/* Text + desktop CTAs */}
+        <div className="relative z-10 px-5 sm:px-8 lg:px-12 py-8 md:py-12 lg:py-16 max-w-[560px]">
+          <p
+            className="text-xs sm:text-sm font-black uppercase tracking-widest mb-3"
+            style={{ color: "#FF5C8A" }}
+          >
+            Alcancías artesanales
+          </p>
 
-          {/* Left: text + desktop CTAs */}
-          <div className="flex flex-col pb-6 lg:pb-12">
-            <h1
-              className="font-black leading-[1.05] text-[1.6rem] sm:text-4xl md:text-5xl lg:text-6xl"
-              style={{ color: "#3F334A" }}
+          <h1
+            className="font-black leading-[1.05] text-[1.7rem] sm:text-4xl md:text-5xl lg:text-6xl"
+            style={{ color: "#3F334A" }}
+          >
+            Imagina, pinta y disfruta con{" "}
+            <span style={{ color: "#FF5C8A" }}>TUCHIS</span>
+          </h1>
+
+          <p
+            className="mt-3 lg:mt-4 text-xs sm:text-sm md:text-base lg:text-lg leading-relaxed max-w-[30ch] sm:max-w-[36ch]"
+            style={{ color: "#7D7288" }}
+          >
+            Alcancías listas para fiestas, regalos y momentos creativos.
+            Elige tus personajes favoritos y arma tu pedido en minutos.
+          </p>
+
+          {/* Desktop CTAs */}
+          <div className="hidden sm:flex flex-wrap gap-3 mt-6 lg:mt-8">
+            <Link
+              href="/catalogo"
+              className="flex items-center gap-2 text-white font-black px-6 py-3 lg:px-8 lg:py-4 rounded-2xl text-sm lg:text-base transition-all active:scale-[.97] shadow-lg"
+              style={{ background: "#FF5C8A", boxShadow: "0 8px 24px #FF5C8A44" }}
             >
-              Imagina, pinta y disfruta con{" "}
-              <span style={{ color: "#FF5C8A" }}>TUCHIS</span>
-            </h1>
-
-            <p
-              className="mt-3 lg:mt-4 text-xs sm:text-sm md:text-base lg:text-lg leading-relaxed max-w-[30ch] sm:max-w-[36ch]"
-              style={{ color: "#7D7288" }}
+              ✦ Ver catálogo
+            </Link>
+            <Link
+              href="/mis-pedidos"
+              className="flex items-center gap-2 font-black px-6 py-3 lg:px-8 lg:py-4 rounded-2xl border-2 text-sm lg:text-base transition hover:bg-white bg-white/60"
+              style={{ color: "#3F334A", borderColor: "#E0D0D6" }}
             >
-              Alcancías listas para fiestas, regalos y momentos creativos.
-              Elige tus personajes favoritos y arma tu pedido en minutos.
-            </p>
-
-            {/* Desktop CTAs */}
-            <div className="hidden sm:flex flex-wrap gap-3 mt-6 lg:mt-8">
-              <Link
-                href="/catalogo"
-                className="flex items-center gap-2 text-white font-black px-6 py-3 lg:px-8 lg:py-4 rounded-2xl text-sm lg:text-base transition-all active:scale-[.97] shadow-lg"
-                style={{ background: "#FF5C8A", boxShadow: "0 8px 24px #FF5C8A44" }}
-              >
-                ✦ Ver catálogo
-              </Link>
-              <Link
-                href="/mis-pedidos"
-                className="flex items-center gap-2 font-black px-6 py-3 lg:px-8 lg:py-4 rounded-2xl border-2 text-sm lg:text-base transition hover:bg-white bg-white/60"
-                style={{ color: "#3F334A", borderColor: "#E0D0D6" }}
-              >
-                📋 Consultar mis pedidos
-              </Link>
-            </div>
-          </div>
-
-          {/* Right: hero image */}
-          <div className="flex items-end justify-center">
-            {!heroError ? (
-              <img
-                src="/images/hero-tuchis.png"
-                alt="Alcancías TUCHIS — personajes para fiestas y regalos"
-                onError={() => setHeroError(true)}
-                className="w-full object-contain object-bottom drop-shadow-xl"
-                style={{ maxWidth: "460px", maxHeight: "400px" }}
-              />
-            ) : (
-              /* Placeholder until hero-tuchis.png is uploaded to public/images/ */
-              <div
-                className="w-full max-w-[220px] lg:max-w-[360px] aspect-square rounded-[28px]
-                           flex flex-col items-center justify-center gap-3 mb-6"
-                style={{ background: "#FFE4EC" }}
-              >
-                <span className="text-5xl">🪆</span>
-                <p
-                  className="text-[10px] sm:text-xs font-bold text-center px-4"
-                  style={{ color: "#7D7288" }}
-                >
-                  Coloca la imagen en<br />
-                  <code className="font-mono">public/images/hero-tuchis.png</code>
-                </p>
-              </div>
-            )}
+              📋 Consultar mis pedidos
+            </Link>
           </div>
         </div>
 
-        {/* Mobile CTAs (below image) */}
-        <div className="flex flex-col gap-3 px-5 pt-3 pb-6 sm:hidden">
+        {/* Mobile CTAs */}
+        <div className="relative z-10 flex flex-col gap-3 px-5 pt-3 pb-6 sm:hidden">
           <Link
             href="/catalogo"
             className="flex items-center justify-center gap-2 text-white font-black px-6 py-4 rounded-2xl text-base transition-all active:scale-[.97]"

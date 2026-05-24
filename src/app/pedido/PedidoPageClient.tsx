@@ -684,10 +684,10 @@ return (
 <div className="flex flex-col lg:flex-row gap-8">
 <aside className="hidden lg:block w-full lg:w-[280px] lg:flex-shrink-0">
   <div className="bg-white rounded-[32px] border border-[#F4D4CF] shadow-sm p-6 lg:sticky lg:top-28">
-    <h1 className="text-4xl md:text-5xl font-black text-cyan-500">TUCHIS</h1>
+    <h1 className="text-4xl md:text-5xl font-black text-[#FF5C8A]">TUCHIS</h1>
     <p className="text-gray-500 mt-2 text-base">Admin Panel</p>
     <div className="mt-8 flex flex-col gap-4">
-      <Link href="/admin" className="bg-[#D9F5F8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Dashboard</Link>
+      <Link href="/admin" className="bg-[#FFE4EC] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Dashboard</Link>
       <Link href="/pedido" className="bg-[#FFD6A8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Pedidos</Link>
       <Link href="/admin/productos" className="bg-[#FFE0DD] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Productos</Link>
       <Link href="/admin/categorias" className="bg-[#FFE9A8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Categorías</Link>
@@ -699,18 +699,18 @@ return (
 </aside>
 <main className="flex-1 min-w-0">
 <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-<h2 className="text-5xl md:text-7xl font-black text-cyan-500 leading-none break-words">
+<h2 className="text-5xl md:text-7xl font-black text-[#FF5C8A] leading-none break-words">
 Pedidos
 </h2>
 <a
 href="/pedido/nuevo"
-className="inline-flex items-center gap-2 bg-[#20B8C9] hover:bg-[#17A7B8] text-white px-6 py-4 rounded-2xl font-black text-base shadow-lg transition"
+className="inline-flex items-center gap-2 bg-[#FF5C8A] hover:opacity-90 text-white px-6 py-4 rounded-2xl font-black text-base shadow-lg transition"
 >
 + Nuevo pedido
 </a>
 </div>
 <div id="pedidos-guardados" className="section-card">
-<h2 className="text-3xl font-black text-cyan-600 mb-8">
+<h2 className="text-3xl font-black text-[#3F334A] mb-8">
 Pedidos guardados
 </h2>
 <div className="space-y-6">
@@ -721,7 +721,7 @@ className="bg-white border border-[#FFD9D4] rounded-[28px] p-6 shadow-sm"
 >
 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
 <div>
-<h3 className="text-3xl font-black text-cyan-600">
+<h3 className="text-3xl font-black text-[#3F334A]">
 {pedido.cliente}
 </h3>
 <p className="text-zinc-500 mt-2">
@@ -756,7 +756,7 @@ obtenerFechaEntrega(pedido)
 </div>
 {pedido.notas && (
 <p className="mt-4 text-zinc-600 whitespace-pre-wrap">
-<span className="font-black text-cyan-600">
+<span className="font-black text-[#3F334A]">
 Notas:{" "}
 </span>
 {pedido.notas}
@@ -789,7 +789,7 @@ className="text-zinc-700"
 )}
 </div>
 <div className="mt-3 flex flex-wrap gap-3 text-sm font-black uppercase">
-<div className="rounded-2xl bg-[#D9F5F8] p-3 text-cyan-700 flex-1 min-w-[80px]">
+<div className="rounded-2xl bg-[#FFE4EC] p-3 text-[#3F334A] flex-1 min-w-[80px]">
 Total {moneda(pedido.total)}
 </div>
 <div className="rounded-2xl bg-[#FFF0B8] p-3 text-zinc-700 flex-1 min-w-[80px]">
@@ -879,8 +879,8 @@ onClick={() =>
 abrirEditorPedido(pedido)
 }
 className="
-bg-cyan-500
-hover:bg-cyan-600
+bg-[#FF5C8A]
+hover:opacity-90
 text-white
 py-3
 rounded-2xl
@@ -944,7 +944,7 @@ mb-8
 <h2 className="
 text-4xl
 font-black
-text-cyan-600
+text-[#3F334A]
 ">
 Editar pedido
 </h2>
@@ -996,11 +996,11 @@ municipio: e.target.value,
 className="input-premium"
 />
 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-<div className="rounded-3xl border border-[#FFD9D4] bg-[#FFF8F5] p-5">
+<div className="rounded-3xl border border-[#FFD9D4] bg-white p-5">
 <p className="text-sm font-black uppercase text-zinc-400">
 Fecha de pedido
 </p>
-<p className="text-xl font-black text-cyan-600 mt-1">
+<p className="text-xl font-black text-[#3F334A] mt-1">
 {formatearFecha(
 obtenerFechaPedido(pedidoEditando)
 ) || "Sin fecha"}
@@ -1165,14 +1165,14 @@ Pagado
 </div>
 </div>
 <div className="mt-8 space-y-5">
-<h3 className="text-2xl font-black text-cyan-600">
+<h3 className="text-2xl font-black text-[#3F334A]">
 Productos del pedido
 </h3>
 {(pedidoEditando.productos || []).map(
 (producto: any, index: number) => (
 <div
 key={index}
-className="rounded-3xl border border-[#FFD9D4] p-5 bg-[#FFF8F5] space-y-4"
+className="rounded-3xl border border-[#FFD9D4] p-5 bg-white space-y-4"
 >
 <input
 type="text"
@@ -1259,7 +1259,7 @@ Subtotal: {moneda(numero(producto.precio) * numero(producto.cantidad))}
 )}
 <div className="rounded-3xl border border-[#FFD9D4] bg-white p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 <div>
-<h4 className="text-xl font-black text-cyan-600">
+<h4 className="text-xl font-black text-[#3F334A]">
 Agregar producto
 </h4>
 <p className="text-zinc-500 mt-1">
@@ -1284,7 +1284,7 @@ flex items-center justify-center
 p-4
 ">
 <div className="
-bg-[#FFF8F5]
+bg-white
 w-full
 max-w-6xl
 rounded-[32px]
@@ -1301,7 +1301,7 @@ src="/logo.png"
 alt="TUCHIS alcancías"
 className="brand-logo-sm mb-4"
 />
-<h3 className="text-4xl font-black text-cyan-600">
+<h3 className="text-4xl font-black text-[#3F334A]">
 Catálogo
 </h3>
 <p className="text-zinc-500 mt-2">
@@ -1359,7 +1359,7 @@ value={categoria}
 <p className="text-xs font-black uppercase text-zinc-400">
 Productos agregados
 </p>
-<h4 className="text-2xl font-black text-cyan-600 mt-1">
+<h4 className="text-2xl font-black text-[#3F334A] mt-1">
 {(pedidoEditando.productos || []).length} en el pedido
 </h4>
 </div>
@@ -1375,9 +1375,9 @@ pedidoEditando.productos || []
 (producto: any, index: number) => (
 <div
 key={`${producto.producto_id || producto.id || index}-${index}`}
-className="min-w-[220px] rounded-2xl bg-[#FFF8F5] border border-[#F8D6D0] p-3"
+className="min-w-[220px] rounded-2xl bg-white border border-[#F8D6D0] p-3"
 >
-<p className="font-black text-cyan-600 truncate">
+<p className="font-black text-[#3F334A] truncate">
 {producto.nombre}
 </p>
 <p className="text-sm font-bold text-zinc-500">
@@ -1414,7 +1414,7 @@ className="w-full h-56 object-cover bg-white"
 <p className="text-pink-400 font-black text-xs uppercase">
 {producto.categoria}
 </p>
-<h4 className="text-2xl font-black text-cyan-600 mt-2">
+<h4 className="text-2xl font-black text-[#3F334A] mt-2">
 {producto.nombre}
 </h4>
 <div className="mt-4 space-y-2">
@@ -1426,7 +1426,7 @@ const mods = tid > 0 && escalas.length > 0
 return mods.map((mod: string) => (
 <div
 key={mod}
-className="rounded-2xl bg-[#FFF8F5] border border-[#F8D6D0] p-3"
+className="rounded-2xl bg-white border border-[#F8D6D0] p-3"
 >
 <p className="text-xs font-black uppercase text-zinc-400">
 {mod}
@@ -1462,11 +1462,11 @@ No hay productos con esa búsqueda.
 </div>
 )}
 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-<div className="rounded-3xl bg-[#D9F5F8] p-5">
+<div className="rounded-3xl bg-[#FFE4EC] p-5">
 <p className="text-sm font-black uppercase text-zinc-500">
 Total pedido
 </p>
-<p className="text-2xl font-black text-cyan-600">
+<p className="text-2xl font-black text-[#3F334A]">
 {moneda(calcularTotalProductos(pedidoEditando.productos || []))}
 </p>
 </div>

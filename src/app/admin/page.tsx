@@ -325,10 +325,10 @@ export default function AdminPage() {
           {/* Desktop sidebar */}
           <aside className="hidden lg:block w-full lg:w-[280px] lg:flex-shrink-0">
             <div className="bg-white rounded-[32px] border border-[#F4D4CF] shadow-sm p-6 lg:sticky lg:top-[96px]">
-              <h1 className="text-4xl md:text-5xl font-black text-cyan-500">TUCHIS</h1>
+              <h1 className="text-4xl md:text-5xl font-black text-[#FF5C8A]">TUCHIS</h1>
               <p className="text-gray-500 mt-2 text-base">Admin Panel</p>
               <div className="mt-8 flex flex-col gap-4">
-                <Link href="/admin" className="bg-cyan-500 text-white px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Dashboard</Link>
+                <Link href="/admin" className="bg-[#FF5C8A] text-white px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Dashboard</Link>
                 <Link href="/pedido" className="bg-[#FFD6A8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Pedidos</Link>
                 <Link href="/admin/productos" className="bg-[#FFE0DD] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Productos</Link>
                 <Link href="/admin/categorias" className="bg-[#FFE9A8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition">Categorías</Link>
@@ -344,7 +344,7 @@ export default function AdminPage() {
             {/* Header */}
             <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
               <div>
-                <h2 className="text-5xl md:text-7xl font-black text-cyan-500 leading-none break-words">
+                <h2 className="text-5xl md:text-7xl font-black text-[#FF5C8A] leading-none break-words">
                   Dashboard
                 </h2>
                 <p className="text-gray-500 text-base md:text-lg mt-4">
@@ -370,8 +370,8 @@ export default function AdminPage() {
                     onClick={() => aplicarLapso(id)}
                     className={`px-4 py-2 rounded-2xl font-bold text-sm transition ${
                       lapso === id
-                        ? "bg-cyan-500 text-white shadow-sm"
-                        : "bg-[#F0FAFA] text-cyan-700 hover:bg-[#D9F5F8]"
+                        ? "bg-[#FF5C8A] text-white shadow-sm"
+                        : "bg-[#FFF7F4] text-[#3F334A] hover:bg-[#FFE4EC]"
                     }`}
                   >
                     {label}
@@ -393,7 +393,7 @@ export default function AdminPage() {
                       setFechaInicioInput(e.target.value)
                       setLapso("personalizado")
                     }}
-                    className="border border-[#F4D4CF] rounded-2xl px-3 py-2 text-sm font-bold bg-white text-gray-700 focus:outline-none focus:border-cyan-400"
+                    className="border border-[#F4D4CF] rounded-2xl px-3 py-2 text-sm font-bold bg-white text-gray-700 focus:outline-none focus:border-[#FF5C8A]"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
@@ -409,7 +409,7 @@ export default function AdminPage() {
                       setFechaFinInput(e.target.value)
                       setLapso("personalizado")
                     }}
-                    className="border border-[#F4D4CF] rounded-2xl px-3 py-2 text-sm font-bold bg-white text-gray-700 focus:outline-none focus:border-cyan-400"
+                    className="border border-[#F4D4CF] rounded-2xl px-3 py-2 text-sm font-bold bg-white text-gray-700 focus:outline-none focus:border-[#FF5C8A]"
                   />
                 </div>
                 <button
@@ -422,7 +422,7 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={() => { void obtenerDatos() }}
-                  className="px-5 py-2 rounded-2xl bg-[#D9F5F8] text-cyan-700 font-bold text-sm hover:bg-[#B8EEF4] transition"
+                  className="px-5 py-2 rounded-2xl bg-[#FFE4EC] text-[#3F334A] font-bold text-sm hover:bg-[#FFD0DC] transition"
                 >
                   ↻ Actualizar
                 </button>
@@ -441,7 +441,7 @@ export default function AdminPage() {
             {/* ── KPI cards ── */}
             <div className="grid grid-cols-2 xl:grid-cols-5 gap-3 md:gap-6 mb-8 md:mb-10">
 
-              <div className="rounded-[24px] md:rounded-[32px] p-4 md:p-6 xl:p-8 bg-[#D9F5F8] flex flex-col justify-between min-h-[130px] md:min-h-[180px]">
+              <div className="rounded-[24px] md:rounded-[32px] p-4 md:p-6 xl:p-8 bg-[#BFF3DF] flex flex-col justify-between min-h-[130px] md:min-h-[180px]">
                 <h3 className="text-gray-700 text-sm md:text-lg font-semibold">Total ventas</h3>
                 <p className="text-2xl md:text-4xl xl:text-5xl font-black mt-3 md:mt-6 break-all">
                   {moneda(resumen.totalVentas)}
@@ -483,7 +483,7 @@ export default function AdminPage() {
 
               {/* Bar chart */}
               <div className="bg-white rounded-[32px] border border-[#F4D4CF] p-5 md:p-8 shadow-sm">
-                <h3 className="text-2xl md:text-4xl font-black text-cyan-500 mb-6 md:mb-8">
+                <h3 className="text-2xl md:text-4xl font-black text-[#FF5C8A] mb-6 md:mb-8">
                   {chartTitle}
                 </h3>
                 <div className={`h-[200px] md:h-[260px] flex items-end ${barGap}`}>
@@ -497,7 +497,7 @@ export default function AdminPage() {
                       </div>
                       <div className="w-full h-[150px] md:h-[190px] bg-[#FFF0B8] rounded-t-xl md:rounded-t-2xl flex items-end overflow-hidden">
                         <div
-                          className="w-full bg-cyan-500 rounded-t-xl md:rounded-t-2xl transition-all"
+                          className="w-full bg-[#FF5C8A] rounded-t-xl md:rounded-t-2xl transition-all"
                           style={{ height: `${porcentaje(dia.total, maxVentasDia)}%` }}
                         />
                       </div>
@@ -555,7 +555,7 @@ export default function AdminPage() {
 
               {/* Top products */}
               <div className="bg-white rounded-[32px] border border-[#F4D4CF] p-5 md:p-8 shadow-sm">
-                <h3 className="text-2xl md:text-4xl font-black text-cyan-500 mb-6 md:mb-8">
+                <h3 className="text-2xl md:text-4xl font-black text-[#FF5C8A] mb-6 md:mb-8">
                   Productos más vendidos
                 </h3>
                 <div className="space-y-4 md:space-y-6">
@@ -572,7 +572,7 @@ export default function AdminPage() {
                       </div>
                       <div className="h-4 md:h-5 rounded-full bg-[#FFE0DD] overflow-hidden">
                         <div
-                          className="bg-cyan-500 h-full rounded-full"
+                          className="bg-[#FF5C8A] h-full rounded-full"
                           style={{ width: `${porcentaje(p.cantidad, maxProductos)}%` }}
                         />
                       </div>
@@ -616,7 +616,7 @@ export default function AdminPage() {
 
               {/* Categories */}
               <div className="bg-white rounded-[32px] border border-[#F4D4CF] p-5 md:p-8 shadow-sm">
-                <h3 className="text-2xl md:text-4xl font-black text-cyan-500 mb-6 md:mb-8">
+                <h3 className="text-2xl md:text-4xl font-black text-[#FF5C8A] mb-6 md:mb-8">
                   Categorías
                 </h3>
                 <div className="space-y-4 md:space-y-6">
@@ -631,9 +631,9 @@ export default function AdminPage() {
                         <span className="truncate">{c.nombre}</span>
                         <span className="flex-shrink-0">{c.cantidad}</span>
                       </div>
-                      <div className="h-4 md:h-5 rounded-full bg-[#D9F5F8] overflow-hidden">
+                      <div className="h-4 md:h-5 rounded-full bg-[#FFE4EC] overflow-hidden">
                         <div
-                          className="bg-[#20B8C9] h-full rounded-full"
+                          className="bg-[#FF5C8A] h-full rounded-full"
                           style={{ width: `${porcentaje(c.cantidad, maxCategorias)}%` }}
                         />
                       </div>
@@ -644,7 +644,7 @@ export default function AdminPage() {
 
               {/* Recent activity */}
               <div className="bg-white rounded-[32px] border border-[#F4D4CF] p-5 md:p-8 shadow-sm">
-                <h3 className="text-2xl md:text-4xl font-black text-cyan-500 mb-6 md:mb-8">
+                <h3 className="text-2xl md:text-4xl font-black text-[#FF5C8A] mb-6 md:mb-8">
                   Actividad reciente
                 </h3>
                 <div className="space-y-4 md:space-y-5">
@@ -662,7 +662,7 @@ export default function AdminPage() {
                         <p className="font-bold text-base md:text-lg leading-tight">
                           {pedido.cliente || "Sin cliente"}
                         </p>
-                        <span className="font-black text-cyan-600 flex-shrink-0 text-sm md:text-base">
+                        <span className="font-black text-[#3F334A] flex-shrink-0 text-sm md:text-base">
                           {moneda(numero(pedido.total))}
                         </span>
                       </div>

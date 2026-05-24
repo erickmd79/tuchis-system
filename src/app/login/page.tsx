@@ -41,23 +41,23 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFF8F5] flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "#FFF7F4" }}>
       <div className="w-full max-w-md">
 
         <div className="text-center mb-10">
           <div className="text-6xl mb-3">🐷</div>
-          <h1 className="text-4xl font-bold text-[#20B8C9]">
+          <h1 className="text-4xl font-bold" style={{ color: "#FF5C8A" }}>
             TUCHIS
           </h1>
-          <p className="text-gray-500 mt-1 font-medium">
+          <p className="mt-1 font-medium" style={{ color: "#7D7288" }}>
             Panel administrativo
           </p>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-lg border border-[#F8D6D0] p-8 space-y-5">
+        <div className="bg-white rounded-3xl shadow-lg border p-8 space-y-5" style={{ borderColor: "#FFE4EC" }}>
 
           <div>
-            <label className="block text-sm font-bold text-gray-600 mb-2">
+            <label className="block text-sm font-bold mb-2" style={{ color: "#3F334A" }}>
               Correo electrónico
             </label>
             <input
@@ -66,13 +66,14 @@ function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="admin@tuchis.com"
-              className="w-full p-4 rounded-2xl border border-[#F8D6D0] bg-[#FFF8F5] focus:outline-none focus:border-[#20B8C9]"
+              className="w-full p-4 rounded-2xl border bg-white focus:outline-none transition"
+              style={{ borderColor: "#FFD0DC" }}
               autoComplete="email"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-600 mb-2">
+            <label className="block text-sm font-bold mb-2" style={{ color: "#3F334A" }}>
               Contraseña
             </label>
             <input
@@ -81,7 +82,8 @@ function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="••••••••"
-              className="w-full p-4 rounded-2xl border border-[#F8D6D0] bg-[#FFF8F5] focus:outline-none focus:border-[#20B8C9]"
+              className="w-full p-4 rounded-2xl border bg-white focus:outline-none transition"
+              style={{ borderColor: "#FFD0DC" }}
               autoComplete="current-password"
             />
           </div>
@@ -95,7 +97,8 @@ function LoginForm() {
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="w-full bg-[#20B8C9] hover:bg-[#17A7B8] disabled:opacity-60 text-white py-4 rounded-2xl font-bold text-lg transition"
+            className="w-full disabled:opacity-60 text-white py-4 rounded-2xl font-bold text-lg transition hover:opacity-90"
+            style={{ background: "#FF5C8A" }}
           >
             {loading ? "Entrando…" : "Entrar"}
           </button>

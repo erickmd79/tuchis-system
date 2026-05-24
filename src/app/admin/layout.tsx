@@ -35,7 +35,7 @@ export default function AdminLayout({
 
   if (verificando) {
     return (
-      <div className="min-h-screen bg-[#FFF8F5] flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <p className="text-gray-400 font-bold text-lg">
           Verificando sesión…
         </p>
