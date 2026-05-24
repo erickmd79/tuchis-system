@@ -9,6 +9,7 @@ import {
   moneda,
   type Escala,
   obtenerPrecioPorEscala,
+  obtenerModalidadesDisponibles,
   calcularTotalProductos,
 } from "../../../lib/pricing"
 
@@ -107,6 +108,7 @@ export default function NuevoPedidoPage() {
       cantidad: piezas,
       precio,
       precio_unitario: precio,
+      subtotal: precio * piezas,
       imagen: item.imagen ?? item.imagenes?.[0] ?? productoBase.imagenes?.[0] ?? "",
       imagenes: item.imagenes ?? productoBase.imagenes ?? [],
     }
@@ -314,30 +316,31 @@ export default function NuevoPedidoPage() {
                         <h3 className="font-black text-cyan-600">
                           {item.nombre}
                         </h3>
-                        {(item.tamano || item.tamano_nombre || item.modalidad) && (
+                        {(item.tamano || item.tamano_nombre) && (
                           <p className="text-xs font-bold text-zinc-400 mt-0.5">
-                            {[item.tamano || item.tamano_nombre, item.modalidad]
-                              .filter(Boolean)
-                              .join(" · ")}
+                            {item.tamano || item.tamano_nombre}
                           </p>
                         )}
                       </div>
-                      <span className="text-sm font-bold text-zinc-600 whitespace-nowrap">
-                        {item.cantidad} × {moneda(item.precio)}
-                      </span>
+                      <div className="text-right flex-shrink-0">
+                        <span className="text-sm font-bold text-zinc-600 whitespace-nowrap">
+                          {item.cantidad} × {moneda(item.precio)}
+                        </span>
+                        {item.precio > 0 && (
+                          <p className="text-xs font-black text-cyan-600 mt-0.5">
+                            = {moneda(item.subtotal ?? item.precio * item.cantidad)}
+                          </p>
+                        )}
+                      </div>
                     </div>
                     {(() => {
                       const tamanoId = Number(item.tamano_id) || 0
-                      const opciones =
+                      const desdeEscalas =
                         tamanoId > 0 && escalas.length > 0
-                          ? Array.from(
-                              new Set(
-                                escalas
-                                  .filter((e) => e.tamano_id === tamanoId)
-                                  .map((e) => e.modalidad)
-                              )
-                            )
-                          : [...MODALIDADES]
+                          ? obtenerModalidadesDisponibles(escalas, tamanoId)
+                          : []
+                      const opciones =
+                        desdeEscalas.length > 0 ? desdeEscalas : [...MODALIDADES]
                       return (
                         <select
                           value={item.modalidad || ""}
@@ -346,7 +349,7 @@ export default function NuevoPedidoPage() {
                           }
                           className="input-premium mt-3"
                         >
-                          <option value="">Selecciona modalidad</option>
+                          <option value="">— Selecciona modalidad —</option>
                           {opciones.map((opcion) => (
                             <option key={opcion} value={opcion}>
                               {opcion}

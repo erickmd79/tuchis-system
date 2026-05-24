@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+/* ── TUCHIS color palette ────────────────────────────
+   Used in the public-facing home page and gradually
+   adopted across the project.
+   ──────────────────────────────────────────────────── */
+:root {
+  --tuchis-rose:        #FF5C8A;
+  --tuchis-rose-light:  #FFE4EC;
+  --tuchis-lila:        #B9A7F5;
+  --tuchis-lila-light:  #EFE9FF;
+  --tuchis-mint:        #BFF3DF;
+  --tuchis-peach:       #FFD8C2;
+  --tuchis-yellow:      #FFECA8;
+  --tuchis-dark:        #3F334A;
+  --tuchis-muted:       #7D7288;
+  --tuchis-bg:          #FFF7F4;
+}
+
 *{
   box-sizing:border-box;
 }
@@ -9,9 +26,9 @@ body{
   margin:0;
   padding:0;
   width:100%;
-  overflow-x:hidden;
-  background:#FFF8F6;
-  color:#2B2B2B;
+  overflow-x:clip;
+  background:#FFFFFF;
+  color:var(--tuchis-dark);
   font-family:Arial, Helvetica, sans-serif;
 }
 
@@ -49,7 +66,7 @@ button{
   min-height:82px;
   background:rgba(255,255,255,.96);
   backdrop-filter:blur(14px);
-  color:#222;
+  color:var(--tuchis-dark);
 
   display:flex;
   align-items:center;
@@ -57,7 +74,7 @@ button{
   gap:24px;
 
   padding:10px 24px;
-  border-bottom:1px solid #F5D3CD;
+  border-bottom:1px solid var(--tuchis-rose-light);
   box-shadow:0 8px 24px rgba(0,0,0,.05);
 
   position:sticky;
@@ -95,7 +112,14 @@ button{
 .navbar-links a{
   font-size:18px;
   font-weight:700;
-  color:#20B8C9;
+  color:var(--tuchis-dark);
+  border-radius:12px;
+  padding:5px 10px;
+  transition:background .15s;
+}
+
+.navbar-links a:hover{
+  background:var(--tuchis-rose-light);
 }
 
 .navbar-cart{
@@ -103,10 +127,10 @@ button{
   width:52px;
   height:52px;
   flex:0 0 auto;
-  border:1px solid #BEE9E8;
+  border:1px solid #FFD0DC;
   border-radius:18px;
-  background:#D9F5F8;
-  color:#20B8C9;
+  background:var(--tuchis-rose-light);
+  color:var(--tuchis-rose);
   display:flex;
   align-items:center;
   justify-content:center;
@@ -159,8 +183,8 @@ button{
     width:48px;
     height:48px;
     border-radius:16px;
-    background:#D9F5F8;
-    border:1px solid #BEE9E8;
+    background:var(--tuchis-rose-light);
+    border:1px solid #FFD0DC;
     display:flex;
     flex-direction:column;
     align-items:center;
@@ -173,7 +197,7 @@ button{
     width:22px;
     height:3px;
     border-radius:999px;
-    background:#20B8C9;
+    background:var(--tuchis-rose);
   }
 
   .navbar-links{
@@ -206,7 +230,7 @@ button{
   }
 
   .navbar-links a:hover{
-    background:#D9F5F8;
+    background:var(--tuchis-rose-light);
   }
 
   .navbar-cart{
@@ -245,7 +269,7 @@ button{
 .cart-drawer-header{
   min-height:72px;
   padding:18px 22px;
-  background:#20B8C9;
+  background:var(--tuchis-rose);
   color:white;
   display:flex;
   align-items:center;
@@ -298,7 +322,7 @@ button{
   font-size:72px;
   font-weight:900;
   line-height:1;
-  color:#20B8C9;
+  color:var(--tuchis-rose);
   margin-bottom:12px;
 }
 
@@ -351,15 +375,15 @@ button{
 }
 
 .input-premium:focus{
-  border-color:#20B8C9;
-  box-shadow:0 0 0 4px rgba(32,184,201,.12);
+  border-color:var(--tuchis-rose);
+  box-shadow:0 0 0 4px rgba(255,92,138,.12);
 }
 
 .input-cliente-grande{
   min-height:78px;
   font-size:28px;
   font-weight:900;
-  color:#20B8C9;
+  color:var(--tuchis-rose);
 }
 
 @media(max-width:768px){
@@ -384,12 +408,17 @@ button{
 
 .btn-primary{
   border:none;
-  background:#20B8C9;
+  background:var(--tuchis-rose);
   color:white;
   padding:16px 24px;
   border-radius:18px;
   font-size:16px;
   font-weight:700;
+  transition:opacity .15s;
+}
+
+.btn-primary:hover{
+  opacity:.88;
 }
 
 .btn-danger{
@@ -589,7 +618,7 @@ button{
 .product-card-hover:hover{
   transform:translateY(-5px);
   box-shadow:
-    0 20px 40px rgba(32,184,201,.13),
+    0 20px 40px rgba(255,92,138,.14),
     0 4px 12px rgba(0,0,0,.06);
 }
 

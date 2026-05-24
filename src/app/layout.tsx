@@ -1,5 +1,6 @@
 import "./globals.css"
 import Navbar from "./components/Navbar"
+import AdminNav from "./components/AdminNav"
 
 export const metadata = {
   title: "TUCHIS",
@@ -20,6 +21,7 @@ export default function RootLayout({
 
         <main className="app-wrapper">
           {children}
+          <AdminNav />
         </main>
 
       </body>
