@@ -200,7 +200,7 @@ export default function EscalasPage() {
           {/* ── Sidebar ── */}
           <aside className="hidden lg:block w-full lg:w-[280px] lg:flex-shrink-0">
             <div className="bg-white rounded-[32px] border border-[#F4D4CF] shadow-sm p-6 lg:sticky lg:top-28">
-              <h1 className="text-4xl md:text-5xl font-black text-cyan-500">
+              <h1 className="text-4xl md:text-5xl font-black text-[#FF5C8A]">
                 TUCHIS
               </h1>
 
@@ -211,7 +211,7 @@ export default function EscalasPage() {
               <div className="mt-8 flex flex-col gap-4">
                 <Link
                   href="/admin"
-                  className="bg-[#D9F5F8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
+                  className="bg-[#FFE4EC] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
                 >
                   Dashboard
                 </Link>
@@ -239,7 +239,7 @@ export default function EscalasPage() {
 
                 <Link
                   href="/admin/tamanos"
-                  className="bg-[#D9F5F8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
+                  className="bg-[#FFE4EC] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
                 >
                   Tamaños
                 </Link>
@@ -260,7 +260,7 @@ export default function EscalasPage() {
           <main className="flex-1 min-w-0">
             <div className="mb-10 flex flex-col sm:flex-row sm:items-end gap-4">
               <div className="flex-1">
-                <h2 className="text-5xl md:text-7xl font-black text-cyan-500 leading-none break-words">
+                <h2 className="text-5xl md:text-7xl font-black text-[#FF5C8A] leading-none break-words">
                   Escalas de Precio
                 </h2>
 
@@ -278,7 +278,7 @@ export default function EscalasPage() {
             </div>
 
             <div className="section-card">
-              <h3 className="text-3xl font-black text-cyan-600 mb-8">
+              <h3 className="text-3xl font-black text-[#3F334A] mb-8">
                 Lista de escalas
               </h3>
 
@@ -289,7 +289,7 @@ export default function EscalasPage() {
               )}
 
               {!cargando && escalas.length === 0 && (
-                <div className="rounded-3xl border border-[#F8D6D0] bg-[#FFF8F5] p-8 text-center text-zinc-500 font-bold">
+                <div className="rounded-3xl border border-[#F8D6D0] bg-white p-8 text-center text-zinc-500 font-bold">
                   Aún no hay escalas configuradas.
                 </div>
               )}
@@ -299,19 +299,19 @@ export default function EscalasPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-[#F4D4CF]">
-                        <th className="text-left p-4 font-black text-cyan-600">
+                        <th className="text-left p-4 font-black text-[#3F334A]">
                           Tamaño
                         </th>
-                        <th className="text-left p-4 font-black text-cyan-600">
+                        <th className="text-left p-4 font-black text-[#3F334A]">
                           Modalidad
                         </th>
-                        <th className="text-left p-4 font-black text-cyan-600">
+                        <th className="text-left p-4 font-black text-[#3F334A]">
                           Cantidad
                         </th>
-                        <th className="text-left p-4 font-black text-cyan-600">
+                        <th className="text-left p-4 font-black text-[#3F334A]">
                           Precio
                         </th>
-                        <th className="text-left p-4 font-black text-cyan-600">
+                        <th className="text-left p-4 font-black text-[#3F334A]">
                           Acciones
                         </th>
                       </tr>
@@ -320,9 +320,9 @@ export default function EscalasPage() {
                       {escalas.map((escala) => (
                         <tr
                           key={escala.id}
-                          className="border-b border-[#F5D3CD] hover:bg-[#FFF8F5]"
+                          className="border-b border-[#F5D3CD] hover:bg-white"
                         >
-                          <td className="p-4 font-bold text-cyan-600">
+                          <td className="p-4 font-bold text-[#3F334A]">
                             {obtenerNombreTamano(escala.tamano_id)}
                           </td>
                           <td className="p-4 text-gray-700">
@@ -338,7 +338,7 @@ export default function EscalasPage() {
                             <div className="flex gap-2">
                               <button
                                 onClick={() => abrirModalEditar(escala)}
-                                className="bg-[#BEE9E8] px-3 py-2 rounded-xl font-bold text-sm"
+                                className="bg-[#BFF3DF] px-3 py-2 rounded-xl font-bold text-sm"
                               >
                                 Editar
                               </button>
@@ -372,7 +372,7 @@ export default function EscalasPage() {
         >
           <div className="modal-content modal-enter max-w-xl w-full">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-3xl font-black text-cyan-600">
+              <h3 className="text-3xl font-black text-[#3F334A]">
                 {editando ? "Editar escala" : "Crear escala"}
               </h3>
 
@@ -501,26 +501,26 @@ export default function EscalasPage() {
               </button>
             </div>
 
-            <div className="bg-[#FFF8F5] border border-[#F5D3CD] rounded-2xl p-5 mb-6">
+            <div className="bg-white border border-[#F5D3CD] rounded-2xl p-5 mb-6">
               <p className="text-gray-700 font-bold text-base mb-3">
                 ¿Seguro que quieres eliminar esta escala?
               </p>
 
               <div className="flex flex-col gap-1 text-sm text-gray-600">
                 <span>
-                  <span className="font-black text-cyan-600">Tamaño:</span>{" "}
+                  <span className="font-black text-[#3F334A]">Tamaño:</span>{" "}
                   {obtenerNombreTamano(escalaPorEliminar.tamano_id)}
                 </span>
                 <span>
-                  <span className="font-black text-cyan-600">Modalidad:</span>{" "}
+                  <span className="font-black text-[#3F334A]">Modalidad:</span>{" "}
                   {escalaPorEliminar.modalidad}
                 </span>
                 <span>
-                  <span className="font-black text-cyan-600">Cantidad:</span>{" "}
+                  <span className="font-black text-[#3F334A]">Cantidad:</span>{" "}
                   {formatearRango(escalaPorEliminar)}
                 </span>
                 <span>
-                  <span className="font-black text-cyan-600">Precio:</span>{" "}
+                  <span className="font-black text-[#3F334A]">Precio:</span>{" "}
                   {moneda(escalaPorEliminar.precio)}
                 </span>
               </div>

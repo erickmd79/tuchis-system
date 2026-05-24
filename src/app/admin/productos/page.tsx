@@ -160,7 +160,7 @@ export default function ProductosPage() {
 
           <aside className="hidden lg:block w-full lg:w-[280px] lg:flex-shrink-0">
             <div className="bg-white rounded-[32px] border border-[#F4D4CF] shadow-sm p-6 lg:sticky lg:top-28">
-              <h1 className="text-4xl md:text-5xl font-black text-cyan-500">
+              <h1 className="text-4xl md:text-5xl font-black text-[#FF5C8A]">
                 TUCHIS
               </h1>
 
@@ -171,7 +171,7 @@ export default function ProductosPage() {
               <div className="mt-8 flex flex-col gap-4">
                 <Link
                   href="/admin"
-                  className="bg-[#D9F5F8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
+                  className="bg-[#FFE4EC] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
                 >
                   Dashboard
                 </Link>
@@ -199,7 +199,7 @@ export default function ProductosPage() {
 
                 <Link
                   href="/admin/tamanos"
-                  className="bg-[#D9F5F8] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
+                  className="bg-[#FFE4EC] text-gray-800 px-5 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition"
                 >
                   Tamaños
                 </Link>
@@ -219,7 +219,7 @@ export default function ProductosPage() {
           <main className="flex-1 min-w-0">
 
             <div className="mb-10">
-              <h2 className="text-5xl md:text-7xl font-black text-cyan-500 leading-none break-words">
+              <h2 className="text-5xl md:text-7xl font-black text-[#FF5C8A] leading-none break-words">
                 Productos
               </h2>
 
@@ -229,7 +229,7 @@ export default function ProductosPage() {
             </div>
 
             <div className="section-card mb-8">
-              <h3 className="text-3xl font-black text-cyan-600 mb-8">
+              <h3 className="text-3xl font-black text-[#3F334A] mb-8">
                 Crear producto
               </h3>
 
@@ -316,8 +316,8 @@ export default function ProductosPage() {
                 className="input-premium min-h-[120px] mt-5"
               />
 
-              <label className="mt-6 border-2 border-dashed border-cyan-300 rounded-[28px] p-12 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-cyan-50 transition">
-                <span className="text-3xl font-black text-cyan-600">
+              <label className="mt-6 border-2 border-dashed border-[#FFD0DC] rounded-[28px] p-12 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-[#FFF7F4] transition">
+                <span className="text-3xl font-black text-[#3F334A]">
                   Arrastra imágenes aquí
                 </span>
                 <span className="text-zinc-500 mt-2">
@@ -402,7 +402,7 @@ export default function ProductosPage() {
                         {producto.categoria}
                       </p>
 
-                      <h3 className="text-4xl font-black text-cyan-600 mt-2">
+                      <h3 className="text-4xl font-black text-[#3F334A] mt-2">
                         {producto.nombre}
                       </h3>
 
@@ -428,7 +428,7 @@ export default function ProductosPage() {
                             (tag: string, index: number) => (
                               <span
                                 key={index}
-                                className="bg-cyan-100 text-cyan-700 px-3 py-1 rounded-full text-sm font-semibold"
+                                className="bg-[#FFE4EC] text-[#3F334A] px-3 py-1 rounded-full text-sm font-semibold"
                               >
                                 {tag}
                               </span>
@@ -447,7 +447,7 @@ export default function ProductosPage() {
                               ),
                             })
                           }
-                          className="bg-cyan-500 hover:bg-cyan-600 text-white py-4 rounded-2xl font-black transition"
+                          className="bg-[#FF5C8A] hover:opacity-90 text-white py-4 rounded-2xl font-black transition"
                         >
                           Editar
                         </button>
@@ -482,7 +482,7 @@ export default function ProductosPage() {
               ×
             </button>
 
-            <h2 className="text-4xl md:text-5xl font-black text-cyan-500 mb-10">
+            <h2 className="text-4xl md:text-5xl font-black text-[#FF5C8A] mb-10">
               Editar producto
             </h2>
 
@@ -673,8 +673,8 @@ export default function ProductosPage() {
             </div>
 
             <div className="mt-8">
-              <label className="border-2 border-dashed border-cyan-300 rounded-3xl p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-cyan-50 transition">
-                <span className="text-2xl font-bold text-cyan-600">
+              <label className="border-2 border-dashed border-[#FFD0DC] rounded-3xl p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-[#FFF7F4] transition">
+                <span className="text-2xl font-bold text-[#3F334A]">
                   Agregar fotografías
                 </span>
                 <span className="text-zinc-500 mt-2">

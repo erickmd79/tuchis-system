@@ -779,7 +779,7 @@ export default function MisPedidosPage() {
         {/* ── Paso 1: Buscar ── */}
         {paso === 1 && (
           <div>
-            <h1 className="text-5xl md:text-7xl font-black text-cyan-500 leading-none mb-3">
+            <h1 className="text-5xl md:text-7xl font-black text-[#FF5C8A] leading-none mb-3">
               Mis pedidos
             </h1>
             <p className="text-gray-500 text-base md:text-lg mb-10">
@@ -787,7 +787,7 @@ export default function MisPedidosPage() {
             </p>
 
             <div className="section-card">
-              <h2 className="text-2xl font-black text-cyan-600 mb-6">
+              <h2 className="text-2xl font-black text-[#3F334A] mb-6">
                 Buscar mis pedidos
               </h2>
 
@@ -828,7 +828,7 @@ export default function MisPedidosPage() {
               ¿Quieres hacer un nuevo pedido?{" "}
               <Link
                 href="/catalogo"
-                className="font-bold text-cyan-500 underline"
+                className="font-bold text-[#FF5C8A] underline"
               >
                 Ver catálogo
               </Link>
@@ -841,12 +841,12 @@ export default function MisPedidosPage() {
           <div>
             <button
               onClick={volverABuscar}
-              className="inline-flex items-center gap-2 text-cyan-600 font-bold text-sm mb-8 hover:opacity-70 transition"
+              className="inline-flex items-center gap-2 text-[#3F334A] font-bold text-sm mb-8 hover:opacity-70 transition"
             >
               ← Buscar de nuevo
             </button>
 
-            <h1 className="text-4xl md:text-6xl font-black text-cyan-500 leading-none mb-2">
+            <h1 className="text-4xl md:text-6xl font-black text-[#FF5C8A] leading-none mb-2">
               Tus pedidos
             </h1>
             <p className="text-gray-500 text-sm mb-8">
@@ -870,7 +870,7 @@ export default function MisPedidosPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-1">
-                          <span className="text-xl font-black text-cyan-600">
+                          <span className="text-xl font-black text-[#3F334A]">
                             #{pedido.id}
                           </span>
                           <span className="text-base font-bold text-gray-800 truncate">
@@ -914,7 +914,7 @@ export default function MisPedidosPage() {
               ¿Quieres hacer un nuevo pedido?{" "}
               <Link
                 href="/catalogo"
-                className="font-bold text-cyan-500 underline"
+                className="font-bold text-[#FF5C8A] underline"
               >
                 Ver catálogo
               </Link>
@@ -941,7 +941,7 @@ export default function MisPedidosPage() {
               <div>
                 <button
                   onClick={volverALista}
-                  className="inline-flex items-center gap-2 text-cyan-600 font-bold text-sm mb-8 hover:opacity-70 transition"
+                  className="inline-flex items-center gap-2 text-[#3F334A] font-bold text-sm mb-8 hover:opacity-70 transition"
                 >
                   ← Mis pedidos
                 </button>
@@ -951,7 +951,7 @@ export default function MisPedidosPage() {
                     <span className="text-2xl font-black text-gray-400">
                       TCH-{p.id}
                     </span>
-                    <h1 className="text-4xl md:text-6xl font-black text-cyan-500 leading-none">
+                    <h1 className="text-4xl md:text-6xl font-black text-[#FF5C8A] leading-none">
                       {p.cliente}
                     </h1>
                   </div>
@@ -1021,7 +1021,7 @@ export default function MisPedidosPage() {
                       return (
                         <div
                           key={i}
-                          className="flex items-center gap-3 bg-[#FFF8F5] rounded-2xl p-3"
+                          className="flex items-center gap-3 bg-white rounded-2xl p-3"
                         >
                           {prod.imagenes?.[0] || prod.imagen ? (
                             <img
@@ -1030,12 +1030,12 @@ export default function MisPedidosPage() {
                               className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
                             />
                           ) : (
-                            <div className="w-14 h-14 rounded-xl bg-[#D9F5F8] flex items-center justify-center flex-shrink-0 text-cyan-500 font-black text-lg">
+                            <div className="w-14 h-14 rounded-xl bg-[#FFE4EC] flex items-center justify-center flex-shrink-0 text-[#FF5C8A] font-black text-lg">
                               {i + 1}
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className="font-black text-cyan-600 truncate">
+                            <div className="font-black text-[#3F334A] truncate">
                               {prod.nombre}
                             </div>
                             {detalles && (
@@ -1062,7 +1062,7 @@ export default function MisPedidosPage() {
                   className="rounded-[24px] p-5 mb-8 text-white"
                   style={{
                     background:
-                      "linear-gradient(135deg,#20B8C9 0%,#1AA8B8 100%)",
+                      "linear-gradient(135deg,#FF5C8A 0%,#e04b7a 100%)",
                   }}
                 >
                   <div
@@ -1117,7 +1117,7 @@ export default function MisPedidosPage() {
                   ¿Quieres explorar más productos?{" "}
                   <Link
                     href="/catalogo"
-                    className="font-bold text-cyan-500 underline"
+                    className="font-bold text-[#FF5C8A] underline"
                   >
                     Ver catálogo
                   </Link>
@@ -1140,7 +1140,7 @@ export default function MisPedidosPage() {
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-3xl font-black text-cyan-600">
+                <h2 className="text-3xl font-black text-[#3F334A]">
                   Volver a pedir
                 </h2>
                 {pedidoActivo && (
@@ -1159,7 +1159,7 @@ export default function MisPedidosPage() {
 
             {cargandoModal ? (
               <div className="flex flex-col items-center gap-4 py-16 text-gray-400">
-                <div className="w-10 h-10 rounded-full border-4 border-[#D9F5F8] border-t-cyan-500 animate-spin" />
+                <div className="w-10 h-10 rounded-full border-4 border-[#FFE4EC] border-t-[#FF5C8A] animate-spin" />
                 <p className="font-bold text-sm">
                   Cargando datos del pedido…
                 </p>
@@ -1285,7 +1285,7 @@ export default function MisPedidosPage() {
                         return (
                           <div
                             key={prod.uid}
-                            className="bg-[#FFF8F5] border border-[#F5D3CD] rounded-2xl p-4"
+                            className="bg-white border border-[#F5D3CD] rounded-2xl p-4"
                           >
                             <div className="flex items-start gap-3">
                               {prod.imagenes[0] ? (
@@ -1295,7 +1295,7 @@ export default function MisPedidosPage() {
                                   className="w-12 h-12 rounded-xl object-cover flex-shrink-0"
                                 />
                               ) : (
-                                <div className="w-12 h-12 rounded-xl bg-[#D9F5F8] flex items-center justify-center flex-shrink-0 text-cyan-500 font-black">
+                                <div className="w-12 h-12 rounded-xl bg-[#FFE4EC] flex items-center justify-center flex-shrink-0 text-[#FF5C8A] font-black">
                                   {prod.nombre.charAt(0)}
                                 </div>
                               )}
@@ -1303,7 +1303,7 @@ export default function MisPedidosPage() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="min-w-0">
-                                    <p className="font-black text-cyan-600 truncate text-sm">
+                                    <p className="font-black text-[#3F334A] truncate text-sm">
                                       {prod.nombre}
                                     </p>
                                     {prod.tamano && (
@@ -1456,7 +1456,7 @@ export default function MisPedidosPage() {
                     className="rounded-2xl p-4 text-white mb-4"
                     style={{
                       background:
-                        "linear-gradient(135deg,#20B8C9 0%,#1AA8B8 100%)",
+                        "linear-gradient(135deg,#FF5C8A 0%,#e04b7a 100%)",
                     }}
                   >
                     <div className="grid grid-cols-3 gap-4 text-center">
@@ -1510,7 +1510,7 @@ export default function MisPedidosPage() {
                             String(Math.round(totalModal * 0.5))
                           )
                         }
-                        className="text-xs font-black text-cyan-600 hover:opacity-70 transition"
+                        className="text-xs font-black text-[#3F334A] hover:opacity-70 transition"
                       >
                         Usar 50%
                       </button>
