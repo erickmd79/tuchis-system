@@ -47,6 +47,17 @@ const moneda = (valor: number) =>
     maximumFractionDigits: 0,
   })
 
+// Compact version for KPI cards: abbreviates ≥ 1M to avoid overflow.
+// Amounts below 1M are shown in full (e.g. $120,000).
+const monedaCard = (valor: number): string => {
+  if (valor >= 1_000_000)
+    return `$${(valor / 1_000_000).toLocaleString("es-MX", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 1,
+    })}M`
+  return moneda(valor)
+}
+
 const obtenerFechaLocal = (): string => {
   const fecha = new Date()
   const offset = fecha.getTimezoneOffset()
@@ -427,15 +438,15 @@ export default function AdminPage() {
 
               <div className="rounded-[24px] md:rounded-[32px] p-4 md:p-6 xl:p-8 bg-[#BFF3DF] flex flex-col justify-between min-h-[130px] md:min-h-[180px]">
                 <h3 className="text-gray-700 text-sm md:text-lg font-semibold">Total ventas</h3>
-                <p className="text-2xl md:text-4xl xl:text-5xl font-black mt-3 md:mt-6 break-all">
-                  {moneda(resumen.totalVentas)}
+                <p className="text-xl md:text-3xl xl:text-4xl font-black mt-auto whitespace-nowrap">
+                  {monedaCard(resumen.totalVentas)}
                 </p>
               </div>
 
               <div className="rounded-[24px] md:rounded-[32px] p-4 md:p-6 xl:p-8 bg-[#FFF0B8] flex flex-col justify-between min-h-[130px] md:min-h-[180px]">
                 <h3 className="text-gray-700 text-sm md:text-lg font-semibold">Anticipos</h3>
-                <p className="text-2xl md:text-4xl xl:text-5xl font-black mt-3 md:mt-6 break-all">
-                  {moneda(resumen.totalAnticipos)}
+                <p className="text-xl md:text-3xl xl:text-4xl font-black mt-auto whitespace-nowrap">
+                  {monedaCard(resumen.totalAnticipos)}
                 </p>
               </div>
 
