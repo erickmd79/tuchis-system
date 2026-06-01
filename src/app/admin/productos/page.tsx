@@ -28,6 +28,7 @@ export default function ProductosPage() {
   const [sku, setSku] = useState("")
   const [stock, setStock] = useState(0)
   const [etiquetas, setEtiquetas] = useState("")
+  const [precio, setPrecio] = useState(0)
   const [imagenes, setImagenes] = useState<File[]>([])
 
   const [productoEditando, setProductoEditando] =
@@ -72,6 +73,14 @@ export default function ProductosPage() {
   }
 
   const guardarProducto = async () => {
+    if (!nombre.trim()) {
+      alert("El nombre es obligatorio")
+      return
+    }
+    if (!precio || Number(precio) <= 0) {
+      alert("El precio es obligatorio")
+      return
+    }
     try {
       let urls: string[] = []
 
@@ -103,6 +112,7 @@ export default function ProductosPage() {
           medidas: limpiarMedidas(medidas),
           sku,
           stock,
+          precio: Number(precio),
           etiquetas: etiquetas.length > 0
             ? etiquetas.split(",").map((e) => e.trim())
             : [],
@@ -123,6 +133,7 @@ export default function ProductosPage() {
       setMedidas("")
       setSku("")
       setStock(0)
+      setPrecio(0)
       setEtiquetas("")
       setImagenes([])
 
@@ -247,6 +258,21 @@ export default function ProductosPage() {
                     onChange={(e) =>
                       setStock(Number(e.target.value))
                     }
+                    className="input-premium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-zinc-500 mb-2">
+                    Precio base ($)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    min="0"
+                    step="0.01"
+                    value={precio}
+                    onChange={(e) => setPrecio(Number(e.target.value))}
                     className="input-premium"
                   />
                 </div>
@@ -555,6 +581,25 @@ export default function ProductosPage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-semibold text-zinc-500 mb-2">
+                  Precio base ($)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={productoEditando.precio || 0}
+                  onChange={(e) =>
+                    setProductoEditando({
+                      ...productoEditando,
+                      precio: Number(e.target.value),
+                    })
+                  }
+                  className="input-premium"
+                />
+              </div>
+
             </div>
 
             <div className="mt-6">
@@ -678,6 +723,7 @@ export default function ProductosPage() {
                       ),
                       sku: String(productoEditando.sku || ""),
                       stock: Number(productoEditando.stock || 0),
+                      precio: Number(productoEditando.precio || 0),
                       etiquetas: Array.isArray(
                         productoEditando.etiquetas
                       )
