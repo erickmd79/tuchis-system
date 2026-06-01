@@ -116,10 +116,22 @@ export default function NuevoPedidoPage() {
 
   const carritoConPrecios = carrito.map((item) => prepararProductoPedido(item))
   const total = calcularTotalProductos(carritoConPrecios)
+  const minimoAnticipo = total > 0 ? total * 0.5 : 0
   const anticipoCapturado = Math.max(0, numero(anticipo))
   const anticipoPedido = Math.min(anticipoCapturado, total)
   const saldoPedido = Math.max(total - anticipoPedido, 0)
   const estadoPagoFinal = calcularEstadoPago(anticipoPedido, total)
+
+  // Auto-fill anticipo when total changes: set to minimum if blank or below minimum.
+  // Preserves any value the user entered above the minimum.
+  useEffect(() => {
+    if (total <= 0) return
+    const minimo = total * 0.5
+    if (numero(anticipo) < minimo) {
+      setAnticipo(String(minimo))
+      setEstadoPagoPedido(calcularEstadoPago(minimo, total))
+    }
+  }, [total]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const actualizarModalidadCarrito = (index: number, modalidad: string) => {
     const actualizado = carrito.map((item, i) =>
@@ -483,7 +495,7 @@ export default function NuevoPedidoPage() {
                 </label>
                 <input
                   type="number"
-                  min="0"
+                  min={minimoAnticipo}
                   value={anticipo}
                   onChange={(e) => {
                     const valor = e.target.value
@@ -497,8 +509,13 @@ export default function NuevoPedidoPage() {
                     )
                   }}
                   className="input-premium"
-                  placeholder="Monto del anticipo"
+                  placeholder={total > 0 ? moneda(minimoAnticipo) : "Monto del anticipo"}
                 />
+                {total > 0 && (
+                  <p className="text-sm text-zinc-500 mt-2">
+                    Anticipo mínimo requerido: <span className="font-black text-zinc-700">{moneda(minimoAnticipo)}</span>
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-semibold text-zinc-500 mb-2">
