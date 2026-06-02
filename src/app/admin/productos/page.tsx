@@ -141,18 +141,35 @@ export default function ProductosPage() {
     const confirmar = confirm("¿Eliminar producto?")
     if (!confirmar) return
 
-    const { error } = await supabase
-      .from("productos")
-      .delete()
-      .eq("id", id)
+    try {
+      const { error, count } = await supabase
+        .from("productos")
+        .delete({ count: "exact" })
+        .eq("id", id)
 
-    if (error) {
-      console.log(error)
-      alert(`Error eliminando producto: ${error.message}`)
-      return
+      if (error) {
+        console.error("Error eliminando producto:", error)
+        alert(`Error eliminando producto: ${error.message}`)
+        return
+      }
+
+      if (count === 0) {
+        console.warn("Delete sin efecto (RLS o FK):", id)
+        alert(
+          "No se pudo eliminar el producto.\n\n" +
+          "Puede deberse a:\n" +
+          "• El producto está relacionado con pedidos existentes.\n" +
+          "• La política de seguridad no permite eliminarlo.\n\n" +
+          "Contacta al administrador de la base de datos."
+        )
+        return
+      }
+
+      obtenerProductos()
+    } catch (err) {
+      console.error("Excepción al eliminar producto:", err)
+      alert("Error inesperado al eliminar el producto.")
     }
-
-    obtenerProductos()
   }
 
   const productosMemo = useMemo(() => productos, [productos])
