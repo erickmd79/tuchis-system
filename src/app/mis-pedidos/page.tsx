@@ -621,7 +621,7 @@ export default function MisPedidosPage() {
       return
     }
     if (!vTelefono.trim()) {
-      setErrorModal("El teléfono es obligatorio.")
+      setErrorModal("Ingresa tu número telefónico. Con él podrás buscar y consultar tus pedidos después.")
       return
     }
     if (!vLugarEntrega.trim()) {
