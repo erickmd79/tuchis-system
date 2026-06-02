@@ -26,7 +26,8 @@ type Pedido = {
   created_at: string
   total: number
   anticipo: number
-  abono: number | null
+  abono_1: number | null
+  abono_2: number | null
   estado: string
   estado_pago: string
   notas: string | null
@@ -99,7 +100,10 @@ const formatearFecha = (valor?: string): string => {
 const calcularSaldo = (p: Pedido): number => {
   if (p.estado_pago === "pagado") return 0
   return Math.max(
-    numero(p.total) - numero(p.anticipo) - numero(p.abono ?? 0),
+    numero(p.total) -
+      numero(p.anticipo) -
+      numero(p.abono_1 ?? 0) -
+      numero(p.abono_2 ?? 0),
     0
   )
 }
@@ -122,7 +126,6 @@ const armarMensajeWhatsApp = (pedido: Pedido): string => {
   const folio = `TCH-${pedido.id}`
   const total = numero(pedido.total)
   const anticipo = numero(pedido.anticipo)
-  const abono = numero(pedido.abono ?? 0)
   const saldo = calcularSaldo(pedido)
 
   const prods = (Array.isArray(pedido.productos) ? pedido.productos : [])
@@ -154,7 +157,6 @@ const armarMensajeWhatsApp = (pedido: Pedido): string => {
     ``,
     `💰 *Total:* ${moneda(total)}`,
     `🤝 *Anticipo:* ${moneda(anticipo)}`,
-    abono > 0 ? `➕ *Abono:* ${moneda(abono)}` : null,
     `📊 *Saldo:* ${moneda(saldo)}`,
     ``,
     `🚚 *Entrega:* ${
@@ -270,7 +272,7 @@ export default function MisPedidosPage() {
     const { data } = await supabase
       .from("pedidos")
       .select(
-        "id,cliente,telefono,email,lugar_entrega,municipio,fecha,created_at,total,anticipo,abono,estado,estado_pago,notas,productos"
+        "id,cliente,telefono,email,lugar_entrega,municipio,fecha,created_at,total,anticipo,abono_1,abono_2,estado,estado_pago,notas,productos"
       )
       .in("telefono", candidatos)
       .order("id", { ascending: false })
@@ -935,7 +937,6 @@ export default function MisPedidosPage() {
             const be = badgeEntrega(p)
             const total = numero(p.total)
             const anticipo = numero(p.anticipo)
-            const abono = numero(p.abono ?? 0)
             const saldo = calcularSaldo(p)
             const productos: any[] = Array.isArray(p.productos)
               ? p.productos
@@ -1069,22 +1070,13 @@ export default function MisPedidosPage() {
                       "linear-gradient(135deg,#FF5C8A 0%,#e04b7a 100%)",
                   }}
                 >
-                  <div
-                    className={`grid gap-4 ${
-                      abono > 0
-                        ? "grid-cols-2 md:grid-cols-4"
-                        : "grid-cols-3"
-                    }`}
-                  >
+                  <div className="grid grid-cols-3 gap-4">
                     <TotalItem
                       label="Total"
                       value={moneda(total)}
                       grande
                     />
                     <TotalItem label="Anticipo" value={moneda(anticipo)} />
-                    {abono > 0 && (
-                      <TotalItem label="Abono" value={moneda(abono)} />
-                    )}
                     <TotalItem label="Saldo" value={moneda(saldo)} />
                   </div>
                 </div>

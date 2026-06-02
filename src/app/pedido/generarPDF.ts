@@ -65,11 +65,12 @@ function buildHTML(pedido: any, origen: string): string {
     return numero(pedido.anticipo) > 0 ? "anticipo" : "pendiente"
   })()
   const anticipoVal = Math.max(0, numero(pedido.anticipo))
-  const abonoVal = Math.max(0, numero(pedido.abono))
+  const abono1Val = Math.max(0, numero(pedido.abono_1 ?? pedido.abono))
+  const abono2Val = Math.max(0, numero(pedido.abono_2))
   const saldoVal =
     estadoPago === "pagado"
       ? 0
-      : Math.max(numero(pedido.total) - anticipoVal - abonoVal, 0)
+      : Math.max(numero(pedido.total) - anticipoVal - abono1Val - abono2Val, 0)
 
   const cpago = colorPago(estadoPago)
   const centrega = colorEntrega(estadoEntrega)
@@ -383,16 +384,6 @@ function buildHTML(pedido: any, origen: string): string {
       ">Anticipo</div>
       <div style="font-size:22px;font-weight:900;line-height:1;">${moneda(anticipoVal)}</div>
     </div>
-    ${abonoVal > 0 ? `
-    <div style="width:1px;height:44px;background:rgba(255,255,255,.3);"></div>
-    <div style="text-align:center;">
-      <div style="
-        font-size:10px;font-weight:700;
-        text-transform:uppercase;opacity:.8;letter-spacing:.05em;margin-bottom:4px;
-      ">Abono</div>
-      <div style="font-size:22px;font-weight:900;line-height:1;">${moneda(abonoVal)}</div>
-    </div>
-    ` : ""}
     <div style="width:1px;height:44px;background:rgba(255,255,255,.3);"></div>
     <div style="text-align:center;">
       <div style="
