@@ -895,19 +895,29 @@ export default function MisPedidosPage() {
                         <span className="text-xl font-black text-[#F49B93]">
                           {moneda(pedido.total)}
                         </span>
-                        <div className="flex gap-2 flex-wrap sm:justify-end">
-                          <span
-                            className={`badge-pedido ${be.clase}`}
-                            style={{ fontSize: 11, padding: "4px 10px" }}
-                          >
-                            {be.label}
-                          </span>
-                          <span
-                            className={`badge-pedido ${bp.clase}`}
-                            style={{ fontSize: 11, padding: "4px 10px" }}
-                          >
-                            {bp.label}
-                          </span>
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center gap-2 sm:justify-end">
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                              Entrega
+                            </span>
+                            <span
+                              className={`badge-pedido ${be.clase}`}
+                              style={{ fontSize: 10, padding: "2px 9px" }}
+                            >
+                              {be.label}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 sm:justify-end">
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                              Pago
+                            </span>
+                            <span
+                              className={`badge-pedido ${bp.clase}`}
+                              style={{ fontSize: 10, padding: "2px 9px" }}
+                            >
+                              {bp.label}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -960,13 +970,23 @@ export default function MisPedidosPage() {
                       {p.cliente}
                     </h1>
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    <span className={`badge-pedido ${be.clase}`}>
-                      {be.label}
-                    </span>
-                    <span className={`badge-pedido ${bp.clase}`}>
-                      {bp.label}
-                    </span>
+                  <div className="flex flex-wrap gap-3 mt-3">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                        Entrega
+                      </span>
+                      <span className={`badge-pedido ${be.clase}`}>
+                        {be.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                        Pago
+                      </span>
+                      <span className={`badge-pedido ${bp.clase}`}>
+                        {bp.label}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
