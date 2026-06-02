@@ -465,34 +465,43 @@ button{
 }
 
 .badge-neutral{
-  background:#F7F4F2;
-  color:#777;
-  border-color:#ECE2DE;
+  background:#F0EEF2;
+  color:#A09AAA;
+  border-color:#E4DFE8;
   box-shadow:none;
+  opacity:.72;
 }
 
 .badge-pendiente{
   background:#FFF0B8;
-  color:#8A6A00;
-  border-color:#FFE28A;
+  color:#7A5800;
+  border-color:#E8C200;
+  box-shadow:0 3px 12px rgba(232,194,0,.28);
+  font-weight:900;
 }
 
 .badge-entregado{
-  background:#E7D9FF;
-  color:#6D4AA8;
-  border-color:#D7C3FF;
+  background:#DDD0FF;
+  color:#5230A0;
+  border-color:#AA8EF0;
+  box-shadow:0 3px 12px rgba(109,74,168,.28);
+  font-weight:900;
 }
 
 .badge-anticipo{
-  background:#FFE0DD;
-  color:#C65E67;
-  border-color:#FFC8C2;
+  background:#FFD0CC;
+  color:#B03040;
+  border-color:#FF9090;
+  box-shadow:0 3px 12px rgba(198,94,103,.28);
+  font-weight:900;
 }
 
 .badge-pagado{
-  background:#DDF5EA;
-  color:#238657;
-  border-color:#BFEAD8;
+  background:#C6F0DA;
+  color:#186640;
+  border-color:#60D898;
+  box-shadow:0 3px 12px rgba(35,134,87,.28);
+  font-weight:900;
 }
 
 @keyframes badge-soft-pulse{

@@ -69,13 +69,15 @@ pedido.anticipo
 )
 const obtenerAnticipo = (pedido: any) =>
 Math.max(0, numero(pedido.anticipo))
-const obtenerAbono = (pedido: any) =>
-Math.max(0, numero(pedido.abono))
+const obtenerAbono1 = (pedido: any) =>
+Math.max(0, numero(pedido.abono_1 ?? pedido.abono))
+const obtenerAbono2 = (pedido: any) =>
+Math.max(0, numero(pedido.abono_2))
 const obtenerSaldo = (pedido: any) =>
 obtenerEstadoPago(pedido) === "pagado"
 ? 0
 : Math.max(
-numero(pedido.total) - obtenerAnticipo(pedido) - obtenerAbono(pedido),
+numero(pedido.total) - obtenerAnticipo(pedido) - obtenerAbono1(pedido) - obtenerAbono2(pedido),
 0
 )
 const esErrorColumnasPedido = (error: any) =>
@@ -87,6 +89,8 @@ anticipo: _anticipo,
 estado_pago: _estadoPago,
 municipio: _municipio,
 abono: _abono,
+abono_1: _abono1,
+abono_2: _abono2,
 ...pedidoCompatible
 } = payload
 return pedidoCompatible
@@ -530,7 +534,8 @@ setPedidoEditando({
 estado: obtenerEstadoEntrega(pedido),
 estado_pago: obtenerEstadoPago(pedido),
 anticipo: obtenerAnticipo(pedido),
-abono: obtenerAbono(pedido),
+abono_1: obtenerAbono1(pedido),
+abono_2: obtenerAbono2(pedido),
 productos: Array.isArray(pedido.productos)
 ? pedido.productos.map((producto: any) =>
 prepararProductoPedido({
@@ -662,7 +667,8 @@ const estadoPago =
 obtenerEstadoPago(pedido)
 const anticipoPedidoGuardado =
 obtenerAnticipo(pedido)
-const abonoGuardado = obtenerAbono(pedido)
+const abono1Guardado = obtenerAbono1(pedido)
+const abono2Guardado = obtenerAbono2(pedido)
 const saldoPedidoGuardado =
 obtenerSaldo(pedido)
 const mensaje =
@@ -674,7 +680,8 @@ const mensaje =
 `Tu pedido:\n${productos}\n\n` +
 `Total: $${pedido.total}\n` +
 `Anticipo: $${anticipoPedidoGuardado}\n` +
-(abonoGuardado > 0 ? `Abono: $${abonoGuardado}\n` : "") +
+(abono1Guardado > 0 ? `Abono 1: $${abono1Guardado}\n` : "") +
+(abono2Guardado > 0 ? `Abono 2: $${abono2Guardado}\n` : "") +
 `Saldo: $${saldoPedidoGuardado}${emailLinea}${lugarLinea}${municipioLinea}${notas}`
 window.open(
 `https://wa.me/52${pedido.telefono}?text=${encodeURIComponent(mensaje)}`,
@@ -785,9 +792,9 @@ Total {moneda(pedido.total)}
 <div className="rounded-2xl bg-[#FFF0B8] p-3 text-zinc-700 flex-1 min-w-[80px]">
 Anticipo {moneda(obtenerAnticipo(pedido))}
 </div>
-{obtenerAbono(pedido) > 0 && (
+{(obtenerAbono1(pedido) + obtenerAbono2(pedido)) > 0 && (
 <div className="rounded-2xl bg-[#E7D9FF] p-3 text-purple-700 flex-1 min-w-[80px]">
-Abono {moneda(obtenerAbono(pedido))}
+Abonos {moneda(obtenerAbono1(pedido) + obtenerAbono2(pedido))}
 </div>
 )}
 <div className="rounded-2xl bg-[#FFE0DD] p-3 text-rose-500 flex-1 min-w-[80px]">
@@ -1037,9 +1044,10 @@ min="0"
 value={pedidoEditando.anticipo || 0}
 onChange={(e) => {
 const anticipo = Number(e.target.value) || 0
-const abono = numero(pedidoEditando.abono)
+const abono1 = Math.max(0, numero(pedidoEditando.abono_1))
+const abono2 = Math.max(0, numero(pedidoEditando.abono_2))
 const totalEdit = calcularTotalProductos(pedidoEditando.productos || [])
-const totalPagado = anticipo + abono
+const totalPagado = anticipo + abono1 + abono2
 setPedidoEditando({
 ...pedidoEditando,
 anticipo,
@@ -1050,28 +1058,55 @@ totalEdit > 0 && totalPagado >= totalEdit ? "pagado" : "anticipo",
 className="input-premium"
 />
 </div>
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 <div>
 <label className="block text-sm font-semibold text-zinc-500 mb-2">
-Abono
+Abono 1
 </label>
 <input
 type="number"
 min="0"
-value={pedidoEditando.abono || 0}
+value={pedidoEditando.abono_1 || 0}
 onChange={(e) => {
-const abono = Number(e.target.value) || 0
+const abono1 = Math.max(0, Number(e.target.value) || 0)
+const abono2 = Math.max(0, numero(pedidoEditando.abono_2))
 const anticipo = numero(pedidoEditando.anticipo)
 const totalEdit = calcularTotalProductos(pedidoEditando.productos || [])
-const totalPagado = anticipo + abono
+const totalPagado = anticipo + abono1 + abono2
 setPedidoEditando({
 ...pedidoEditando,
-abono,
+abono_1: abono1,
 estado_pago:
 totalEdit > 0 && totalPagado >= totalEdit ? "pagado" : "anticipo",
 })
 }}
 className="input-premium"
 />
+</div>
+<div>
+<label className="block text-sm font-semibold text-zinc-500 mb-2">
+Abono 2
+</label>
+<input
+type="number"
+min="0"
+value={pedidoEditando.abono_2 || 0}
+onChange={(e) => {
+const abono2 = Math.max(0, Number(e.target.value) || 0)
+const abono1 = Math.max(0, numero(pedidoEditando.abono_1))
+const anticipo = numero(pedidoEditando.anticipo)
+const totalEdit = calcularTotalProductos(pedidoEditando.productos || [])
+const totalPagado = anticipo + abono1 + abono2
+setPedidoEditando({
+...pedidoEditando,
+abono_2: abono2,
+estado_pago:
+totalEdit > 0 && totalPagado >= totalEdit ? "pagado" : "anticipo",
+})
+}}
+className="input-premium"
+/>
+</div>
 </div>
 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 <div>
@@ -1451,12 +1486,12 @@ No hay productos con esa búsqueda.
 </div>
 </div>
 )}
-<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 <div className="rounded-3xl bg-[#FFE4EC] p-5">
 <p className="text-sm font-black uppercase text-zinc-500">
 Total pedido
 </p>
-<p className="text-2xl font-black text-[#3F334A]">
+<p className="text-xl font-black text-[#3F334A] whitespace-nowrap">
 {moneda(calcularTotalProductos(pedidoEditando.productos || []))}
 </p>
 </div>
@@ -1464,24 +1499,36 @@ Total pedido
 <p className="text-sm font-black uppercase text-zinc-500">
 Anticipo
 </p>
-<p className="text-2xl font-black text-zinc-700">
+<p className="text-xl font-black text-zinc-700 whitespace-nowrap">
 {moneda(Math.min(
 numero(pedidoEditando.anticipo),
 calcularTotalProductos(pedidoEditando.productos || [])
 ))}
 </p>
 </div>
+<div className="rounded-3xl bg-[#E7D9FF] p-5">
+<p className="text-sm font-black uppercase text-zinc-500">
+Abonos
+</p>
+<p className="text-xl font-black text-purple-700 whitespace-nowrap">
+{moneda(
+Math.max(0, numero(pedidoEditando.abono_1)) +
+Math.max(0, numero(pedidoEditando.abono_2))
+)}
+</p>
+</div>
 <div className="rounded-3xl bg-[#FFE0DD] p-5">
 <p className="text-sm font-black uppercase text-zinc-500">
-Saldo
+Saldo pendiente
 </p>
-<p className="text-2xl font-black text-rose-400">
+<p className="text-xl font-black text-rose-400 whitespace-nowrap">
 {moneda(pedidoEditando.estado_pago === "pagado"
 ? 0
 : Math.max(
 calcularTotalProductos(pedidoEditando.productos || []) -
 numero(pedidoEditando.anticipo) -
-numero(pedidoEditando.abono),
+Math.max(0, numero(pedidoEditando.abono_1)) -
+Math.max(0, numero(pedidoEditando.abono_2)),
 0
 ))}
 </p>
@@ -1531,8 +1578,9 @@ if (numero(pedidoEditando.anticipo) > totalActualizado) {
 setErrorEdicion("El anticipo no puede ser mayor al total del pedido")
 return
 }
-const abonoActualizado = Math.max(0, numero(pedidoEditando.abono))
-const totalPagado = anticipoActualizado + abonoActualizado
+const abono1Actualizado = Math.max(0, numero(pedidoEditando.abono_1))
+const abono2Actualizado = Math.max(0, numero(pedidoEditando.abono_2))
+const totalPagado = anticipoActualizado + abono1Actualizado + abono2Actualizado
 const estadoPagoActualizado =
 totalActualizado > 0 && totalPagado >= totalActualizado
 ? "pagado"
@@ -1548,7 +1596,8 @@ notas: pedidoEditando.notas,
 estado: pedidoEditando.estado,
 estado_pago: estadoPagoActualizado,
 anticipo: anticipoActualizado,
-abono: abonoActualizado,
+abono_1: abono1Actualizado,
+abono_2: abono2Actualizado,
 productos:
 productos.map((producto: any) => ({
 producto_id: producto.producto_id,
