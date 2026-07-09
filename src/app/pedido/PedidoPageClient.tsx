@@ -119,6 +119,7 @@ const [enviando, setEnviando] = useState(false)
 const [pedidoAEliminar, setPedidoAEliminar] = useState<number | null>(null)
 const [errorEdicion, setErrorEdicion] = useState("")
 const [generandoPDF, setGenerandoPDF] = useState<number | null>(null)
+const [alertaNuevoPedido, setAlertaNuevoPedido] = useState<any>(null)
 useEffect(() => {
 const data =
 JSON.parse(
@@ -139,6 +140,36 @@ obtenerProductos()
 supabase.from("escalas").select("*").then(({ data }) => {
 if (data) setEscalas(data as Escala[])
 })
+}, [])
+useEffect(() => {
+const beep = () => {
+try {
+const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+const osc = ctx.createOscillator()
+const gain = ctx.createGain()
+osc.connect(gain)
+gain.connect(ctx.destination)
+osc.type = "sine"
+osc.frequency.setValueAtTime(880, ctx.currentTime)
+gain.gain.setValueAtTime(0.18, ctx.currentTime)
+gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55)
+osc.start(ctx.currentTime)
+osc.stop(ctx.currentTime + 0.55)
+} catch (_) {}
+}
+const canal = supabase
+.channel("pedidos-admin")
+.on(
+"postgres_changes",
+{ event: "INSERT", schema: "public", table: "pedidos" },
+(payload) => {
+beep()
+setAlertaNuevoPedido(payload.new)
+obtenerPedidos()
+}
+)
+.subscribe()
+return () => { supabase.removeChannel(canal) }
 }, [])
 const obtenerPedidos = async () => {
 const { data } =
@@ -688,6 +719,23 @@ return (
 <div className="flex flex-col lg:flex-row gap-8">
 <AdminSidebar />
 <main className="flex-1 min-w-0">
+{alertaNuevoPedido && (
+<div
+className="mb-6 flex items-center justify-between gap-4 rounded-2xl px-5 py-4 text-white font-black shadow-lg"
+style={{ background: "#FF5C8A", animation: "modal-in .22s cubic-bezier(.34,1.2,.64,1) forwards" }}
+>
+<span className="text-base md:text-lg">
+🛎️ Nuevo pedido de <strong>{alertaNuevoPedido.nombre || "cliente"}</strong>
+{alertaNuevoPedido.telefono ? ` · ${alertaNuevoPedido.telefono}` : ""}
+</span>
+<button
+onClick={() => setAlertaNuevoPedido(null)}
+className="ml-auto flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-xl font-black"
+style={{ background: "rgba(255,255,255,.22)" }}
+aria-label="Cerrar alerta"
+>×</button>
+</div>
+)}
 <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 <h2 className="text-5xl md:text-7xl font-black text-[#FF5C8A] leading-none break-words">
 Pedidos
