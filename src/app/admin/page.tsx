@@ -299,20 +299,20 @@ export default function AdminPage() {
           })
         : pedidos
 
-    console.log(
-      "[Dashboard] useMemo → total:", pedidos.length,
-      "| filtrados:", pedidosFiltrados.length,
-      "| rango:", fechaInicio || "∞", "→", fechaFin || "∞"
-    )
-    if (pedidos.length > 0) {
-      const muestra = pedidos.slice(0, 5).map((p: any) => ({
+    console.log("Hoy:", obtenerClaveFecha(String(new Date())))
+    console.log("Inicio:", fechaInicio)
+    console.log("Fin:", fechaFin)
+    console.table(
+      pedidos.map((p: any) => ({
         id: p.id,
-        created_at: p.created_at ?? "—",
-        fecha: p.fecha ?? "—",
-        fechaUsada: obtenerClaveFecha(obtenerFechaPedido(p)),
+        created_at: p.created_at,
+        fecha_pedido: p.fecha_pedido,
+        fecha: p.fecha,
+        fecha_creacion: p.fecha_creacion,
+        fechaUsada: obtenerFechaPedido(p),
+        clave: obtenerClaveFecha(obtenerFechaPedido(p)),
       }))
-      console.log("[Dashboard] Muestra de fechas (primeros 5 pedidos):", muestra)
-    }
+    )
 
     const totalVentas = pedidosFiltrados.reduce((acc, p) => acc + numero(p.total), 0)
     const totalAnticipos = pedidosFiltrados.reduce((acc, p) => acc + numero(p.anticipo), 0)
