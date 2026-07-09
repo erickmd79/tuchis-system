@@ -12,6 +12,7 @@ import {
   obtenerPrecioPorEscala,
   calcularTotalProductos,
 } from "../../lib/pricing"
+import { formatearFechaMX } from "../../lib/dates"
 
 const obtenerFechaLocal = () => {
 const fecha = new Date()
@@ -40,8 +41,8 @@ year: "numeric",
 })
 }
 const obtenerFechaPedido = (pedido: any) =>
-pedido.fecha_pedido ||
 pedido.created_at ||
+pedido.fecha_pedido ||
 pedido.fecha_creacion ||
 ""
 const obtenerFechaEntrega = (pedido: any) =>
@@ -669,7 +670,7 @@ p.modalidad,
 )
 .join("\n")
 const fechaPedido =
-formatearFecha(
+formatearFechaMX(
 obtenerFechaPedido(pedido)
 ) || "Sin fecha"
 const fechaEntrega =
@@ -789,7 +790,7 @@ className="bg-white border border-[#FFD9D4] rounded-[28px] p-6 shadow-sm"
 )}
 <div className="mt-3 space-y-1 text-zinc-500">
 <p>
-Pedido: {formatearFecha(
+Pedido: {formatearFechaMX(
 obtenerFechaPedido(pedido)
 ) || "Sin fecha"}
 </p>
@@ -1046,7 +1047,7 @@ className="input-premium"
 Fecha de pedido
 </p>
 <p className="text-xl font-black text-[#3F334A] mt-1">
-{formatearFecha(
+{formatearFechaMX(
 obtenerFechaPedido(pedidoEditando)
 ) || "Sin fecha"}
 </p>

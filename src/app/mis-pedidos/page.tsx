@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { supabase } from "../../lib/supabase"
 import { generarPDF } from "../pedido/generarPDF"
+import { formatearFechaMX } from "../../lib/dates"
 import {
   moneda,
   numero,
@@ -1010,7 +1011,7 @@ export default function MisPedidosPage() {
                   />
                   <InfoCard
                     label="Fecha de pedido"
-                    value={formatearFecha(p.created_at)}
+                    value={formatearFechaMX(p.created_at)}
                   />
                 </div>
 
