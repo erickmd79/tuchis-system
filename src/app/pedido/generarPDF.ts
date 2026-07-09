@@ -1,6 +1,7 @@
 "use client"
 
 import { moneda, numero } from "../../lib/pricing"
+import { formatearFechaMX } from "../../lib/dates"
 
 // ─── helpers ───────────────────────────────────────────────────────────────
 
@@ -11,18 +12,6 @@ const esc = (valor: unknown): string =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;")
-
-const formatFecha = (valor?: string): string => {
-  if (!valor) return ""
-  const soloFecha = String(valor).split("T")[0]
-  const [anio, mes, dia] = soloFecha.split("-").map(Number)
-  if (!anio || !mes || !dia) return String(valor)
-  return new Date(anio, mes - 1, dia).toLocaleDateString("es-MX", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  })
-}
 
 // Pastel badge colors
 const colorPago = (estado: string) => {
@@ -50,13 +39,13 @@ function buildHTML(pedido: any, origen: string): string {
   })
 
   const fechaPedido =
-    formatFecha(
-      pedido.fecha_pedido ||
+    formatearFechaMX(
       pedido.created_at ||
+      pedido.fecha_pedido ||
       pedido.fecha_creacion
-    ) || "—"
+    )
   const fechaEntrega =
-    formatFecha(pedido.fecha || pedido.fecha_entrega) || "—"
+    formatearFechaMX(pedido.fecha || pedido.fecha_entrega)
 
   const estadoEntrega =
     pedido.estado === "entregado" ? "entregado" : "pendiente"

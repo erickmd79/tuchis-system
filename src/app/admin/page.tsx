@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "../../lib/supabase"
 import AdminSidebar from "../components/AdminSidebar"
+import { fechaMX, obtenerClaveFechaMX } from "../../lib/dates"
 
 type Lapso = "hoy" | "7d" | "15d" | "30d" | "mes" | "personalizado" | "todos"
 
@@ -58,22 +59,7 @@ const monedaCard = (valor: number): string => {
   return moneda(valor)
 }
 
-// All date operations use America/Mexico_City explicitly so that UTC
-// timestamps stored by Supabase (e.g. created_at = "2026-07-09T04:43:00Z")
-// are correctly mapped to their local date in Mexico
-// ("2026-07-08" at 22:43 local time) before any filtering is applied.
-const TZ = "America/Mexico_City"
-
-const fechaMX = (d: Date): string => {
-  const parts = new Intl.DateTimeFormat("es-MX", {
-    timeZone: TZ,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(d)
-  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "00"
-  return `${get("year")}-${get("month")}-${get("day")}`
-}
+// fechaMX and obtenerClaveFechaMX are imported from src/lib/dates.ts.
 
 const obtenerFechaLocal = (): string => fechaMX(new Date())
 
@@ -84,8 +70,8 @@ const diasAtras = (n: number): string => {
 }
 
 const primerDiaMes = (): string => {
-  const hoy = obtenerFechaLocal()       // "YYYY-MM-DD" in Mexico City
-  return `${hoy.slice(0, 7)}-01`        // replace day with "01"
+  const hoy = obtenerFechaLocal()
+  return `${hoy.slice(0, 7)}-01`
 }
 
 const obtenerDiasEnRango = (inicio: string, fin: string, max = 30): string[] => {
@@ -101,26 +87,12 @@ const obtenerDiasEnRango = (inicio: string, fin: string, max = 30): string[] => 
   return resultado
 }
 
-// Reads created_at first (Supabase creation timestamp) as the order date,
-// falling back to other date columns only if created_at is absent.
 const obtenerFechaPedido = (pedido: Pedido): string =>
   pedido.created_at ||
   pedido.fecha_pedido ||
   pedido.fecha_creacion ||
   pedido.fecha ||
   ""
-
-// Converts any value to a YYYY-MM-DD string in America/Mexico_City.
-// Pure date strings are returned as-is; ISO timestamps are parsed and
-// converted so that e.g. "2026-07-09T04:43:00Z" → "2026-07-08".
-const obtenerClaveFecha = (valor?: string): string => {
-  if (!valor) return ""
-  const s = String(valor).trim()
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
-  const d = new Date(s)
-  if (Number.isNaN(d.getTime())) return s.slice(0, 10)
-  return fechaMX(d)
-}
 
 const formatearDia = (valor: string): string => {
   const [anio, mes, dia] = valor.split("-").map(Number)
@@ -283,7 +255,7 @@ export default function AdminPage() {
     const pedidosFiltrados =
       fechaInicio && fechaFin
         ? pedidos.filter((p) => {
-            const fecha = obtenerClaveFecha(obtenerFechaPedido(p))
+            const fecha = obtenerClaveFechaMX(obtenerFechaPedido(p))
             return fecha >= fechaInicio && fecha <= fechaFin
           })
         : pedidos
@@ -292,7 +264,7 @@ export default function AdminPage() {
     const totalAnticipos = pedidosFiltrados.reduce((acc, p) => acc + numero(p.anticipo), 0)
     const pedidosEnRango = pedidosFiltrados.length
     const pedidosHoy = pedidos.filter(
-      (p) => obtenerClaveFecha(obtenerFechaPedido(p)) === hoy
+      (p) => obtenerClaveFechaMX(obtenerFechaPedido(p)) === hoy
     ).length
 
     const estados = pedidosFiltrados.reduce<Record<string, number>>((acc, p) => {
@@ -346,7 +318,7 @@ export default function AdminPage() {
     const ventasPorDia = diasChart.map((dia) => ({
       dia,
       total: pedidos
-        .filter((p) => obtenerClaveFecha(obtenerFechaPedido(p)) === dia)
+        .filter((p) => obtenerClaveFechaMX(obtenerFechaPedido(p)) === dia)
         .reduce((acc, p) => acc + numero(p.total), 0),
     }))
 
@@ -866,7 +838,7 @@ export default function AdminPage() {
                         {" · "}
                         {obtenerEstadoPago(pedido)}
                         {" · "}
-                        {formatearDia(obtenerClaveFecha(obtenerFechaPedido(pedido)))}
+                        {formatearDia(obtenerClaveFechaMX(obtenerFechaPedido(pedido)))}
                       </p>
                     </div>
                   ))}
