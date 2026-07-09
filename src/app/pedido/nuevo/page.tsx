@@ -12,25 +12,7 @@ import {
   obtenerModalidadesDisponibles,
   calcularTotalProductos,
 } from "../../../lib/pricing"
-
-const obtenerFechaLocal = () => {
-  const fecha = new Date()
-  const offset = fecha.getTimezoneOffset()
-  const local = new Date(fecha.getTime() - offset * 60000)
-  return local.toISOString().slice(0, 10)
-}
-
-const formatearFecha = (valor?: string) => {
-  if (!valor) return ""
-  const soloFecha = String(valor).split("T")[0]
-  const [anio, mes, dia] = soloFecha.split("-").map(Number)
-  if (!anio || !mes || !dia) return String(valor)
-  return new Date(anio, mes - 1, dia).toLocaleDateString("es-MX", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  })
-}
+import { obtenerFechaHoyMX, formatearFechaMX } from "../../../lib/dates"
 
 // Returns "pagado" when anticipo covers total; otherwise "anticipo".
 // Never returns "pendiente" for new orders.
@@ -149,6 +131,7 @@ export default function NuevoPedidoPage() {
       lugar_entrega: pedido.lugar_entrega || null,
       municipio: pedido.municipio || null,
       fecha: pedido.fecha,
+      fecha_pedido: obtenerFechaHoyMX(),
       notas: pedido.notas,
       productos: pedido.productos.map((p: any) => ({
         producto_id: p.producto_id ?? p.id,
@@ -181,6 +164,7 @@ export default function NuevoPedidoPage() {
         email: _e,
         lugar_entrega: _l,
         municipio: _m,
+        fecha_pedido: _fp,
         ...base
       } = pedidoBase
       const { error: e2 } = await supabase.from("pedidos").insert([base])
@@ -462,7 +446,7 @@ export default function NuevoPedidoPage() {
                   Fecha de pedido
                 </p>
                 <p className="text-xl font-black text-cyan-600 mt-1">
-                  {formatearFecha(obtenerFechaLocal())}
+                  {formatearFechaMX(obtenerFechaHoyMX())}
                 </p>
               </div>
               <div>

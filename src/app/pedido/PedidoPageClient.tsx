@@ -12,7 +12,7 @@ import {
   obtenerPrecioPorEscala,
   calcularTotalProductos,
 } from "../../lib/pricing"
-import { formatearFechaMX } from "../../lib/dates"
+import { formatearFechaMX, obtenerFechaHoyMX } from "../../lib/dates"
 
 const obtenerFechaLocal = () => {
 const fecha = new Date()
@@ -41,8 +41,8 @@ year: "numeric",
 })
 }
 const obtenerFechaPedido = (pedido: any) =>
-pedido.created_at ||
 pedido.fecha_pedido ||
+pedido.created_at ||
 pedido.fecha_creacion ||
 ""
 const obtenerFechaEntrega = (pedido: any) =>
@@ -345,6 +345,7 @@ email: pedido.email || null,
 lugar_entrega: pedido.lugar_entrega || null,
 municipio: pedido.municipio || null,
 fecha: pedido.fecha,
+fecha_pedido: obtenerFechaHoyMX(),
 notas: pedido.notas,
 productos:
 pedido.productos.map((p: any) => ({

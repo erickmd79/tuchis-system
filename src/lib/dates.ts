@@ -22,6 +22,9 @@ export const fechaMX = (d: Date): string => {
   return `${get("year")}-${get("month")}-${get("day")}`
 }
 
+/** Returns today's date as "YYYY-MM-DD" in the Mexico City timezone. */
+export const obtenerFechaHoyMX = (): string => fechaMX(new Date())
+
 /**
  * Converts any date string or ISO timestamp to "YYYY-MM-DD" in Mexico City.
  * Pure date strings (YYYY-MM-DD) are returned unchanged.

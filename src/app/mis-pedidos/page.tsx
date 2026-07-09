@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { supabase } from "../../lib/supabase"
 import { generarPDF } from "../pedido/generarPDF"
-import { formatearFechaMX } from "../../lib/dates"
+import { formatearFechaMX, obtenerFechaHoyMX } from "../../lib/dates"
 import {
   moneda,
   numero,
@@ -673,6 +673,7 @@ export default function MisPedidosPage() {
         lugar_entrega: vLugarEntrega.trim() || null,
         municipio: vMunicipio.trim() || null,
         fecha: vFecha,
+        fecha_pedido: obtenerFechaHoyMX(),
         notas: vNotas.trim(),
         productos: vProductos.map((p) => ({
           producto_id: p.producto_id,

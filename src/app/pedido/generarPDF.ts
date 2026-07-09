@@ -40,8 +40,8 @@ function buildHTML(pedido: any, origen: string): string {
 
   const fechaPedido =
     formatearFechaMX(
-      pedido.created_at ||
       pedido.fecha_pedido ||
+      pedido.created_at ||
       pedido.fecha_creacion
     )
   const fechaEntrega =

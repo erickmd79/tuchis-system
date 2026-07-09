@@ -88,8 +88,8 @@ const obtenerDiasEnRango = (inicio: string, fin: string, max = 30): string[] => 
 }
 
 const obtenerFechaPedido = (pedido: Pedido): string =>
-  pedido.created_at ||
   pedido.fecha_pedido ||
+  pedido.created_at ||
   pedido.fecha_creacion ||
   pedido.fecha ||
   ""
