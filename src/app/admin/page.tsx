@@ -58,27 +58,34 @@ const monedaCard = (valor: number): string => {
   return moneda(valor)
 }
 
-const obtenerFechaLocal = (): string => {
-  const fecha = new Date()
-  const offset = fecha.getTimezoneOffset()
-  const local = new Date(fecha.getTime() - offset * 60000)
-  return local.toISOString().slice(0, 10)
+// All date operations use America/Mexico_City explicitly so that UTC
+// timestamps stored by Supabase (e.g. created_at = "2026-07-09T04:43:00Z")
+// are correctly mapped to their local date in Mexico
+// ("2026-07-08" at 22:43 local time) before any filtering is applied.
+const TZ = "America/Mexico_City"
+
+const fechaMX = (d: Date): string => {
+  const parts = new Intl.DateTimeFormat("es-MX", {
+    timeZone: TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(d)
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "00"
+  return `${get("year")}-${get("month")}-${get("day")}`
 }
+
+const obtenerFechaLocal = (): string => fechaMX(new Date())
 
 const diasAtras = (n: number): string => {
   const d = new Date()
   d.setDate(d.getDate() - n)
-  const offset = d.getTimezoneOffset()
-  const local = new Date(d.getTime() - offset * 60000)
-  return local.toISOString().slice(0, 10)
+  return fechaMX(d)
 }
 
 const primerDiaMes = (): string => {
-  const hoy = new Date()
-  const d = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
-  const offset = d.getTimezoneOffset()
-  const local = new Date(d.getTime() - offset * 60000)
-  return local.toISOString().slice(0, 10)
+  const hoy = obtenerFechaLocal()       // "YYYY-MM-DD" in Mexico City
+  return `${hoy.slice(0, 7)}-01`        // replace day with "01"
 }
 
 const obtenerDiasEnRango = (inicio: string, fin: string, max = 30): string[] => {
@@ -88,15 +95,14 @@ const obtenerDiasEnRango = (inicio: string, fin: string, max = 30): string[] => 
   let cur = new Date(ai, mi - 1, di)
   const last = new Date(af, mf - 1, df)
   while (cur <= last && resultado.length < max) {
-    const offset = cur.getTimezoneOffset()
-    const local = new Date(cur.getTime() - offset * 60000)
-    resultado.push(local.toISOString().slice(0, 10))
+    resultado.push(fechaMX(cur))
     cur = new Date(cur.getFullYear(), cur.getMonth(), cur.getDate() + 1)
   }
   return resultado
 }
 
-// Uses created_at (creation timestamp) as primary source, not delivery date.
+// Reads created_at first (Supabase creation timestamp) as the order date,
+// falling back to other date columns only if created_at is absent.
 const obtenerFechaPedido = (pedido: Pedido): string =>
   pedido.created_at ||
   pedido.fecha_pedido ||
@@ -104,21 +110,16 @@ const obtenerFechaPedido = (pedido: Pedido): string =>
   pedido.fecha ||
   ""
 
-// Converts any date string or ISO timestamp to a local YYYY-MM-DD string.
-// The previous version called split("T")[0] then matched the regex, which
-// returned the UTC date part of a timestamp without applying the local offset.
+// Converts any value to a YYYY-MM-DD string in America/Mexico_City.
+// Pure date strings are returned as-is; ISO timestamps are parsed and
+// converted so that e.g. "2026-07-09T04:43:00Z" → "2026-07-08".
 const obtenerClaveFecha = (valor?: string): string => {
   if (!valor) return ""
   const s = String(valor).trim()
-  // Pure date (no time component) — use as-is, no conversion needed.
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
-  // Timestamp — parse and read LOCAL date components to avoid UTC-offset shift.
   const d = new Date(s)
   if (Number.isNaN(d.getTime())) return s.slice(0, 10)
-  const y = d.getFullYear()
-  const mo = String(d.getMonth() + 1).padStart(2, "0")
-  const da = String(d.getDate()).padStart(2, "0")
-  return `${y}-${mo}-${da}`
+  return fechaMX(d)
 }
 
 const formatearDia = (valor: string): string => {
@@ -175,15 +176,7 @@ export default function AdminPage() {
       supabase.from("pedidos").select("*").order("id", { ascending: false }),
       supabase.from("productos").select("id,nombre,categoria"),
     ])
-    console.log("[Dashboard] Pedidos recibidos:", pedidosRes.data?.length ?? "null", "| error:", pedidosRes.error?.message ?? "ninguno")
-    if (pedidosRes.error) console.error("[Dashboard] Error Supabase:", pedidosRes.error)
-    if (pedidosRes.data) {
-      if (pedidosRes.data.length > 0) {
-        const p = pedidosRes.data[0] as any
-        console.log("[Dashboard] Primer pedido →", { id: p.id, created_at: p.created_at, fecha: p.fecha, total: p.total, nombre: p.nombre })
-      }
-      setPedidos(pedidosRes.data as Pedido[])
-    }
+    if (pedidosRes.data) setPedidos(pedidosRes.data as Pedido[])
     if (productosRes.data) setProductos(productosRes.data as ProductoCatalogo[])
     setCargando(false)
   }
@@ -209,14 +202,12 @@ export default function AdminPage() {
     const refrescar = () => { void obtenerDatos() }
     const refrescarSiVisible = () => { if (!document.hidden) void obtenerDatos() }
 
-    console.log("[Realtime] Conectando canal dashboard-pedidos…")
     const canal = supabase
       .channel("dashboard-pedidos")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "pedidos" },
         (payload) => {
-          console.log("[Realtime] INSERT recibido:", payload.new)
           const nuevo = payload.new as any
           const hora = new Date().toLocaleTimeString("es-MX", {
             hour: "2-digit",
@@ -247,9 +238,7 @@ export default function AdminPage() {
         { event: "DELETE", schema: "public", table: "pedidos" },
         refrescar
       )
-      .subscribe((status) => {
-        console.log("[Realtime] estado del canal:", status)
-      })
+      .subscribe()
 
     window.addEventListener("focus", refrescar)
     document.addEventListener("visibilitychange", refrescarSiVisible)
@@ -298,21 +287,6 @@ export default function AdminPage() {
             return fecha >= fechaInicio && fecha <= fechaFin
           })
         : pedidos
-
-    console.log("Hoy:", obtenerClaveFecha(String(new Date())))
-    console.log("Inicio:", fechaInicio)
-    console.log("Fin:", fechaFin)
-    console.table(
-      pedidos.map((p: any) => ({
-        id: p.id,
-        created_at: p.created_at,
-        fecha_pedido: p.fecha_pedido,
-        fecha: p.fecha,
-        fecha_creacion: p.fecha_creacion,
-        fechaUsada: obtenerFechaPedido(p),
-        clave: obtenerClaveFecha(obtenerFechaPedido(p)),
-      }))
-    )
 
     const totalVentas = pedidosFiltrados.reduce((acc, p) => acc + numero(p.total), 0)
     const totalAnticipos = pedidosFiltrados.reduce((acc, p) => acc + numero(p.anticipo), 0)
