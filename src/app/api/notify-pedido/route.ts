@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET
 const ADMIN_EMAIL = "tuchis.alcancias@gmail.com"
 
 export async function POST(req: NextRequest) {
+  const webhookSecret = process.env.WEBHOOK_SECRET
   const secret = req.headers.get("x-webhook-secret")
-  if (!WEBHOOK_SECRET || secret !== WEBHOOK_SECRET) {
+  if (!webhookSecret || secret !== webhookSecret) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    return NextResponse.json({ error: "Email not configured" }, { status: 503 })
+  }
+  const resend = new Resend(apiKey)
 
   let body: any
   try {
