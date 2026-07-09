@@ -96,22 +96,29 @@ const obtenerDiasEnRango = (inicio: string, fin: string, max = 30): string[] => 
   return resultado
 }
 
+// Uses created_at (creation timestamp) as primary source, not delivery date.
 const obtenerFechaPedido = (pedido: Pedido): string =>
-  pedido.fecha_pedido ||
   pedido.created_at ||
+  pedido.fecha_pedido ||
   pedido.fecha_creacion ||
   pedido.fecha ||
   ""
 
+// Converts any date string or ISO timestamp to a local YYYY-MM-DD string.
+// The previous version called split("T")[0] then matched the regex, which
+// returned the UTC date part of a timestamp without applying the local offset.
 const obtenerClaveFecha = (valor?: string): string => {
   if (!valor) return ""
-  const soloFecha = String(valor).split("T")[0]
-  if (/^\d{4}-\d{2}-\d{2}$/.test(soloFecha)) return soloFecha
-  const fecha = new Date(valor)
-  if (Number.isNaN(fecha.getTime())) return ""
-  const offset = fecha.getTimezoneOffset()
-  const local = new Date(fecha.getTime() - offset * 60000)
-  return local.toISOString().slice(0, 10)
+  const s = String(valor).trim()
+  // Pure date (no time component) — use as-is, no conversion needed.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
+  // Timestamp — parse and read LOCAL date components to avoid UTC-offset shift.
+  const d = new Date(s)
+  if (Number.isNaN(d.getTime())) return s.slice(0, 10)
+  const y = d.getFullYear()
+  const mo = String(d.getMonth() + 1).padStart(2, "0")
+  const da = String(d.getDate()).padStart(2, "0")
+  return `${y}-${mo}-${da}`
 }
 
 const formatearDia = (valor: string): string => {
@@ -292,7 +299,20 @@ export default function AdminPage() {
           })
         : pedidos
 
-    console.log("[Dashboard] useMemo → pedidos total:", pedidos.length, "| filtrados:", pedidosFiltrados.length, "| rango:", fechaInicio || "∞", "→", fechaFin || "∞")
+    console.log(
+      "[Dashboard] useMemo → total:", pedidos.length,
+      "| filtrados:", pedidosFiltrados.length,
+      "| rango:", fechaInicio || "∞", "→", fechaFin || "∞"
+    )
+    if (pedidos.length > 0) {
+      const muestra = pedidos.slice(0, 5).map((p: any) => ({
+        id: p.id,
+        created_at: p.created_at ?? "—",
+        fecha: p.fecha ?? "—",
+        fechaUsada: obtenerClaveFecha(obtenerFechaPedido(p)),
+      }))
+      console.log("[Dashboard] Muestra de fechas (primeros 5 pedidos):", muestra)
+    }
 
     const totalVentas = pedidosFiltrados.reduce((acc, p) => acc + numero(p.total), 0)
     const totalAnticipos = pedidosFiltrados.reduce((acc, p) => acc + numero(p.anticipo), 0)
