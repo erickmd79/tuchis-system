@@ -140,10 +140,21 @@ const LAPSOS: { id: Lapso; label: string }[] = [
   { id: "mes", label: "Este mes" },
 ]
 
+type Notificacion = {
+  uid: string
+  nombre: string
+  telefono: string
+  total: number
+  hora: string
+}
+
 export default function AdminPage() {
   const [pedidos, setPedidos] = useState<Pedido[]>([])
   const [productos, setProductos] = useState<ProductoCatalogo[]>([])
   const [cargando, setCargando] = useState(true)
+  const [notificaciones, setNotificaciones] = useState<Notificacion[]>([])
+  const [noVistas, setNoVistas] = useState(0)
+  const [panelNotif, setPanelNotif] = useState(false)
 
   const [lapso, setLapso] = useState<Lapso>("30d")
   const [fechaInicio, setFechaInicio] = useState<string>(() => diasAtras(29))
@@ -161,14 +172,69 @@ export default function AdminPage() {
     setCargando(false)
   }
 
+  const beep = () => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.type = "sine"
+      osc.frequency.setValueAtTime(880, ctx.currentTime)
+      gain.gain.setValueAtTime(0.18, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55)
+      osc.start(ctx.currentTime)
+      osc.stop(ctx.currentTime + 0.55)
+    } catch (_) {}
+  }
+
   useEffect(() => {
-    obtenerDatos()
+    void obtenerDatos()
     const refrescar = () => { void obtenerDatos() }
     const refrescarSiVisible = () => { if (!document.hidden) void obtenerDatos() }
+
+    console.log("[Realtime] Conectando canal dashboard-pedidos…")
     const canal = supabase
       .channel("dashboard-pedidos")
-      .on("postgres_changes", { event: "*", schema: "public", table: "pedidos" }, refrescar)
-      .subscribe()
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "pedidos" },
+        (payload) => {
+          console.log("[Realtime] INSERT recibido:", payload.new)
+          const nuevo = payload.new as any
+          const hora = new Date().toLocaleTimeString("es-MX", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+          beep()
+          setNotificaciones((prev) => [
+            {
+              uid: `${nuevo.id ?? ""}-${hora}`,
+              nombre: nuevo.nombre || nuevo.cliente || "Cliente nuevo",
+              telefono: nuevo.telefono || "—",
+              total: Number(nuevo.total || 0),
+              hora,
+            },
+            ...prev.slice(0, 19),
+          ])
+          setNoVistas((prev) => prev + 1)
+          void obtenerDatos()
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "pedidos" },
+        refrescar
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "pedidos" },
+        refrescar
+      )
+      .subscribe((status) => {
+        console.log("[Realtime] estado del canal:", status)
+      })
+
     window.addEventListener("focus", refrescar)
     document.addEventListener("visibilitychange", refrescarSiVisible)
     return () => {
@@ -345,6 +411,124 @@ export default function AdminPage() {
                 <p className="text-gray-500 text-base md:text-lg mt-4">
                   Estadísticas reales del historial de pedidos.
                 </p>
+              </div>
+
+              {/* ── Notification bell ── */}
+              <div className="relative self-start md:self-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPanelNotif((p) => !p)
+                    setNoVistas(0)
+                  }}
+                  className="relative w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-sm transition hover:scale-105"
+                  style={{ background: "#FFE4EC", border: "1px solid #FFD0DC" }}
+                  aria-label="Notificaciones"
+                >
+                  🔔
+                  {noVistas > 0 && (
+                    <span
+                      className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1.5 rounded-full text-white text-xs font-black flex items-center justify-center border-2 border-white"
+                      style={{ background: "#FF5C8A" }}
+                    >
+                      {noVistas > 99 ? "99+" : noVistas}
+                    </span>
+                  )}
+                </button>
+
+                {panelNotif && (
+                  <>
+                    {/* click-outside trap */}
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setPanelNotif(false)}
+                    />
+                    <div
+                      className="absolute top-16 right-0 w-[340px] max-w-[calc(100vw-32px)] rounded-3xl shadow-2xl z-50 overflow-hidden"
+                      style={{ background: "white", border: "1px solid #F4D4CF" }}
+                    >
+                      {/* Panel header */}
+                      <div
+                        className="flex items-center justify-between px-5 py-4"
+                        style={{ background: "#FF5C8A" }}
+                      >
+                        <span className="text-white font-black text-base">
+                          Notificaciones
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setPanelNotif(false)}
+                          className="w-8 h-8 rounded-xl flex items-center justify-center text-xl font-black"
+                          style={{ background: "rgba(255,255,255,.22)", color: "white" }}
+                        >
+                          ×
+                        </button>
+                      </div>
+
+                      {notificaciones.length === 0 ? (
+                        <div className="px-5 py-10 text-center">
+                          <p className="text-3xl mb-3">🔕</p>
+                          <p className="text-gray-500 font-bold text-sm">
+                            Sin notificaciones aún.
+                          </p>
+                          <p className="text-gray-400 text-xs mt-1">
+                            Aquí aparecerán los pedidos nuevos en tiempo real.
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="max-h-[360px] overflow-y-auto divide-y divide-[#F4D4CF]">
+                            {notificaciones.map((n) => (
+                              <div
+                                key={n.uid}
+                                className="px-5 py-4 transition"
+                                style={{ background: "white" }}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.background = "#FFF7F4")
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.currentTarget.style.background = "white")
+                                }
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="font-black text-[#3F334A] text-sm leading-tight truncate">
+                                      {n.nombre}
+                                    </p>
+                                    <p className="text-gray-400 text-xs mt-0.5">
+                                      {n.telefono}
+                                    </p>
+                                  </div>
+                                  <div className="text-right flex-shrink-0">
+                                    <p className="font-black text-[#FF5C8A] text-sm">
+                                      {moneda(n.total)}
+                                    </p>
+                                    <p className="text-gray-400 text-xs mt-0.5">
+                                      {n.hora}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="px-5 py-3 border-t border-[#F4D4CF]">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setNotificaciones([])
+                                setNoVistas(0)
+                                setPanelNotif(false)
+                              }}
+                              className="w-full py-2.5 rounded-2xl text-sm font-bold text-gray-400 hover:text-red-400 transition"
+                            >
+                              Limpiar historial
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
