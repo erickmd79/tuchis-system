@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { supabase } from "../../lib/supabase"
 import AdminSidebar from "../components/AdminSidebar"
 
-type Lapso = "hoy" | "7d" | "15d" | "30d" | "mes" | "personalizado"
+type Lapso = "hoy" | "7d" | "15d" | "30d" | "mes" | "personalizado" | "todos"
 
 type ProductoPedido = {
   producto_id?: string | number
@@ -133,6 +133,7 @@ const porcentaje = (valor: number, maximo: number) =>
   maximo > 0 ? Math.max(6, Math.round((valor / maximo) * 100)) : 0
 
 const LAPSOS: { id: Lapso; label: string }[] = [
+  { id: "todos", label: "Todos" },
   { id: "hoy", label: "Hoy" },
   { id: "7d", label: "7 días" },
   { id: "15d", label: "15 días" },
@@ -156,9 +157,9 @@ export default function AdminPage() {
   const [noVistas, setNoVistas] = useState(0)
   const [panelNotif, setPanelNotif] = useState(false)
 
-  const [lapso, setLapso] = useState<Lapso>("30d")
-  const [fechaInicio, setFechaInicio] = useState<string>(() => diasAtras(29))
-  const [fechaFin, setFechaFin] = useState<string>(() => obtenerFechaLocal())
+  const [lapso, setLapso] = useState<Lapso>("todos")
+  const [fechaInicio, setFechaInicio] = useState<string>("")
+  const [fechaFin, setFechaFin] = useState<string>("")
   const [fechaInicioInput, setFechaInicioInput] = useState<string>(() => diasAtras(29))
   const [fechaFinInput, setFechaFinInput] = useState<string>(() => obtenerFechaLocal())
 
@@ -167,7 +168,15 @@ export default function AdminPage() {
       supabase.from("pedidos").select("*").order("id", { ascending: false }),
       supabase.from("productos").select("id,nombre,categoria"),
     ])
-    if (pedidosRes.data) setPedidos(pedidosRes.data as Pedido[])
+    console.log("[Dashboard] Pedidos recibidos:", pedidosRes.data?.length ?? "null", "| error:", pedidosRes.error?.message ?? "ninguno")
+    if (pedidosRes.error) console.error("[Dashboard] Error Supabase:", pedidosRes.error)
+    if (pedidosRes.data) {
+      if (pedidosRes.data.length > 0) {
+        const p = pedidosRes.data[0] as any
+        console.log("[Dashboard] Primer pedido →", { id: p.id, created_at: p.created_at, fecha: p.fecha, total: p.total, nombre: p.nombre })
+      }
+      setPedidos(pedidosRes.data as Pedido[])
+    }
     if (productosRes.data) setProductos(productosRes.data as ProductoCatalogo[])
     setCargando(false)
   }
@@ -247,6 +256,11 @@ export default function AdminPage() {
   const aplicarLapso = (nuevoLapso: Lapso) => {
     const hoy = obtenerFechaLocal()
     setLapso(nuevoLapso)
+    if (nuevoLapso === "todos") {
+      setFechaInicio("")
+      setFechaFin("")
+      return
+    }
     let ini = hoy
     if (nuevoLapso === "7d") ini = diasAtras(6)
     else if (nuevoLapso === "15d") ini = diasAtras(14)
@@ -277,6 +291,8 @@ export default function AdminPage() {
             return fecha >= fechaInicio && fecha <= fechaFin
           })
         : pedidos
+
+    console.log("[Dashboard] useMemo → pedidos total:", pedidos.length, "| filtrados:", pedidosFiltrados.length, "| rango:", fechaInicio || "∞", "→", fechaFin || "∞")
 
     const totalVentas = pedidosFiltrados.reduce((acc, p) => acc + numero(p.total), 0)
     const totalAnticipos = pedidosFiltrados.reduce((acc, p) => acc + numero(p.anticipo), 0)
@@ -331,7 +347,7 @@ export default function AdminPage() {
     const diasChart =
       fechaInicio && fechaFin
         ? obtenerDiasEnRango(fechaInicio, fechaFin, 30)
-        : obtenerDiasEnRango(diasAtras(6), hoy, 7)
+        : obtenerDiasEnRango(diasAtras(29), hoy, 30)
 
     const ventasPorDia = diasChart.map((dia) => ({
       dia,
@@ -367,30 +383,34 @@ export default function AdminPage() {
   const showBarLabels = barsCount <= 14
 
   const labelPedidos =
-    lapso === "hoy"
-      ? "Pedidos hoy"
-      : lapso === "7d"
-        ? "Pedidos 7 días"
-        : lapso === "15d"
-          ? "Pedidos 15 días"
-          : lapso === "30d"
-            ? "Pedidos 30 días"
-            : lapso === "mes"
-              ? "Pedidos este mes"
-              : "Pedidos en rango"
+    lapso === "todos"
+      ? "Total pedidos"
+      : lapso === "hoy"
+        ? "Pedidos hoy"
+        : lapso === "7d"
+          ? "Pedidos 7 días"
+          : lapso === "15d"
+            ? "Pedidos 15 días"
+            : lapso === "30d"
+              ? "Pedidos 30 días"
+              : lapso === "mes"
+                ? "Pedidos este mes"
+                : "Pedidos en rango"
 
   const chartTitle =
-    lapso === "hoy"
-      ? "Ventas hoy"
-      : lapso === "7d"
-        ? "Ventas últimos 7 días"
-        : lapso === "15d"
-          ? "Ventas últimos 15 días"
-          : lapso === "30d"
-            ? "Ventas últimos 30 días"
-            : lapso === "mes"
-              ? "Ventas este mes"
-              : "Ventas por día"
+    lapso === "todos"
+      ? "Ventas últimos 30 días"
+      : lapso === "hoy"
+        ? "Ventas hoy"
+        : lapso === "7d"
+          ? "Ventas últimos 7 días"
+          : lapso === "15d"
+            ? "Ventas últimos 15 días"
+            : lapso === "30d"
+              ? "Ventas últimos 30 días"
+              : lapso === "mes"
+                ? "Ventas este mes"
+                : "Ventas por día"
 
   return (
     <div className="w-full">
@@ -609,7 +629,9 @@ export default function AdminPage() {
 
               {/* Range summary */}
               <p className="text-xs text-gray-400 font-bold mt-3">
-                {formatearDia(fechaInicio)} → {formatearDia(fechaFin)}
+                {lapso === "todos"
+                  ? "Todos los pedidos"
+                  : `${formatearDia(fechaInicio)} → ${formatearDia(fechaFin)}`}
                 {" · "}
                 {resumen.pedidosEnRango} pedido{resumen.pedidosEnRango !== 1 ? "s" : ""}
                 {" · "}
